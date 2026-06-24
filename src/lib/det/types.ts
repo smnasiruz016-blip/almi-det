@@ -47,7 +47,7 @@ export type ReadAndSelectPayload = {
 };
 export type ReadAndSelectResponse = { selected: string[] };
 
-export type ListenAndTypePayload = { sentence: string; audioScript: string };
+export type ListenAndTypePayload = { sentence: string; audioScript?: string };
 export type ListenAndTypeResponse = { typed: string };
 
 export type WriteAboutPhotoPayload = {

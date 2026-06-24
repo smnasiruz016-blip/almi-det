@@ -19,7 +19,7 @@ const ITEMS: Prisma.DetItemCreateManyInput[] = [
     taskType: "WRITE_ABOUT_THE_PHOTO",
     title: "The morning market",
     prompt: PROMPT,
-    difficulty: "CORE",
+    difficulty: "FOUNDATION",
     topicTag: "everyday",
     payload: {
       imageUrl: "",

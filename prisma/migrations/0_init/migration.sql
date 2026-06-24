@@ -16,6 +16,12 @@ CREATE TYPE "DetAttemptStatus" AS ENUM ('IN_PROGRESS', 'SUBMITTED', 'SCORED');
 -- CreateEnum
 CREATE TYPE "DetDifficulty" AS ENUM ('FOUNDATION', 'CORE', 'STRETCH');
 
+-- CreateEnum
+CREATE TYPE "DetSessionMode" AS ENUM ('ADAPTIVE', 'MOCK');
+
+-- CreateEnum
+CREATE TYPE "DetSessionStatus" AS ENUM ('IN_PROGRESS', 'COMPLETED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -135,12 +141,32 @@ CREATE TABLE "DetAttempt" (
     "aiModel" TEXT,
     "costCents" INTEGER,
     "latencyMs" INTEGER,
+    "sessionId" TEXT,
+    "sessionStep" INTEGER,
     "timeSpentSeconds" INTEGER NOT NULL DEFAULT 0,
     "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "submittedAt" TIMESTAMP(3),
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "DetAttempt_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DetSession" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "mode" "DetSessionMode" NOT NULL,
+    "taskType" "DetTaskType",
+    "targetCount" INTEGER NOT NULL,
+    "currentStep" INTEGER NOT NULL DEFAULT 0,
+    "currentDifficulty" "DetDifficulty" NOT NULL DEFAULT 'CORE',
+    "plan" JSONB,
+    "status" "DetSessionStatus" NOT NULL DEFAULT 'IN_PROGRESS',
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "completedAt" TIMESTAMP(3),
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DetSession_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -215,6 +241,12 @@ CREATE INDEX "DetAttempt_userId_startedAt_idx" ON "DetAttempt"("userId", "starte
 -- CreateIndex
 CREATE INDEX "DetAttempt_itemId_idx" ON "DetAttempt"("itemId");
 
+-- CreateIndex
+CREATE INDEX "DetAttempt_sessionId_sessionStep_idx" ON "DetAttempt"("sessionId", "sessionStep");
+
+-- CreateIndex
+CREATE INDEX "DetSession_userId_status_startedAt_idx" ON "DetSession"("userId", "status", "startedAt");
+
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -226,4 +258,10 @@ ALTER TABLE "DetAttempt" ADD CONSTRAINT "DetAttempt_userId_fkey" FOREIGN KEY ("u
 
 -- AddForeignKey
 ALTER TABLE "DetAttempt" ADD CONSTRAINT "DetAttempt_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "DetItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DetAttempt" ADD CONSTRAINT "DetAttempt_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "DetSession"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DetSession" ADD CONSTRAINT "DetSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

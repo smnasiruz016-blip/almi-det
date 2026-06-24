@@ -20,6 +20,16 @@ import {
   writeAboutPhotoResponseSchema,
   evaluateWriteAboutPhoto,
 } from "@/lib/det/tasks/write-about-the-photo";
+import {
+  listenAndTypePayloadSchema,
+  listenAndTypeResponseSchema,
+  scoreListenAndType,
+} from "@/lib/det/tasks/listen-and-type";
+import {
+  speakAboutPhotoPayloadSchema,
+  speakAboutPhotoResponseSchema,
+  evaluateSpeakAboutPhoto,
+} from "@/lib/det/tasks/speak-about-the-photo";
 
 export type ScoringMode = "DETERMINISTIC" | "AI";
 
@@ -43,7 +53,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     scoringMode: "DETERMINISTIC",
     feedsSubscores: SKILL_FEEDS.READING,
     blurb:
-      "Mark the words that are real English words and leave the invented ones unmarked. Quick reading recognition.",
+      "Mark the words that are real English words and leave the invented ones unmarked — quick reading recognition.",
     live: true,
   },
   LISTEN_AND_TYPE: {
@@ -53,8 +63,9 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     skill: "LISTENING",
     scoringMode: "DETERMINISTIC",
     feedsSubscores: SKILL_FEEDS.LISTENING,
-    blurb: "Listen to a short sentence and type exactly what you hear.",
-    live: false,
+    blurb:
+      "Listen to a short sentence and type exactly what you hear. Replays are limited, so listen closely.",
+    live: true,
   },
   WRITE_ABOUT_THE_PHOTO: {
     taskType: "WRITE_ABOUT_THE_PHOTO",
@@ -64,7 +75,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     scoringMode: "AI",
     feedsSubscores: SKILL_FEEDS.WRITING,
     blurb:
-      "Write at least 50 words describing the photo. You'll get honest feedback on relevance, range, and clarity.",
+      "Write at least 50 words describing the scene. You'll get honest feedback on relevance, range, and clarity.",
     live: true,
   },
   SPEAK_ABOUT_THE_PHOTO: {
@@ -75,8 +86,8 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     scoringMode: "AI",
     feedsSubscores: SKILL_FEEDS.SPEAKING,
     blurb:
-      "Speak about the photo for up to 90 seconds. We estimate from a transcript of what you said — not your accent.",
-    live: false,
+      "Speak about the scene for up to 90 seconds. We estimate from a transcript of what you said — not from your accent or audio.",
+    live: true,
   },
 };
 
@@ -120,12 +131,35 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
       return scoreReadAndSelect(p, r);
     },
   },
+  LISTEN_AND_TYPE: {
+    mode: "DETERMINISTIC",
+    run: async ({ payload, response }) => {
+      const p = listenAndTypePayloadSchema.parse(payload);
+      const r = listenAndTypeResponseSchema.parse(response);
+      return scoreListenAndType(p, r);
+    },
+  },
   WRITE_ABOUT_THE_PHOTO: {
     mode: "AI",
     run: async ({ payload, response, userId }) => {
       const p = writeAboutPhotoPayloadSchema.parse(payload);
       const r = writeAboutPhotoResponseSchema.parse(response);
       const s = await evaluateWriteAboutPhoto({ payload: p, response: r, userId });
+      return {
+        pointsEarned: s.pointsEarned,
+        pointsMax: s.pointsMax,
+        fraction: s.fraction,
+        feedback: s.feedback,
+        telemetry: s.telemetry,
+      };
+    },
+  },
+  SPEAK_ABOUT_THE_PHOTO: {
+    mode: "AI",
+    run: async ({ payload, response, userId }) => {
+      const p = speakAboutPhotoPayloadSchema.parse(payload);
+      const r = speakAboutPhotoResponseSchema.parse(response);
+      const s = await evaluateSpeakAboutPhoto({ payload: p, response: r, userId });
       return {
         pointsEarned: s.pointsEarned,
         pointsMax: s.pointsMax,

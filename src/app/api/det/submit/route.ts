@@ -1,8 +1,8 @@
 // Unified submit endpoint for every DET task. The route does NOT branch on task
 // type — it looks the handler up in the registry, runs it, turns the result
 // into an honest per-subscore practice range, and persists. AI tasks are gated
-// on paid access; objective tasks are free practice (a v1 free-tier placeholder
-// pending the founder's call).
+// on paid access; objective tasks are free practice. Speak About the Photo
+// arrives as multipart audio, which is transcribed (Whisper) before scoring.
 
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { DET_HANDLERS, DET_TASKS } from "@/lib/det/registry";
 import { fractionToRange } from "@/lib/det/scale";
 import { subscoreEstimateFromSkill } from "@/lib/det/subscores";
+import { transcribeAudio } from "@/lib/ai/openai";
 
 export const runtime = "nodejs";
 
@@ -21,14 +22,33 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
   }
 
-  let body: { attemptId?: unknown; response?: unknown; timeSpentSeconds?: unknown };
-  try {
-    body = (await req.json()) as typeof body;
-  } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  const contentType = req.headers.get("content-type") ?? "";
+  let attemptId = "";
+  let responseValue: unknown = {};
+  let timeSpent = 0;
+  let audio: { file: Blob; durationSeconds: number } | null = null;
+
+  if (contentType.includes("multipart/form-data")) {
+    const form = await req.formData();
+    attemptId = String(form.get("attemptId") ?? "");
+    timeSpent = Number(form.get("timeSpentSeconds") ?? 0);
+    const f = form.get("audio");
+    const dur = Number(form.get("durationSeconds") ?? 0);
+    if (f instanceof Blob) {
+      audio = { file: f, durationSeconds: Number.isFinite(dur) ? dur : 0 };
+    }
+  } else {
+    let body: { attemptId?: unknown; response?: unknown; timeSpentSeconds?: unknown };
+    try {
+      body = (await req.json()) as typeof body;
+    } catch {
+      return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+    }
+    attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
+    responseValue = body.response ?? {};
+    timeSpent = typeof body.timeSpentSeconds === "number" ? body.timeSpentSeconds : 0;
   }
 
-  const attemptId = typeof body.attemptId === "string" ? body.attemptId : "";
   if (!attemptId) {
     return NextResponse.json({ ok: false, error: "Missing attemptId" }, { status: 400 });
   }
@@ -61,11 +81,30 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
+  // Speaking: transcribe the uploaded audio before scoring.
+  if (audio) {
+    try {
+      const transcript = await transcribeAudio({
+        file: audio.file,
+        filename: "speech.webm",
+        durationSeconds: audio.durationSeconds,
+        userId: user.id,
+      });
+      responseValue = { transcript };
+    } catch (err) {
+      console.error("[det.submit] transcription failed:", err);
+      return NextResponse.json(
+        { ok: false, error: "Could not transcribe your recording. Try again." },
+        { status: 500 },
+      );
+    }
+  }
+
   let run;
   try {
     run = await handler.run({
       payload: attempt.item.payload,
-      response: body.response,
+      response: responseValue,
       userId: user.id,
     });
   } catch (err) {
@@ -78,16 +117,14 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const skillRange = fractionToRange(run.fraction);
   const subscoreEstimate = subscoreEstimateFromSkill(def.skill, skillRange);
-  const timeSpent =
-    typeof body.timeSpentSeconds === "number" && body.timeSpentSeconds >= 0
-      ? Math.round(body.timeSpentSeconds)
-      : 0;
+  const timeSpentSeconds =
+    Number.isFinite(timeSpent) && timeSpent >= 0 ? Math.round(timeSpent) : 0;
 
   await prisma.detAttempt.update({
     where: { id: attempt.id },
     data: {
       status: "SCORED",
-      response: (body.response ?? {}) as Prisma.InputJsonValue,
+      response: (responseValue ?? {}) as Prisma.InputJsonValue,
       pointsEarned: run.pointsEarned,
       pointsMax: run.pointsMax,
       subscoreEstimate: subscoreEstimate as unknown as Prisma.InputJsonValue,
@@ -96,7 +133,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       costCents: run.telemetry?.costCents ?? null,
       latencyMs: run.telemetry?.latencyMs ?? null,
       submittedAt: new Date(),
-      timeSpentSeconds: timeSpent,
+      timeSpentSeconds,
     },
   });
 

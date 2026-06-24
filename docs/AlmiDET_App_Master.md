@@ -79,12 +79,16 @@ Four tasks — two objective (deterministic path), two productive (AI path) — 
 | **Write About the Photo** | Writing | Literacy, Production | AI (text) |
 | **Speak About the Photo** | Speaking | Conversation, Production | AI (Whisper transcript) |
 
-**Phase 2 checkpoint module:** Read and Select + Write About the Photo (proves both scoring paths end-to-end on the DET scale, no audio infra required yet).
+All four tasks are built end to end (objective auto-marked; productive AI-graded with Whisper for speaking).
 
-**Deferred (NOT v1), honestly labelled:**
+**Adaptivity (BUILT — difficulty-pool):** objective tasks run as 5-question adaptive sets whose difficulty pool (FOUNDATION/CORE/STRETCH) moves with performance as you go; AI tasks pick their difficulty from the user's recent history. Copy: *"questions adjust to your level."* This is honest difficulty-pool adaptivity and never claims to reproduce DET's proprietary adaptive/IRT scoring engine.
+
+**Full-length mock (BUILT):** one item per task type across all four skills, aggregated into the four honest subscore ranges + a readiness band. Still no fabricated overall.
+
+**Deferred (NOT in this build), honestly labelled:**
 - Video-interview / webcam section
 - Interactive Speaking (conversational AI), Interactive Reading/Listening
-- True item-difficulty **adaptivity** — v1 uses **fixed difficulty pools**, labelled **"full-length practice,"** never "adaptive simulation."
+- Any reproduction of DET's exact adaptive/IRT scoring engine (we never claim this).
 
 ---
 
@@ -123,11 +127,16 @@ Results page shows, per attempt and cumulatively:
 **"Full-length practice" label (mock surface):**
 > A full-length practice run across all four skills. The real test is adaptive; this practice uses fixed task sets so you can rehearse the format end to end.
 
-**Per-task intros:**
-- *Read and Select:* "You'll see words one at a time. Mark the ones that are real English words. Quick reading recognition — the same skill the DET's reading tasks reward."
-- *Listen and Type:* "Listen to a short sentence and type exactly what you hear. Tests how precisely you catch spoken English."
-- *Write About the Photo:* "Write at least 50 words describing the photo. You'll get honest feedback on range, accuracy, and clarity."
-- *Speak About the Photo:* "Speak about the photo for up to 90 seconds. We estimate your speaking from a transcript of what you said — not from your accent."
+**Per-task intros (reconciled with the shipped registry blurbs):**
+- *Read and Select:* "Mark the words that are real English words and leave the invented ones unmarked — quick reading recognition."
+- *Listen and Type:* "Listen to a short sentence and type exactly what you hear. Replays are limited, so listen closely."
+- *Write About the Photo:* "Write at least 50 words describing the scene. You'll get honest feedback on relevance, range, and clarity."
+- *Speak About the Photo:* "Speak about the scene for up to 90 seconds. We estimate from a transcript of what you said — not from your accent or audio."
+
+**Adaptive practice line (hub / session):**
+> Adaptive practice — questions adjust to your level.
+
+(Honesty: this is difficulty-pool adaptivity and must NOT claim to match DET's exact scoring engine.)
 
 **Results framing (subscore card subtitle):**
 > Practice estimate on the 10–160 scale. We show a range, not a single number, because honest prep means showing the uncertainty.
@@ -144,4 +153,4 @@ Copy above avoids the AlmiWorld hard-ban list (discover/unlock/dream/transform/e
 
 - **Phase 0:** verify (done) → this doc → scaffold (`almi-det` repo + Neon + Vercel + env; fork TOEFL chassis; strip `toefl-*` SEO + `lib/toefl` data; rename cookie; fix stale `plans.ts`/Stripe-metadata comments).
 - **Phase 1:** `lib/det/scale.ts` (10–160/5, subscore map, readiness range, **no average-overall**); port item-bank (`DetItem ↔ DetAttempt`, `payload Json` + `pointsEarned/pointsMax`); data-driven `taskType → {composer, evaluator, scorer}` registry.
-- **Phase 2 (STOP for review):** Read and Select + Write About the Photo end-to-end, original seeded content, both scoring paths → honest DET-scale subscore estimates.
+- **Complete build:** all four tasks end-to-end (Read and Select, Listen and Type, Write About the Photo, Speak About the Photo); difficulty-pool adaptive sets; full-length mock aggregating the four subscore ranges + readiness; billing ($12/mo + 7-day trial, objective free / AI paid, email verify, owner bypass). Remaining = founder provisioning (Neon + Vercel + env), seed (`npm run seed:all`), then launch.

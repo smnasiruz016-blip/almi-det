@@ -66,6 +66,10 @@ const FAQ = [
     a: "It is widely accepted for university admission, including many top US universities. It is often NOT accepted for visa or immigration English proof — those usually require IELTS or PTE. Always check what your specific university and visa route require.",
   },
   {
+    q: "Is the practice adaptive?",
+    a: "Yes. Objective tasks run as short adaptive sets — as you answer, the difficulty adjusts to your level. This is our own difficulty-pool adaptivity to make practice efficient; it does not reproduce Duolingo's scoring engine.",
+  },
+  {
     q: "Is my AlmiDET score my real DET result?",
     a: "No. It's a practice estimate to guide your prep. Your real score comes only from an official Duolingo English Test.",
   },
@@ -187,8 +191,8 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <h2 className="text-center text-3xl font-semibold text-almi-ink">Practise the real DET task types</h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-base text-almi-text-muted">
-            Objective tasks are auto-marked; writing and speaking get honest AI feedback. Each informs the
-            subscores it touches.
+            Objective tasks run as adaptive sets that adjust to your level; writing and speaking get honest
+            AI feedback. Each informs the subscores it touches.
           </p>
           <ul className="mt-10 grid gap-4 md:grid-cols-2">
             {TASK_ORDER.map((t) => {

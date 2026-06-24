@@ -64,6 +64,38 @@ export async function recordCost(input: {
 }
 
 /**
+ * Record an already-computed external (e.g. OpenAI TTS) cost into the ledger.
+ * Token fields are logged as 0; costCents is in the same 1/100-cents unit.
+ */
+export async function recordExternalCost(input: {
+  userId: string | null;
+  feature: string;
+  model: string;
+  costCents: number;
+  success: boolean;
+  errorMessage?: string;
+}): Promise<void> {
+  try {
+    await prisma.aICostLedger.create({
+      data: {
+        userId: input.userId,
+        feature: input.feature,
+        model: input.model,
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costCents: input.success ? input.costCents : 0,
+        success: input.success,
+        errorMessage: input.errorMessage,
+      },
+    });
+  } catch (e) {
+    console.error("[ai-cost-ledger] external insert failed:", e);
+  }
+}
+
+/**
  * Record a Whisper transcription call into the same AICostLedger. Cost is
  * per-minute (see computeTranscriptionCostCents) rather than token-based, so
  * tokens are logged as 0. Returns the cost in 1/100 cents.

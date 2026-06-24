@@ -27,6 +27,18 @@ export const TRANSCRIPTION_USD_PER_MINUTE: Record<TranscriptionModelId, number> 
   "whisper-1": 0.006,
 };
 
+// --- Text-to-speech (OpenAI) — Listen and Type prompt audio, generated on
+// demand so the sentence text never reaches the client. tts-1 is $15 / 1M chars.
+export const TTS_MODELS = {
+  TTS: "tts-1",
+} as const;
+
+export type TtsModelId = (typeof TTS_MODELS)[keyof typeof TTS_MODELS];
+
+export const TTS_USD_PER_1K_CHARS: Record<TtsModelId, number> = {
+  "tts-1": 0.015,
+};
+
 // Per-million-token pricing in dollars. Source: Anthropic pricing page.
 // Cache read = 10% of input. Cache write 5-min TTL = 1.25x of input.
 export const PRICING_USD_PER_MTOK: Record<

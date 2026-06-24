@@ -9,7 +9,10 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "seed:read-select": "tsx scripts/seed/read-and-select.ts",
-    "seed:write-photo": "tsx scripts/seed/write-about-photo.ts"
+    "seed:listen": "tsx scripts/seed/listen-and-type.ts",
+    "seed:write-photo": "tsx scripts/seed/write-about-photo.ts",
+    "seed:speak": "tsx scripts/seed/speak-about-photo.ts",
+    "seed:all": "npm run seed:read-select && npm run seed:listen && npm run seed:write-photo && npm run seed:speak"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
