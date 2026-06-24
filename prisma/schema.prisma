@@ -1,0 +1,229 @@
+// AlmiDET data model. The shared engine foundation (auth, billing, AI cost
+// ledger) is forked from AlmiTOEFL. The practice layer is an ITEM-BANK ported
+// from AlmiPTE: a single DetItem ↔ DetAttempt pair carries every task type via
+// a typed `payload` Json, instead of one model per skill. Scoring is hybrid —
+// deterministic for objective tasks, AI trait-feedback for productive tasks —
+// and is reported as honest per-subscore practice ranges on the 10–160 scale.
+// We never compute or store a single fabricated overall (DET's overall is a
+// proprietary adaptive estimate). All practice content is original to AlmiDET.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Migrations use Neon's direct (unpooled) connection; runtime queries use the
+  // pooled URL above. Both are provided by the Neon–Vercel integration.
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Locale {
+  EN
+  UR
+  AR
+  HI
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  name         String?
+  passwordHash String
+  locale       Locale  @default(EN)
+  countryCode  String?
+  referralCode String  @unique @default(cuid())
+
+  // Email verification — required before paid feature access.
+  emailVerified               DateTime?
+  emailVerificationTokenHash  String?   @unique
+  emailVerificationExpiresAt  DateTime?
+  emailVerificationLastSentAt DateTime?
+
+  // Stripe subscription state — webhook keeps this in lockstep with Stripe.
+  stripeCustomerId              String?          @unique
+  stripeSubscriptionId          String?          @unique
+  subscriptionStatus            String?
+  subscriptionPlan              String?
+  subscriptionCurrentPeriodEnd  DateTime?
+  subscriptionCancelAtPeriodEnd Boolean          @default(false)
+  trialEndsAt                   DateTime?
+  subscriptionTier              SubscriptionTier @default(FREE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+  detAttempts         DetAttempt[]
+
+  @@index([email])
+  @@index([referralCode])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ProcessedWebhook {
+  id          String   @id
+  eventType   String
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+}
+
+model EarlyAccess {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model AICostLedger {
+  id               String   @id @default(cuid())
+  timestamp        DateTime @default(now())
+  userId           String? // null for system calls (e.g. seeding, admin)
+  feature          String // e.g. "write-about-photo.evaluate"
+  model            String
+  inputTokens      Int
+  outputTokens     Int
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  costCents        Int // rounded total cost in 1/100 cents
+  success          Boolean  @default(true)
+  errorMessage     String?
+
+  @@index([timestamp(sort: Desc)])
+  @@index([userId, timestamp])
+  @@index([feature, timestamp])
+}
+
+// ===================== Practice item-bank (ported from AlmiPTE) =====================
+// DET is a stream of many small interleaved task types. One DetItem/DetAttempt
+// pair serves them all; the `payload`/`response` Json shapes vary by taskType
+// and are validated in app code (see src/lib/det/tasks/*). v1 ships four tasks:
+// two objective (deterministic) and two productive (AI). The video-interview /
+// Interactive Speaking / true item-difficulty adaptivity are deferred — v1 uses
+// fixed difficulty pools, honestly labelled "full-length practice".
+
+enum DetTaskType {
+  READ_AND_SELECT // Reading,  deterministic
+  LISTEN_AND_TYPE // Listening, deterministic
+  WRITE_ABOUT_THE_PHOTO // Writing,   AI
+  SPEAK_ABOUT_THE_PHOTO // Speaking,  AI (Phase 3 — Whisper transcript)
+}
+
+enum DetAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  SCORED
+}
+
+// Fixed difficulty pools stand in for true adaptivity in v1.
+enum DetDifficulty {
+  FOUNDATION
+  CORE
+  STRETCH
+}
+
+model DetItem {
+  id       String      @id @default(cuid())
+  taskType DetTaskType
+  title    String
+  // Instruction shown to the test-taker.
+  prompt   String      @db.Text
+  // Task-specific stimulus + (for objective tasks) the server-side answer key,
+  // never sent raw to the client. Shapes by taskType:
+  //   READ_AND_SELECT        { words: [{ id, text, real:boolean }] }
+  //   LISTEN_AND_TYPE        { sentence, audioScript }
+  //   WRITE_ABOUT_THE_PHOTO  { imageUrl, imageAlt, minWords }
+  //   SPEAK_ABOUT_THE_PHOTO  { imageUrl, imageAlt, prepSeconds, speakSeconds }
+  payload    Json
+  difficulty DetDifficulty @default(CORE)
+  // Honest "what good looks like" coaching note (never the answer).
+  guidanceNote     String?  @db.Text
+  timeLimitSeconds Int      @default(0)
+  topicTag         String   @default("general")
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  attempts DetAttempt[]
+
+  @@index([taskType, active, difficulty])
+}
+
+model DetAttempt {
+  id       String           @id @default(cuid())
+  userId   String
+  itemId   String
+  taskType DetTaskType
+  status   DetAttemptStatus @default(IN_PROGRESS)
+
+  // The user's raw response; shape depends on taskType:
+  //   READ_AND_SELECT        { selected: string[] }   (word ids marked "real")
+  //   LISTEN_AND_TYPE        { typed: string }
+  //   WRITE_ABOUT_THE_PHOTO  { text: string }
+  //   SPEAK_ABOUT_THE_PHOTO  { transcript: string }
+  response Json @default("{}")
+
+  // Honest practice points: deterministic for objective tasks; for productive
+  // tasks, derived conservatively from the AI trait read. Never a DET score.
+  pointsEarned Int @default(0)
+  pointsMax    Int @default(0)
+
+  // Per-subscore practice estimate RANGE on the 10–160 scale. We never store a
+  // single overall. Shape: { literacy, comprehension, conversation, production }
+  // where each is [lo, hi] | null (null = not enough evidence yet).
+  subscoreEstimate Json?
+
+  // AI trait feedback payload for productive tasks (qualitative; no DET number).
+  feedback Json?
+
+  // Telemetry (productive tasks).
+  aiModel   String?
+  costCents Int?
+  latencyMs Int?
+
+  timeSpentSeconds Int       @default(0)
+  startedAt        DateTime  @default(now())
+  submittedAt      DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item DetItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, submittedAt])
+  @@index([userId, startedAt])
+  @@index([itemId])
+}
