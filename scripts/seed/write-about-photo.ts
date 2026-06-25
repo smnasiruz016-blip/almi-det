@@ -1,7 +1,6 @@
-// Seeds original "Write About the Photo" items. The scene is described in
-// imageAlt (the AI rates against this), and imageUrl is left empty so the
-// composer shows a captioned scene placeholder — production swaps in licensed
-// photos. All scenes are original to AlmiDET — never copied from Duolingo.
+// Seeds original "Write About the Photo" items. Real stock photos (Unsplash,
+// free license) via plain <img> in the composer; imageAlt describes the same
+// scene the AI rates against, so the human and the rater stay consistent.
 //
 // Run: npm run seed:write-photo  (needs DATABASE_URL set)
 
@@ -9,54 +8,50 @@ import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const PROMPT =
-  "Describe the photo in at least 50 words. Say what you see and what is happening.";
+const PROMPT = "Describe the photo in at least 50 words. Say what you see and what is happening.";
 const GUIDANCE =
   "Cover who or what is in the scene, what is happening, and a couple of details. Use full sentences and varied vocabulary.";
 
+function item(
+  title: string,
+  difficulty: "FOUNDATION" | "CORE" | "STRETCH",
+  topicTag: string,
+  imageUrl: string,
+  imageAlt: string,
+): Prisma.DetItemCreateManyInput {
+  return {
+    taskType: "WRITE_ABOUT_THE_PHOTO",
+    title,
+    prompt: PROMPT,
+    difficulty,
+    topicTag,
+    payload: { imageUrl, imageAlt, minWords: 50 },
+    guidanceNote: GUIDANCE,
+  };
+}
+
 const ITEMS: Prisma.DetItemCreateManyInput[] = [
-  {
-    taskType: "WRITE_ABOUT_THE_PHOTO",
-    title: "The morning market",
-    prompt: PROMPT,
-    difficulty: "FOUNDATION",
-    topicTag: "everyday",
-    payload: {
-      imageUrl: "",
-      imageAlt:
-        "A busy outdoor farmers' market in the morning: wooden stalls piled with fruit and vegetables, a vendor handing a paper bag to a customer, and people walking between the stalls carrying baskets.",
-      minWords: 50,
-    },
-    guidanceNote: GUIDANCE,
-  },
-  {
-    taskType: "WRITE_ABOUT_THE_PHOTO",
-    title: "The study desk",
-    prompt: PROMPT,
-    difficulty: "CORE",
-    topicTag: "everyday",
-    payload: {
-      imageUrl: "",
-      imageAlt:
-        "A quiet home study desk by a window: an open laptop, a stack of books, a mug of tea, and a small potted plant, with afternoon light coming through the blinds.",
-      minWords: 50,
-    },
-    guidanceNote: GUIDANCE,
-  },
-  {
-    taskType: "WRITE_ABOUT_THE_PHOTO",
-    title: "The train platform",
-    prompt: PROMPT,
-    difficulty: "STRETCH",
-    topicTag: "travel",
-    payload: {
-      imageUrl: "",
-      imageAlt:
-        "A train platform at rush hour: commuters in coats waiting behind the yellow line, a train arriving with its doors still closed, a large clock on the wall, and a person checking their phone.",
-      minWords: 50,
-    },
-    guidanceNote: GUIDANCE,
-  },
+  item(
+    "The morning market",
+    "FOUNDATION",
+    "everyday",
+    "https://images.unsplash.com/photo-1526399743290-f73cb4022f48?w=1000&q=80&auto=format&fit=crop",
+    "An outdoor market with stalls of fresh fruit and vegetables and people shopping among them.",
+  ),
+  item(
+    "The study desk",
+    "CORE",
+    "everyday",
+    "https://images.unsplash.com/photo-1611269154421-4e27233ac5c7?w=1000&q=80&auto=format&fit=crop",
+    "A desk by a window with a laptop, some books and a few personal items, lit by daylight.",
+  ),
+  item(
+    "The train platform",
+    "STRETCH",
+    "travel",
+    "https://images.unsplash.com/photo-1527295110-5145f6b148d0?w=1000&q=80&auto=format&fit=crop",
+    "A train station platform with a train alongside it and people waiting near the edge.",
+  ),
 ];
 
 async function main() {
