@@ -6,14 +6,14 @@ export const revalidate = 86400;
 export const dynamicParams = true;
 
 // Dispatcher: /requirements/[destination]/from-[origin] → corridor (Matrix C);
-// /requirements/[destination]/[university] → university layer (gate-closed).
+// /requirements/[destination]/[university] → university detail (Duolingo list).
 const FROM = "from-";
 type Params = Promise<{ destination: string; seg: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { destination, seg } = await params;
   if (seg.startsWith(FROM)) return buildDetCorridorMetadata(destination, seg.slice(FROM.length));
-  return buildDetUniversityMetadata(destination);
+  return buildDetUniversityMetadata({ destinationSlug: destination, universitySlug: seg });
 }
 
 export default async function Page({ params }: { params: Params }) {
