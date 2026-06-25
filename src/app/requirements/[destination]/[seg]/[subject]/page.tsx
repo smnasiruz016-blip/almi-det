@@ -4,15 +4,23 @@ import { DetUniversityPage, buildDetUniversityMetadata } from "@/components/det-
 export const revalidate = 86400;
 export const dynamicParams = true;
 
-// University × subject (Matrix D/E) — scaffolded, gate-closed (noindex).
+// /requirements/[dest]/[uni]/from-[origin] → university × origin
+// /requirements/[dest]/[uni]/[subject]     → university × subject (AlmiStudy-enriched)
+const FROM = "from-";
 type Params = Promise<{ destination: string; seg: string; subject: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const { destination } = await params;
-  return buildDetUniversityMetadata(destination);
+  const { destination, seg, subject } = await params;
+  if (subject.startsWith(FROM)) {
+    return buildDetUniversityMetadata({ destinationSlug: destination, universitySlug: seg, originSlug: subject.slice(FROM.length) });
+  }
+  return buildDetUniversityMetadata({ destinationSlug: destination, universitySlug: seg, subject });
 }
 
 export default async function Page({ params }: { params: Params }) {
   const { destination, seg, subject } = await params;
+  if (subject.startsWith(FROM)) {
+    return <DetUniversityPage destinationSlug={destination} universitySlug={seg} originSlug={subject.slice(FROM.length)} />;
+  }
   return <DetUniversityPage destinationSlug={destination} universitySlug={seg} subject={subject} />;
 }
