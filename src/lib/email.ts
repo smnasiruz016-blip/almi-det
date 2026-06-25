@@ -4,7 +4,8 @@ let cachedClient: Resend | null = null;
 
 function getResendClient(): Resend {
   if (cachedClient) return cachedClient;
-  const key = process.env.RESEND_API_KEY;
+  // Trim so a stray space/newline from a copy-paste doesn't invalidate the key.
+  const key = process.env.RESEND_API_KEY?.trim();
   if (!key || key === "TODO_FOUNDER_PROVIDES") {
     throw new Error("RESEND_API_KEY is not configured");
   }
@@ -12,11 +13,13 @@ function getResendClient(): Resend {
   return cachedClient;
 }
 
+// From-address. EMAIL_FROM is OPTIONAL — if unset we use the verified family
+// sender, so the only env var email actually needs is RESEND_API_KEY.
+const DEFAULT_FROM = "AlmiDET <almiworld@almiworld.com>";
+
 function getFromAddress(): string {
-  const addr = process.env.EMAIL_FROM;
-  if (!addr) {
-    throw new Error("EMAIL_FROM is not configured");
-  }
+  const addr = process.env.EMAIL_FROM?.trim();
+  if (!addr) return DEFAULT_FROM;
   return addr.includes("<") ? addr : `AlmiDET <${addr}>`;
 }
 
