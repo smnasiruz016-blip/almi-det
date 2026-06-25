@@ -43,17 +43,33 @@ export const PLAN_DISPLAY_NAME: Record<PlanKey, string> = {
 };
 
 const ACTIVE_STATUSES = new Set(["trialing", "active"]);
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 type ProUserShape = Pick<
   User,
-  "subscriptionStatus" | "subscriptionCurrentPeriodEnd"
+  "subscriptionStatus" | "subscriptionCurrentPeriodEnd" | "compProUntil"
 >;
 
+/** True while an admin comp grant is active (compProUntil in the future). */
+export function isComped(user: Pick<User, "compProUntil">): boolean {
+  return user.compProUntil !== null && user.compProUntil.getTime() > Date.now();
+}
+
+/** Whole days left on an active comp grant (ceil), or null if not comped. */
+export function getCompProDaysRemaining(
+  user: Pick<User, "compProUntil">,
+): number | null {
+  if (!isComped(user)) return null;
+  return Math.ceil((user.compProUntil!.getTime() - Date.now()) / DAY_MS);
+}
+
 /**
- * True when the user has Pro access right now — paid or trialing subscription
- * still inside its period. Past-due / canceled / incomplete = false.
+ * True when the user has Pro access right now — an active comp grant, or a
+ * paid / trialing subscription still inside its period. Comp short-circuits
+ * first, before any Stripe state is consulted.
  */
 export function isProActive(user: ProUserShape): boolean {
+  if (isComped(user)) return true;
   if (!user.subscriptionStatus) return false;
   if (!ACTIVE_STATUSES.has(user.subscriptionStatus)) return false;
   if (!user.subscriptionCurrentPeriodEnd) return false;
@@ -73,7 +89,9 @@ export function isEmailVerified(user: Pick<User, "emailVerified">): boolean {
 export function hasPaidAccess(
   user: ProUserShape & Pick<User, "emailVerified" | "email">,
 ): boolean {
-  if (isOwner(user.email)) return true;
+  // Owner and comp both grant immediate full access — they bypass the email
+  // verification a normal paid subscription still requires.
+  if (isOwner(user.email) || isComped(user)) return true;
   return isProActive(user) && isEmailVerified(user);
 }
 

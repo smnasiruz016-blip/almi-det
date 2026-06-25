@@ -56,6 +56,16 @@ model User {
   trialEndsAt                   DateTime?
   subscriptionTier              SubscriptionTier @default(FREE)
 
+  // Comp Pro access — admin-granted, no Stripe. isProActive()/hasPaidAccess()
+  // short-circuit true while compProUntil is in the future, bypassing BOTH the
+  // subscription check AND email verification (comp = immediate full access).
+  // Single grant per user (revoke = null all four; extend tops up). DET full Pro
+  // = AI feedback on Write/Speak About the Photo + the full-length mock.
+  compProUntil  DateTime?
+  compGrantedAt DateTime?
+  compGrantedBy String?
+  compReason    String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -68,6 +78,7 @@ model User {
   @@index([referralCode])
   @@index([stripeCustomerId])
   @@index([stripeSubscriptionId])
+  @@index([compProUntil])
 }
 
 model Session {

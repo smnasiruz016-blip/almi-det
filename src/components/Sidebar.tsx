@@ -23,9 +23,10 @@ function buildItems(isAdmin: boolean): Item[] {
     { key: "progress", href: "/account", icon: "📊", label: "My Progress", match: "/account" },
     { key: "account", href: "/account", icon: "👤", label: "Account", match: "/account" },
   ];
-  // Admin panel (AI costs, reviews, teacher-tips) is restored once those routes
-  // ship in later phases — omitted in Phase 0 so the nav has no dead links.
-  void isAdmin;
+  // Admin panel (Comp Accounts + Accounts) — only for ADMIN_EMAILS users.
+  if (isAdmin) {
+    items.push({ key: "admin", href: "/admin", icon: "🛠️", label: "Admin", match: "/admin" });
+  }
   return items;
 }
 
