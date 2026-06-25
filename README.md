@@ -1,14 +1,20 @@
-# AlmiTOEFL
+# AlmiDET
 
-AI-powered **TOEFL** preparation + research-tuned SEO landing pages — a **separate**
-product in the AlmiWorld family, on its own subdomain **almitoefl.almiworld.com**.
+AI-powered **Duolingo English Test (DET)** practice — a **separate** product in
+the AlmiWorld family, on its own subdomain **almidet.almiworld.com**.
 
-This is NOT AlmiPrep (which is IELTS). Shared facts come from
-`@smnasiruz016-blip/almi-data`; the page patterns mirror AlmiPrep/AlmiPTE
-(research-tuned `/toefl-for/[country]`, real-data-or-noindex gate, `/from-[origin]`,
-`/toefl-vs-ielts`) but as an independent codebase.
+Forked from AlmiTOEFL's app chassis; the practice layer is an item-bank ported
+from AlmiPTE (`DetItem ↔ DetAttempt`, data-driven task registry — no if-chains).
+Four tasks: **Read and Select** + **Listen and Type** (deterministic) and
+**Write About the Photo** + **Speak About the Photo** (AI — Claude Sonnet, plus
+Whisper transcription for speaking). Difficulty-pool **adaptive sets** + a
+**full-length mock**.
 
-⚠️ TOEFL changed completely on **21 Jan 2026**: new **1.0–6.0** band scale
-(overall = average of 4 sections), CEFR-aligned, adaptive, new task types,
-results ~72h, valid 2 years. The old 0–120 scale is retired as primary (shown
-only during the 2026–2028 transition). No fabricated scores.
+Honesty doctrine: scores are practice estimates on the **10–160** scale, shown
+as per-subscore **ranges** (Literacy / Comprehension / Conversation / Production)
+plus a readiness band — **never a fabricated overall** (DET's overall is a
+proprietary adaptive estimate). All content is original — **never copied from
+Duolingo**. $12/month + 7-day trial; objective tasks free, AI feedback paid.
+
+Adaptivity here is honest difficulty-pool adaptivity and does **not** reproduce
+DET's scoring engine.

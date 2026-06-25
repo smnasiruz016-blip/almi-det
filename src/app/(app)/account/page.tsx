@@ -1,6 +1,5 @@
-// Account page — Phase 0 slim version: plan + email status only. As each TOEFL
-// practice section ships, its "recent attempts" block is added back here (the
-// AlmiPrep account page is the template).
+// Account page — slim version: plan + email status only. A "recent attempts"
+// block can be added back here later (the AlmiPrep account page is the template).
 
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";

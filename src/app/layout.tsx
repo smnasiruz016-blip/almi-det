@@ -7,28 +7,28 @@ import { GlobalFooter } from "@/components/GlobalFooter";
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
 const allura = Allura({ variable: "--font-allura", subsets: ["latin"], weight: "400", display: "swap" });
 
-const SITE_URL = "https://almitoefl.almiworld.com";
+const SITE_URL = "https://almidet.almiworld.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "AlmiTOEFL — TOEFL preparation for the new 1–6 format (2026)",
-    template: "%s · AlmiTOEFL",
+    default: "AlmiDET — Duolingo English Test practice with honest AI feedback",
+    template: "%s · AlmiDET",
   },
   description:
-    "Honest TOEFL guidance for the new 1.0–6.0 format (effective 21 Jan 2026) — the score you need by country, and which routes accept TOEFL. Part of the AlmiWorld family.",
-  applicationName: "AlmiTOEFL",
+    "Practise the Duolingo English Test on the real 10–160 scale, with honest AI feedback and subscore estimates shown as ranges, not inflated numbers. Original material, never copied from Duolingo. Part of the AlmiWorld family.",
+  applicationName: "AlmiDET",
   authors: [{ name: "AlmiWorld" }],
-  keywords: ["TOEFL", "TOEFL 2026", "new TOEFL", "TOEFL 1-6", "TOEFL score", "TOEFL requirement", "AlmiTOEFL", "AlmiWorld"],
+  keywords: ["Duolingo English Test", "DET", "DET practice", "DET preparation", "Duolingo test score", "DET writing", "DET speaking", "AlmiDET", "AlmiWorld"],
   openGraph: {
-    title: "AlmiTOEFL — TOEFL preparation for the new 1–6 format (2026)",
-    description: "The TOEFL score you need by country, on the new 1–6 scale — honest, sourced.",
+    title: "AlmiDET — honest Duolingo English Test practice",
+    description: "Original practice tasks on the real 10–160 scale, with honest AI feedback and subscore ranges, not inflated numbers.",
     url: SITE_URL,
-    siteName: "AlmiTOEFL",
+    siteName: "AlmiDET",
     type: "website",
     locale: "en_US",
   },
-  twitter: { card: "summary_large_image", title: "AlmiTOEFL — new TOEFL 1–6 format", description: "The TOEFL score you need by country, honest and sourced." },
+  twitter: { card: "summary_large_image", title: "AlmiDET — Duolingo English Test practice", description: "Honest DET practice on the 10–160 scale — ranges, not inflated numbers." },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
 };
 

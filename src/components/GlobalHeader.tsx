@@ -1,6 +1,6 @@
-// AlmiTOEFL-branded header — own wordmark + product entry points + the family
+// AlmiDET-branded header — own wordmark + product entry points + the family
 // sibling nav (like AlmiCV's site header). The brand links home; the family
-// links keep AlmiTOEFL connected to the rest of AlmiWorld.
+// links keep AlmiDET connected to the rest of AlmiWorld.
 
 import Link from "next/link";
 import { HeaderMobileMenu } from "./HeaderMobileMenu";
@@ -14,12 +14,13 @@ export const FAMILY_NAV = [
   { label: "Almistudy", href: "https://almistudy.almiworld.com/" },
   { label: "AlmiPrep", href: "https://almiprep.almiworld.com/" },
   { label: "AlmiPTE", href: "https://almipte.almiworld.com/" },
+  { label: "AlmiTOEFL", href: "https://almitoefl.almiworld.com/" },
   { label: "Contact Us", href: "https://almiworld.com/contact-us/" },
   { label: "Shamool Foundation", href: "https://shamoolfoundation.com/" },
 ] as const;
 
 // Product entry points (distinct from the family sibling links above). These
-// take a visitor from any page into AlmiTOEFL's own practice product.
+// take a visitor from any page into AlmiDET's own practice product.
 export const PRODUCT_NAV = [
   { label: "Practice", href: "/practice" },
   { label: "Log in", href: "/login" },
@@ -34,11 +35,11 @@ export function GlobalHeader() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           href="/"
-          aria-label="AlmiTOEFL home"
+          aria-label="AlmiDET home"
           className="inline-flex shrink-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-almi-coral focus-visible:ring-offset-2 focus-visible:ring-offset-almi-bg"
         >
           <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-lg bg-almi-coral text-lg font-bold text-white">A</span>
-          <span className="text-xl font-semibold tracking-tight text-almi-ink">AlmiTOEFL</span>
+          <span className="text-xl font-semibold tracking-tight text-almi-ink">AlmiDET</span>
         </Link>
 
         <nav

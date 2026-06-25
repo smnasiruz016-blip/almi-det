@@ -1,9 +1,9 @@
 // Family-wide footer — AlmiWorld Global Nav Spec v1 §3. Data-driven; the current
 // product (CURRENT_PRODUCT) renders bold + unlinked, every sibling is a followed
-// link. AlmiTOEFL is the 7th product — listed here on its own footer now; rolling
+// link. AlmiDET is the 8th product — listed here on its own footer now; rolling
 // it into the OTHER products' footers is a separate careful pass (held).
 
-const CURRENT_PRODUCT = "AlmiTOEFL";
+const CURRENT_PRODUCT = "AlmiDET";
 
 type FooterLink = { label: string; href: string };
 type FooterColumn = { title: string; links: FooterLink[] };
@@ -18,7 +18,7 @@ const FOOTER_COLUMNS: FooterColumn[] = [
     ],
   },
   {
-    // All seven products — one list.
+    // All eight products — one list.
     title: "Products",
     links: [
       { label: "AlmiJobs", href: "https://almijob.almiworld.com/" },
@@ -28,6 +28,7 @@ const FOOTER_COLUMNS: FooterColumn[] = [
       { label: "AlmiPrep", href: "https://almiprep.almiworld.com/" },
       { label: "AlmiPTE", href: "https://almipte.almiworld.com/" },
       { label: "AlmiTOEFL", href: "https://almitoefl.almiworld.com/" },
+      { label: "AlmiDET", href: "https://almidet.almiworld.com/" },
     ],
   },
   {

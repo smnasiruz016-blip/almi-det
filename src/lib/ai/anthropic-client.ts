@@ -1,4 +1,4 @@
-// Anthropic SDK wrapper for AlmiTOEFL. Lighter than AlmiCV's wrapper —
+// Anthropic SDK wrapper for AlmiDET. Lighter than AlmiCV's wrapper —
 // AlmiPrep has no batch jobs, so we don't need the elaborate per-model
 // token-bucket pacing. SDK's built-in retry + a small cost-ledger write
 // is all we need.

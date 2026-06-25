@@ -8,15 +8,15 @@ import { PricingCheckoutButton } from "./PricingCheckoutButton";
 export const metadata: Metadata = {
   title: "Pricing — 7-day free trial",
   description:
-    "AlmiTOEFL Pro — $12/month, cancel anytime. 7-day free trial. All four TOEFL sections on the new 1–6 format, AI evaluation, unlimited practice.",
+    "AlmiDET Pro — $12/month, cancel anytime. 7-day free trial. Honest AI feedback on Write and Speak About the Photo, full-length practice, and subscore estimates on the 10–160 scale.",
 };
 
 const FEATURES = [
-  "All four TOEFL sections — Reading, Listening, Speaking, Writing (new 2026 format)",
-  "AI-evaluated Writing on every task you submit, scored 1.0–6.0",
-  "AI-evaluated Speaking with honest feedback",
-  "Unlimited practice attempts",
-  "Full Mock Test with an overall band (the average of the four sections)",
+  "Honest AI feedback on Write About the Photo and Speak About the Photo",
+  "Full-length practice across all four skills",
+  "Subscore estimates on the 10–160 scale, shown as ranges (never a fabricated overall)",
+  "Adaptive practice that adjusts to your level",
+  "Original material — never copied from Duolingo",
   "Cancel anytime from your account",
 ];
 
@@ -35,7 +35,7 @@ export default async function PricingPage({
         <div className="text-center">
           <h1 className="text-4xl font-semibold text-almi-ink">Simple pricing. 7-day free trial.</h1>
           <p className="mt-3 text-base text-almi-text-muted">
-            One subscription. All four TOEFL sections. Cancel anytime.
+            One subscription. Honest AI feedback and full-length practice. Cancel anytime.
           </p>
         </div>
 
