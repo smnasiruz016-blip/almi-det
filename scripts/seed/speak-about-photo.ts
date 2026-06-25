@@ -5,6 +5,7 @@
 // Run: npm run seed:speak  (needs DATABASE_URL set)
 
 import { PrismaClient, Prisma } from "@prisma/client";
+import { isDirectRun } from "./_entry";
 
 const prisma = new PrismaClient();
 
@@ -30,7 +31,7 @@ function item(
   };
 }
 
-const ITEMS: Prisma.DetItemCreateManyInput[] = [
+export const ITEMS: Prisma.DetItemCreateManyInput[] = [
   item(
     "The park picnic",
     "FOUNDATION",
@@ -52,6 +53,111 @@ const ITEMS: Prisma.DetItemCreateManyInput[] = [
     "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1000&q=80&auto=format&fit=crop",
     "A construction site with workers, machinery and a partly-built structure.",
   ),
+  item(
+    "The cup of coffee",
+    "FOUNDATION",
+    "everyday",
+    "https://images.unsplash.com/photo-1595434091143-b375ced5fe5c?w=1000&q=80&auto=format&fit=crop",
+    "A white ceramic cup of coffee sitting on a wooden table.",
+  ),
+  item(
+    "The sleeping cat",
+    "FOUNDATION",
+    "everyday",
+    "https://images.unsplash.com/photo-1630910627747-299d3bc50b4d?w=1000&q=80&auto=format&fit=crop",
+    "A brown tabby cat lying asleep on a grey sofa.",
+  ),
+  item(
+    "The beach",
+    "FOUNDATION",
+    "travel",
+    "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1000&q=80&auto=format&fit=crop",
+    "Waves rolling onto a sandy beach beside the open sea.",
+  ),
+  item(
+    "The child and toys",
+    "FOUNDATION",
+    "everyday",
+    "https://images.unsplash.com/photo-1532330393533-443990a51d10?w=1000&q=80&auto=format&fit=crop",
+    "A child playing with colourful toy cars on a wooden table.",
+  ),
+  item(
+    "The flower garden",
+    "FOUNDATION",
+    "everyday",
+    "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=1000&q=80&auto=format&fit=crop",
+    "Bright orange flowers in bloom in a garden.",
+  ),
+  item(
+    "The cafe table",
+    "CORE",
+    "everyday",
+    "https://images.unsplash.com/photo-1764173038859-11b5bcf26d0f?w=1000&q=80&auto=format&fit=crop",
+    "Two people sitting and talking at a cafe table beside large windows.",
+  ),
+  item(
+    "The supermarket aisle",
+    "CORE",
+    "everyday",
+    "https://images.unsplash.com/photo-1601600576337-c1d8a0d1373c?w=1000&q=80&auto=format&fit=crop",
+    "Shelves stocked with products along a supermarket aisle.",
+  ),
+  item(
+    "The playground",
+    "CORE",
+    "everyday",
+    "https://images.unsplash.com/photo-1596997000103-e597b3ca50df?w=1000&q=80&auto=format&fit=crop",
+    "A wooden playground with climbing equipment surrounded by trees.",
+  ),
+  item(
+    "The library",
+    "CORE",
+    "everyday",
+    "https://images.unsplash.com/photo-1749671232817-1f224147f0c9?w=1000&q=80&auto=format&fit=crop",
+    "A large library reading room lined with bookshelves and study tables.",
+  ),
+  item(
+    "The street musician",
+    "CORE",
+    "everyday",
+    "https://images.unsplash.com/photo-1706990462661-558838502fc3?w=1000&q=80&auto=format&fit=crop",
+    "A man playing a guitar on the street in front of a building.",
+  ),
+  item(
+    "The harbour",
+    "STRETCH",
+    "travel",
+    "https://images.unsplash.com/photo-1609021933073-7f58bfce4ba4?w=1000&q=80&auto=format&fit=crop",
+    "A boat docked at a harbour on the calm water.",
+  ),
+  item(
+    "The factory floor",
+    "STRETCH",
+    "work",
+    "https://images.unsplash.com/photo-1716643863806-989dd76ae093?w=1000&q=80&auto=format&fit=crop",
+    "A factory floor filled with industrial machines and equipment.",
+  ),
+  item(
+    "The mountain trail",
+    "STRETCH",
+    "travel",
+    "https://images.unsplash.com/photo-1643386165206-d1be6dcc76c2?w=1000&q=80&auto=format&fit=crop",
+    "A person climbing wooden steps on a trail through a wooded hillside.",
+  ),
+  item(
+    "The wedding celebration",
+    "STRETCH",
+    "everyday",
+    "https://images.unsplash.com/photo-1583939411023-14783179e581?w=1000&q=80&auto=format&fit=crop",
+    "People dressed in white dancing and celebrating outdoors on the grass.",
+  ),
+  item(
+    "The football match",
+    "STRETCH",
+    "everyday",
+    "https://images.unsplash.com/photo-1434648957308-5e6a859697e8?w=1000&q=80&auto=format&fit=crop",
+    "A crowd of spectators watching a football match in a stadium.",
+  ),
 ];
 
 async function main() {
@@ -66,9 +172,11 @@ async function main() {
   console.log(`Seeded ${ITEMS.length} Speak About the Photo items.`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+if (isDirectRun(import.meta.url)) {
+  main()
+    .catch((e) => {
+      console.error(e);
+      process.exitCode = 1;
+    })
+    .finally(() => prisma.$disconnect());
+}
