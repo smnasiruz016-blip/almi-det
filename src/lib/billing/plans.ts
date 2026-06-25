@@ -116,18 +116,25 @@ export function priceIdToPlanLabel(
 }
 
 /**
- * Dry-run guard. Billing is enabled only when:
- *   1. NEXT_PUBLIC_BILLING_ENABLED === "true", AND
- *   2. The monthly Stripe price ID is configured.
+ * Billing is enabled when Stripe is actually configured — a real secret key AND
+ * a monthly price id. Both are RUNTIME (non-NEXT_PUBLIC) env vars, so this
+ * reflects the deployment's current env immediately and is NOT frozen into the
+ * build. (Previously this also gated on NEXT_PUBLIC_BILLING_ENABLED, which is
+ * inlined at build time and so required a fresh, no-cache rebuild every time —
+ * the build-cache trap. Dropping it removes that footgun: set the Stripe env
+ * vars and any redeploy turns billing on.)
+ *
  * AlmiDET ships a single $12/month plan — there is no yearly price, so the
- * yearly scaffolding below stays dormant (STRIPE_PRICE_YEARLY === "" makes
+ * yearly scaffolding stays dormant (STRIPE_PRICE_YEARLY === "" makes
  * priceIdToPlanLabel + the checkout allowlist reject any "yearly" request).
- * Webhook endpoint still processes events when disabled (so we can verify
- * the integration end-to-end with test transactions).
  */
+function isRealEnv(v: string | undefined): boolean {
+  return Boolean(v && v.trim() && v !== "TODO_FOUNDER_PROVIDES");
+}
+
 export function isBillingEnabled(): boolean {
   return (
-    process.env.NEXT_PUBLIC_BILLING_ENABLED === "true" &&
-    Boolean(STRIPE_PRICE_MONTHLY)
+    isRealEnv(process.env.STRIPE_SECRET_KEY) &&
+    isRealEnv(process.env.STRIPE_PRICE_ID_MONTHLY)
   );
 }
