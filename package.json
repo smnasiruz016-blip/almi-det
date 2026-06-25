@@ -12,7 +12,8 @@
     "seed:listen": "tsx scripts/seed/listen-and-type.ts",
     "seed:write-photo": "tsx scripts/seed/write-about-photo.ts",
     "seed:speak": "tsx scripts/seed/speak-about-photo.ts",
-    "seed:all": "npm run seed:read-select && npm run seed:listen && npm run seed:write-photo && npm run seed:speak"
+    "seed:all": "npm run seed:read-select && npm run seed:listen && npm run seed:write-photo && npm run seed:speak",
+    "seed:append": "tsx scripts/seed/append.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",

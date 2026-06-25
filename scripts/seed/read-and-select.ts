@@ -6,6 +6,7 @@
 // Run: npm run seed:read-select  (needs DATABASE_URL set)
 
 import { PrismaClient, Prisma } from "@prisma/client";
+import { isDirectRun } from "./_entry";
 
 const prisma = new PrismaClient();
 
@@ -32,7 +33,7 @@ function item(
   };
 }
 
-const ITEMS: Prisma.DetItemCreateManyInput[] = [
+export const ITEMS: Prisma.DetItemCreateManyInput[] = [
   item("Real words — A1", "FOUNDATION", [
     ["garden", true], ["blornic", false], ["river", true], ["tewdle", false],
     ["happy", true], ["grummel", false], ["table", true], ["pencil", true],
@@ -69,6 +70,42 @@ const ITEMS: Prisma.DetItemCreateManyInput[] = [
     ["ambiguous", true], ["plimber", false], ["coherent", true], ["gorphic", false],
     ["substantial", true], ["snarvle", false], ["nuance", true], ["inevitable", true],
   ]),
+  item("Real words — A4", "FOUNDATION", [
+    ["chair", true], ["dremmle", false], ["window", true], ["blunto", false],
+    ["milk", true], ["frabel", false], ["spoon", true], ["finger", true],
+  ]),
+  item("Real words — A5", "FOUNDATION", [
+    ["bottle", true], ["grendle", false], ["candle", true], ["sworple", false],
+    ["ticket", true], ["plimby", false], ["morning", true], ["sister", true],
+  ]),
+  item("Real words — A6", "FOUNDATION", [
+    ["kitchen", true], ["brundel", false], ["mountain", true], ["snarpy", false],
+    ["summer", true], ["drofen", false], ["evening", true], ["sandwich", true],
+  ]),
+  item("Real words — B4", "CORE", [
+    ["balance", true], ["quorfen", false], ["decision", true], ["splithe", false],
+    ["address", true], ["gandor", false], ["monitor", true], ["courage", true],
+  ]),
+  item("Real words — B5", "CORE", [
+    ["neighbour", true], ["trindle", false], ["schedule", true], ["brovish", false],
+    ["attention", true], ["glomber", false], ["package", true], ["distance", true],
+  ]),
+  item("Real words — B6", "CORE", [
+    ["industry", true], ["speward", false], ["increase", true], ["dwomble", false],
+    ["evidence", true], ["prombic", false], ["signal", true], ["council", true],
+  ]),
+  item("Real words — C4", "STRETCH", [
+    ["ambitious", true], ["vornicate", false], ["prevalent", true], ["glunthor", false],
+    ["intricate", true], ["swelden", false], ["candidate", true], ["momentum", true],
+  ]),
+  item("Real words — C5", "STRETCH", [
+    ["spontaneous", true], ["plimbeous", false], ["articulate", true], ["grondical", false],
+    ["susceptible", true], ["fendarial", false], ["hypothesis", true], ["credible", true],
+  ]),
+  item("Real words — C6", "STRETCH", [
+    ["unprecedented", true], ["quorbital", false], ["conscientious", true], ["blandocate", false],
+    ["perpetual", true], ["swarndle", false], ["ostensible", true], ["reservoir", true],
+  ]),
 ];
 
 async function main() {
@@ -81,9 +118,11 @@ async function main() {
   console.log(`Seeded ${ITEMS.length} Read and Select items.`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+if (isDirectRun(import.meta.url)) {
+  main()
+    .catch((e) => {
+      console.error(e);
+      process.exitCode = 1;
+    })
+    .finally(() => prisma.$disconnect());
+}
