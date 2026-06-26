@@ -5,7 +5,7 @@ import {
   detDestinationName,
   detDestinationFlag,
 } from "@/lib/det/seo/destinations";
-import { findDetOrigin, getLocalizedOrigin } from "@/lib/det/seo/origins";
+import { findDetOrigin, getLocalizedOrigin, isDetOriginIndexable } from "@/lib/det/seo/origins";
 import {
   DetMasterCrossLinks,
   DetMasterShamool,
@@ -16,11 +16,11 @@ import {
 
 const SITE_URL = "https://almidet.almiworld.com";
 
-/** Indexable only when BOTH the destination is verified AND the origin carries
- *  real localized substance; otherwise it canonicalises up to the destination
- *  master and stays noindex. */
+/** Indexable when the destination is verified AND the origin is a researched
+ *  origin (base or localized — both carry real substance). Otherwise it
+ *  canonicalises up to the destination master and stays noindex. */
 export function corridorIndexable(destSlug: string, originSlug: string): boolean {
-  return isDetDestinationIndexable(destSlug) && Boolean(getLocalizedOrigin(originSlug));
+  return isDetDestinationIndexable(destSlug) && isDetOriginIndexable(originSlug);
 }
 
 export function DetCorridorPage({ destinationSlug, originSlug }: { destinationSlug: string; originSlug: string }) {
@@ -58,17 +58,19 @@ export function DetCorridorPage({ destinationSlug, originSlug }: { destinationSl
         </section>
       )}
 
-      {loc && (
+      {origin && (
         <section className="mt-8 rounded-2xl border border-almi-bg-peach bg-almi-paper p-5">
           <h2 className="text-base font-semibold text-almi-ink">From {originName} — the essentials</h2>
           <dl className="mt-2 space-y-1 text-sm text-almi-text">
-            <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Costs in</dt><dd>{loc.currency}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Where students go</dt><dd className="text-right">{loc.topDestinations.join(", ")}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Apply from</dt><dd className="text-right">{loc.cities.join(", ")}</dd></div>
+            {loc && <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Costs in</dt><dd>{loc.currency}</dd></div>}
+            <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Credentials</dt><dd className="text-right">{origin.credentialBody}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Funding to search</dt><dd className="text-right">{origin.scholarshipCluster.join(", ")}</dd></div>
+            {loc && <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Where students go</dt><dd className="text-right">{loc.topDestinations.join(", ")}</dd></div>}
+            {loc && <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Apply from</dt><dd className="text-right">{loc.cities.join(", ")}</dd></div>}
           </dl>
           <p className="mt-3 text-sm text-almi-text-muted">
-            At about $70 the DET is taken online from {originName} — no test-centre travel, and far
-            cheaper than IELTS.
+            {origin.languageNote} At about $70 the DET is taken online from {originName} — no
+            test-centre travel, and far cheaper than IELTS.
           </p>
         </section>
       )}

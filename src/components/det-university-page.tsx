@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { lookupDetDestination, detDestinationName } from "@/lib/det/seo/destinations";
 import { findDetUni, isDetUniIndexable, isDetUniSubjectIndexable } from "@/lib/det/seo/universities";
-import { findDetOrigin, getLocalizedOrigin } from "@/lib/det/seo/origins";
+import { findDetOrigin, getLocalizedOrigin, isDetOriginIndexable } from "@/lib/det/seo/origins";
 import {
   DetMasterCrossLinks,
   DetMasterShamool,
@@ -37,12 +37,12 @@ type Props = {
 
 /** Page is indexable when the institution is Duolingo-confirmed; the subject
  *  layer additionally needs AlmiStudy enrichment; origin leaves additionally
- *  need a localized origin (real substance). */
+ *  need a researched origin (base or localized — both carry real substance). */
 export function uniIndexable(p: Props): boolean {
   const { destinationSlug, universitySlug, subject, originSlug } = p;
   if (!isDetUniIndexable(destinationSlug, universitySlug)) return false;
   if (subject && !isDetUniSubjectIndexable(destinationSlug, universitySlug, subject)) return false;
-  if (originSlug && !getLocalizedOrigin(originSlug)) return false;
+  if (originSlug && !isDetOriginIndexable(originSlug)) return false;
   return true;
 }
 
@@ -115,13 +115,18 @@ export function DetUniversityPage({ destinationSlug, universitySlug, subject, or
         </section>
       )}
 
-      {loc && originName && (
+      {origin && originName && (
         <section className="mt-6 rounded-2xl border border-almi-bg-peach bg-almi-paper p-5">
           <h2 className="text-base font-semibold text-almi-ink">Applying from {originName}</h2>
           <p className="mt-2 text-sm text-almi-text">
             At about $70 the DET is taken online from {originName} — no test-centre travel, and far
-            cheaper than IELTS. Students from {originName} commonly head to {loc.topDestinations.join(", ")}.
+            cheaper than IELTS. {origin.languageNote}
           </p>
+          <dl className="mt-2 space-y-1 text-sm text-almi-text">
+            <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Credentials</dt><dd className="text-right">{origin.credentialBody}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Funding to search</dt><dd className="text-right">{origin.scholarshipCluster.join(", ")}</dd></div>
+            {loc && <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Where students go</dt><dd className="text-right">{loc.topDestinations.join(", ")}</dd></div>}
+          </dl>
         </section>
       )}
 
@@ -154,7 +159,6 @@ export function buildDetUniversityMetadata(p: Props): Metadata {
     `${SITE_URL}/requirements/${destinationSlug}/${universitySlug}` +
     (subject ? `/${subject}` : "") +
     (originSlug ? `/from-${originSlug}` : "");
-  // canonical-up: origin/subject leaves fold to the uni base; unknown unis fold to destination.
   const upUrl = uni
     ? `${SITE_URL}/requirements/${destinationSlug}/${universitySlug}`
     : `${SITE_URL}/requirements/${destinationSlug}`;
