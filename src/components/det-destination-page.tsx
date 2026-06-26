@@ -6,6 +6,7 @@ import {
   detDestinationName,
   detDestinationFlag,
 } from "@/lib/det/seo/destinations";
+import { detUnisInCountry, countryEnrichedCount } from "@/lib/det/seo/universities";
 import {
   DetMasterCrossLinks,
   DetMasterShamool,
@@ -186,6 +187,38 @@ export function DetDestinationPage({ destinationSlug }: { destinationSlug: strin
             bands, so this page is honest general guidance and is not yet indexed. Confirm the current
             requirement on your university&apos;s official admissions page.
           </p>
+        </section>
+      )}
+
+      {detUnisInCountry(destinationSlug).length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xl font-semibold text-almi-ink">
+            Universities in {name} that accept the DET
+          </h2>
+          <p className="mt-2 text-sm text-almi-text-muted">
+            Confirmed on Duolingo&apos;s accepting-institutions list, with course data from AlmiStudy.
+            Each university sets its own DET score — confirm on its official page.
+          </p>
+          <ul className="mt-4 divide-y divide-almi-bg-peach/60">
+            {detUnisInCountry(destinationSlug).map((u) => (
+              <li key={u.slug} className="py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <a href={`/requirements/${destinationSlug}/${u.slug}`} className="font-medium text-almi-ink hover:text-almi-coral-deep">
+                    {u.name}
+                  </a>
+                  {u.city && <span className="text-xs text-almi-text-muted">{u.city}</span>}
+                </div>
+                {u.subjects.length > 0 && (
+                  <div className="mt-0.5 text-xs text-almi-text-muted">{u.subjects.join(" · ")}</div>
+                )}
+              </li>
+            ))}
+          </ul>
+          {countryEnrichedCount(destinationSlug) > 14 && (
+            <p className="mt-3 text-xs text-almi-text-muted">
+              Showing 14 of {countryEnrichedCount(destinationSlug)} matched universities.
+            </p>
+          )}
         </section>
       )}
 
