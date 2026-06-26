@@ -23,6 +23,17 @@
 // };
 
 import { findCountry } from "./almi-data-local";
+import autoRaw from "./destinations-auto.json";
+
+// Auto-opened destinations: countries with >=5 DET-accepting institutions on
+// Duolingo's official list. We index a real COUNT (honest, Duolingo-sourced) +
+// general guidance — never a named list (Duolingo's program-country tagging
+// can place a foreign campus under another country, so names are not shown).
+export type DetAutoDestination = { count: number };
+const AUTO_DESTINATIONS = autoRaw as Record<string, DetAutoDestination>;
+export const AUTO_DESTINATION_SLUGS: string[] = Object.keys(AUTO_DESTINATIONS);
+export const lookupAutoDestination = (slug: string): DetAutoDestination | null =>
+  AUTO_DESTINATIONS[slug] ?? null;
 
 export type DetAcceptanceNote = { label: string; text: string; warn?: boolean };
 export type DetNamedUni = { name: string; detScore?: string; note?: string };
@@ -368,7 +379,8 @@ export const DET_DESTINATIONS: Record<string, DetDestination> = {
 export const DET_DESTINATION_SLUGS: string[] = Object.keys(DET_DESTINATIONS);
 export const lookupDetDestination = (slug: string): DetDestination | null => DET_DESTINATIONS[slug] ?? null;
 /** Index gate: only the verified destinations in the map are indexable. */
-export const isDetDestinationIndexable = (slug: string): boolean => slug in DET_DESTINATIONS;
+export const isDetDestinationIndexable = (slug: string): boolean =>
+  slug in DET_DESTINATIONS || slug in AUTO_DESTINATIONS;
 /** Display name + flag come from the canonical country list (almi-data-local). */
 export function detDestinationName(slug: string): string { return findCountry(slug)?.name ?? slug.replace(/-/g, " "); }
 export function detDestinationFlag(slug: string): string { return findCountry(slug)?.flag ?? ""; }

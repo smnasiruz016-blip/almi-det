@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   lookupDetDestination,
+  lookupAutoDestination,
   isDetDestinationIndexable,
   detDestinationName,
   detDestinationFlag,
@@ -25,6 +26,7 @@ function faqsFor(name: string): { q: string; a: string }[] {
 
 export function DetDestinationPage({ destinationSlug }: { destinationSlug: string }) {
   const data = lookupDetDestination(destinationSlug);
+  const auto = lookupAutoDestination(destinationSlug);
   const name = detDestinationName(destinationSlug);
   const flag = detDestinationFlag(destinationSlug);
   const indexable = isDetDestinationIndexable(destinationSlug);
@@ -138,6 +140,43 @@ export function DetDestinationPage({ destinationSlug }: { destinationSlug: strin
               </ul>
             </section>
           )}
+        </>
+      ) : auto ? (
+        <>
+          <section className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-almi-bg-peach bg-almi-paper p-5">
+              <div className="text-xs uppercase tracking-wide text-almi-text-muted">On Duolingo&apos;s accepting list</div>
+              <div className="mt-1 text-xl font-semibold text-almi-ink">{auto.count} institutions &amp; programmes</div>
+            </div>
+            <div className="rounded-2xl border border-almi-bg-peach bg-almi-paper p-5">
+              <div className="text-xs uppercase tracking-wide text-almi-text-muted">Score scale</div>
+              <div className="mt-1 text-xl font-semibold text-almi-ink">10–160</div>
+            </div>
+          </section>
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-almi-ink">The Duolingo English Test in {name}</h2>
+            <p className="mt-2 text-almi-text">
+              Around {auto.count} institutions and programmes associated with {name} accept the
+              Duolingo English Test, per Duolingo&apos;s own accepting-institutions list. Scores run on
+              the 10–160 scale; each university and programme sets its own minimum, so confirm the
+              figure on the official admissions page.
+            </p>
+          </section>
+          <section className="mt-6 rounded-2xl border border-almi-accent/40 bg-almi-bg p-5">
+            <h2 className="text-base font-semibold text-almi-ink">Admission is not the same as the visa</h2>
+            <p className="mt-2 text-sm text-almi-text">
+              A test accepted for university admission is not automatically accepted for the student
+              visa. Confirm the visa English requirement for {name} with the official immigration
+              authority before you rely on a DET score.
+            </p>
+          </section>
+          <section className="mt-6 rounded-2xl border border-almi-bg-peach bg-almi-paper p-5">
+            <h2 className="text-base font-semibold text-almi-ink">DET vs IELTS — cost</h2>
+            <p className="mt-2 text-sm text-almi-text">
+              At about $70 the DET is taken online from home — far cheaper than IELTS (~$245) and with
+              no test-centre travel.
+            </p>
+          </section>
         </>
       ) : (
         <section className="mt-8 rounded-2xl border border-almi-bg-peach bg-almi-paper p-6">
