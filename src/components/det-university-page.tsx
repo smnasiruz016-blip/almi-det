@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { lookupDetDestination, detDestinationName } from "@/lib/det/seo/destinations";
-import { findDetUni, isDetUniIndexable, isDetUniSubjectIndexable } from "@/lib/det/seo/universities";
+import { findDetUni, findEnrichedUni, isDetUniIndexable, isDetUniSubjectIndexable } from "@/lib/det/seo/universities";
 import { findDetOrigin, getLocalizedOrigin, isDetOriginIndexable } from "@/lib/det/seo/origins";
 import {
   DetMasterCrossLinks,
@@ -48,6 +48,7 @@ export function uniIndexable(p: Props): boolean {
 
 export function DetUniversityPage({ destinationSlug, universitySlug, subject, originSlug }: Props) {
   const uni = findDetUni(destinationSlug, universitySlug);
+  const rich = findEnrichedUni(destinationSlug, universitySlug);
   const destName = detDestinationName(destinationSlug);
   const dest = lookupDetDestination(destinationSlug);
   const subjLabel = subjectName(subject);
@@ -92,6 +93,24 @@ export function DetUniversityPage({ destinationSlug, universitySlug, subject, or
           set their own minimum, so confirm the figure on the official admissions page.
         </p>
       </header>
+
+      {rich && (
+        <section className="mt-8 rounded-2xl border border-almi-bg-peach bg-almi-paper p-5">
+          <h2 className="text-base font-semibold text-almi-ink">About {rich.name}</h2>
+          <dl className="mt-2 space-y-1 text-sm text-almi-text">
+            {rich.city && <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">City</dt><dd>{rich.city}</dd></div>}
+            {rich.subjects.length > 0 && <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Subjects</dt><dd className="text-right">{rich.subjects.join(", ")}</dd></div>}
+            {rich.accreditation && <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Accreditation</dt><dd className="text-right">{rich.accreditation}</dd></div>}
+            {rich.website && (
+              <div className="flex justify-between gap-3"><dt className="text-almi-text-muted">Official site</dt>
+                <dd className="text-right"><a href={rich.website} className="text-almi-teal underline" rel="nofollow noopener" target="_blank">{rich.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}</a></dd>
+              </div>
+            )}
+          </dl>
+          {rich.note && <p className="mt-3 text-sm text-almi-text-muted">{rich.note}</p>}
+          <p className="mt-2 text-xs text-almi-text-muted">Course and profile data from AlmiStudy.</p>
+        </section>
+      )}
 
       {dest && (
         <section className="mt-8 rounded-2xl border border-almi-bg-peach bg-almi-paper p-5">
