@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { DET_DESTINATION_SLUGS, isDetDestinationIndexable } from "./destinations";
+import { DET_DESTINATION_SLUGS, AUTO_DESTINATION_SLUGS } from "./destinations";
 import { DET_ORIGIN_SLUGS, isDetOriginIndexable } from "./origins";
 import { DET_UNIS, UNI_SUBJECT_PAIRS } from "./universities";
 
@@ -23,15 +23,15 @@ function baseUrls(): MetadataRoute.Sitemap {
   const out: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
   ];
-  for (const d of DET_DESTINATION_SLUGS) {
-    if (isDetDestinationIndexable(d)) out.push({ url: `${SITE_URL}/requirements/${d}`, changeFrequency: "monthly", priority: 0.8 });
+  const ALL_DEST = [...DET_DESTINATION_SLUGS, ...AUTO_DESTINATION_SLUGS];
+  for (const d of ALL_DEST) {
+    out.push({ url: `${SITE_URL}/requirements/${d}`, changeFrequency: "monthly", priority: 0.8 });
   }
   for (const o of DET_ORIGIN_SLUGS) {
     if (isDetOriginIndexable(o)) out.push({ url: `${SITE_URL}/prepare/from-${o}`, changeFrequency: "monthly", priority: 0.6 });
   }
-  // Matrix C — corridors (verified dest × researched origin)
-  for (const d of DET_DESTINATION_SLUGS) {
-    if (!isDetDestinationIndexable(d)) continue;
+  // Matrix C — corridors (indexable dest × researched origin)
+  for (const d of ALL_DEST) {
     for (const o of LEAF_ORIGINS) {
       out.push({ url: `${SITE_URL}/requirements/${d}/from-${o}`, changeFrequency: "monthly", priority: 0.5 });
     }
