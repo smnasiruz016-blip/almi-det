@@ -18,6 +18,7 @@ export const FAMILY_NAV = [
   { label: "AlmiOET", href: "https://almioet.almiworld.com/" },
   { label: "AlmiCELPIP", href: "https://almicelpip.almiworld.com/" },
   { label: "AlmiGoethe", href: "https://almigoethe.almiworld.com/" },
+  { label: "AlmiFrench", href: "https://almifrench.almiworld.com/" },
   { label: "Contact Us", href: "https://almiworld.com/contact-us/" },
   { label: "Shamool Foundation", href: "https://shamoolfoundation.com/" },
 ] as const;
