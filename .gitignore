@@ -9,3 +9,6 @@ dist/
 
 .vercel
 .env*.local
+
+# TypeScript incremental build cache — machine-specific, never commit
+*.tsbuildinfo
