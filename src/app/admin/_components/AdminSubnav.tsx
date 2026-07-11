@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { label: "Comp Accounts", href: "/admin/comp-accounts" },
   { label: "Accounts", href: "/admin/accounts" },
+  { label: "Reviews", href: "/admin/reviews" },
 ];
 
 export function AdminSubnav() {

@@ -73,6 +73,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   detAttempts         DetAttempt[]
   detSessions         DetSession[]
+  reviews             Review[]
 
   @@index([email])
   @@index([referralCode])
@@ -286,4 +287,17 @@ model DetSession {
   attempts DetAttempt[]
 
   @@index([userId, status, startedAt])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  text      String   @db.Text
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([approved, createdAt])
 }

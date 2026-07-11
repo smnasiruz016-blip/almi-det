@@ -10,6 +10,7 @@ import {
   isEmailVerified,
 } from "@/lib/billing/plans";
 import { ResendVerificationButton } from "@/components/ResendVerificationButton";
+import { ReviewCard } from "@/components/reviews/ReviewCard";
 
 export default async function AccountPage({
   searchParams,
@@ -112,6 +113,8 @@ export default async function AccountPage({
           Choose a task →
         </Link>
       </section>
+
+      <ReviewCard />
     </div>
   );
 }
