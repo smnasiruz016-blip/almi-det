@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DetUniversityPage, buildDetUniversityMetadata } from "@/components/det-university-page";
 
-export const revalidate = 86400;
+export const revalidate = false; // render-once, cache until redeploy — static SEO data, no periodic ISR re-writes
 export const dynamicParams = true;
 
 // University × subject × origin (Matrix E). Indexable when the institution is on
