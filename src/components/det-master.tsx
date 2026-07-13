@@ -33,9 +33,9 @@ export function DetMasterShamool() {
     <section className="mt-6 rounded-2xl border border-almi-bg-peach bg-almi-bg p-6">
       <h2 className="text-base font-semibold text-almi-ink">The Shamool pledge</h2>
       <p className="mt-2 text-sm text-almi-text">
-        AlmiDET is part of the AlmiWorld family. A share of what the family earns goes to the
-        Shamool Foundation to support students who cannot afford fees and tests — so the work you
-        do here helps fund a place for someone else.
+        AlmiDET is part of the AlmiWorld family. 25% of our sales go to the Shamool Foundation
+        to support students who cannot afford fees and tests — so the work you do here helps fund
+        a place for someone else.
       </p>
     </section>
   );
