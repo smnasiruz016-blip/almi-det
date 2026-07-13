@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DetDestinationPage, buildDetDestinationMetadata } from "@/components/det-destination-page";
 
-export const revalidate = 86400;
+export const revalidate = false; // render-once, cache until redeploy — static SEO data, no periodic ISR re-writes
 export const dynamicParams = true;
 
 type Params = Promise<{ destination: string }>;

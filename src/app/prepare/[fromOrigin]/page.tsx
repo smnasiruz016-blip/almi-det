@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { DetOriginPage, buildDetOriginMetadata } from "@/components/det-origin-page";
 
-export const revalidate = 86400;
+export const revalidate = false; // render-once, cache until redeploy — static SEO data, no periodic ISR re-writes
 export const dynamicParams = true;
 
 const FROM = "from-";
