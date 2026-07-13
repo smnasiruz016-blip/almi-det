@@ -7,10 +7,10 @@ import { SUBSCORE_LABEL } from "@/lib/det/types";
 // template so the brand appears exactly once.
 export const metadata: Metadata = {
   title: {
-    absolute: "Duolingo English Test Practice with Honest AI Feedback | AlmiDET",
+    absolute: "DET Practice Test — Realistic Subscores (10–160) | AlmiDET",
   },
   description:
-    "Practise the Duolingo English Test on the real 10–160 scale, with honest AI feedback and a clear estimate of your Literacy, Comprehension, Conversation and Production. Original material, never copied from Duolingo. $12/month, 7-day free trial.",
+    "Duolingo English Test practice on the real 10–160 scale — honest subscore ranges for Literacy, Comprehension, Conversation and Production. Never inflated.",
   openGraph: {
     title: "AlmiDET — honest Duolingo English Test practice",
     description:
