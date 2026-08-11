@@ -1,7 +1,7 @@
 // Unified submit endpoint for every DET task. The route does NOT branch on task
 // type — it looks the handler up in the registry, runs it, turns the result
 // into an honest per-subscore practice range, and persists. AI tasks are gated
-// on paid access; objective tasks are free practice. Speak About the Photo
+// on paid access; objective tasks are AI-scored practice. Speak About the Photo
 // arrives as multipart audio, which is transcribed (Whisper) before scoring.
 
 import { NextResponse } from "next/server";
@@ -73,8 +73,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
-  // AI feedback is a paid feature; objective auto-marking is free practice.
-  if (handler.mode === "AI" && !hasPaidAccess(user)) {
+  // AI feedback is a paid feature; objective auto-marking is AI-scored practice.
+  if (!hasPaidAccess(user)) {
     return NextResponse.json(
       { ok: false, error: "AI feedback needs a subscription", upgradeUrl: "/pricing" },
       { status: 402 },

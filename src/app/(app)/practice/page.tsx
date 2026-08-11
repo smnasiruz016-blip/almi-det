@@ -28,7 +28,7 @@ export default async function PracticePage() {
         {TASK_ORDER.map((t) => {
           const def = DET_TASKS[t];
           const subs = def.feedsSubscores.map((s) => SUBSCORE_LABEL[s]).join(" + ");
-          const tag = def.scoringMode === "AI" ? "AI feedback · Pro" : "Auto-marked · Free";
+          const tag = def.scoringMode === "AI" ? "AI feedback" : "Auto-marked";
           const inner = (
             <>
               <div className="flex items-baseline justify-between gap-3">
