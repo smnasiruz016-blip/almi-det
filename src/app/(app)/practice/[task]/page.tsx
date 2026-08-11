@@ -15,7 +15,7 @@ async function beginAction(formData: FormData) {
   const def = taskBySlug(slug);
   if (!def || !def.live) redirect("/practice");
   const user = await requireUser();
-  if (def.scoringMode === "AI" && !hasPaidAccess(user)) redirect("/pricing");
+  if (!hasPaidAccess(user)) redirect("/pricing");
   const id = await startSession({ userId: user.id, mode: "ADAPTIVE", taskType: def.taskType });
   if (!id) redirect(`/practice/${def.slug}?empty=1`);
   redirect(`/practice/session/${id}`);
@@ -36,7 +36,7 @@ export default async function TaskStartPage({
 
   const subs = def.feedsSubscores.map((s) => SUBSCORE_LABEL[s]).join(" + ");
   const isObjective = def.scoringMode === "DETERMINISTIC";
-  const needsPaid = def.scoringMode === "AI" && !hasPaidAccess(user);
+  const needsPaid = !hasPaidAccess(user);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -72,7 +72,7 @@ export default async function TaskStartPage({
           <a href="/pricing" className="font-semibold underline">
             See plans
           </a>{" "}
-          — objective tasks (Read and Select, Listen and Type) are free.
+         
         </div>
       ) : (
         <form action={beginAction}>

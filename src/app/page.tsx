@@ -152,7 +152,7 @@ export default function Home() {
                 href="/signup"
                 className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-almi-coral px-7 py-3 text-base font-semibold text-almi-ink hover:bg-almi-coral-deep focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-almi-coral/30"
               >
-                Practise free
+                Start 7-day free trial
               </Link>
               <Link
                 href="/login"
@@ -252,7 +252,7 @@ export default function Home() {
               href="/signup"
               className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-almi-coral px-7 py-3 text-base font-semibold text-almi-ink hover:bg-almi-coral-deep"
             >
-              Practise free
+              Start 7-day free trial
             </Link>
           </div>
           <p className="mt-4 text-sm text-almi-text-muted">
@@ -289,7 +289,7 @@ export default function Home() {
               href="/signup"
               className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-almi-coral px-7 py-3 text-base font-semibold text-almi-ink hover:bg-almi-coral-deep"
             >
-              Practise free
+              Start 7-day free trial
             </Link>
           </div>
         </div>
