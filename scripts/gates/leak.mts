@@ -128,14 +128,39 @@ export default defineGate("gate:leak", async (bank: Bank) => {
     }
     // READ_AND_COMPLETE: neither the keyed letters nor the alternatives may
     // survive projection — only the blank LENGTH is allowed across.
+    //
+    // Checked against the projected BLANK TOKENS, not against the whole wire.
+    // A raw substring scan looks stricter but is worse: a key like "ther"
+    // (weather -> wea|ther) occurs inside ordinary passage prose — "there is
+    // very" — so the scan fired on two clean items. A gate that cries wolf on
+    // correct content is a gate someone switches off, and the structured check
+    // below is both exact and immune to what the passage happens to say.
     if (it.taskType === "READ_AND_COMPLETE") {
       if (/"missingLetters"\s*:/.test(wire) || /"alsoAccept"\s*:/.test(wire)) {
         l3.push(`${it.taskType} / ${it.title}: cloze answer key present in the client payload`);
       }
-      for (const t of (it.payload.passage as { kind: string; missingLetters?: string }[] | undefined) ?? []) {
-        if (t.kind !== "blank" || !t.missingLetters || t.missingLetters.length < 4) continue;
-        if (wire.includes(t.missingLetters)) {
-          l3.push(`${it.taskType} / ${it.title}: keyed letters "${t.missingLetters}" reach the client verbatim`);
+      const projected = (client.passage as Record<string, unknown>[] | undefined) ?? [];
+      const authored = (it.payload.passage as { kind: string; id?: string; missingLetters?: string; alsoAccept?: string[] }[] | undefined) ?? [];
+      const keyById = new Map(
+        authored.filter((t) => t.kind === "blank" && t.id).map((t) => [t.id as string, t]),
+      );
+      for (const tok of projected) {
+        if (tok.kind !== "blank") continue;
+        const src = keyById.get(String(tok.id));
+        if (!src) continue;
+        const secrets = [src.missingLetters, ...(src.alsoAccept ?? [])].filter(Boolean) as string[];
+        // Every string this token carries to the browser, checked field by field.
+        // Absent fields are skipped rather than stringified: String(undefined)
+        // is "undefined", which contains "ine" — so a blank keyed decl|ine was
+        // reported as leaking into its own empty `suffix`. The gate was matching
+        // its own placeholder, not the content.
+        const carried = Object.entries(tok)
+          .filter(([k, v]) => k !== "kind" && k !== "id" && v !== undefined && v !== null)
+          .map(([, v]) => String(v));
+        for (const secret of secrets) {
+          if (carried.some((v) => v.toLowerCase().includes(secret.toLowerCase()))) {
+            l3.push(`${it.taskType} / ${it.title} / ${tok.id}: keyed letters "${secret}" carried in a projected field`);
+          }
         }
       }
     }

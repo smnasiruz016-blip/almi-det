@@ -70,10 +70,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.READING,
     blurb:
       "A short passage with letters missing from some words. Use the sentence around each gap to work out the word, and type the letters that are missing.",
-    // Flipped to true when the authored passages land. Until then the practice
-    // hub shows "Coming soon" and MOCK_ORDER (derived from `live`) skips it, so
-    // a registered-but-empty type can never strand a session on a missing item.
-    live: false,
+    live: true,
   },
   LISTEN_AND_TYPE: {
     taskType: "LISTEN_AND_TYPE",
