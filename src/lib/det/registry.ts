@@ -16,6 +16,11 @@ import {
   scoreReadAndSelect,
 } from "@/lib/det/tasks/read-and-select";
 import {
+  readAndCompletePayloadSchema,
+  readAndCompleteResponseSchema,
+  scoreReadAndComplete,
+} from "@/lib/det/tasks/read-and-complete";
+import {
   writeAboutPhotoPayloadSchema,
   writeAboutPhotoResponseSchema,
   evaluateWriteAboutPhoto,
@@ -56,6 +61,20 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "Mark the words that are real English words and leave the invented ones unmarked — quick reading recognition.",
     live: true,
   },
+  READ_AND_COMPLETE: {
+    taskType: "READ_AND_COMPLETE",
+    slug: "read-and-complete",
+    label: "Read and Complete",
+    skill: "READING",
+    scoringMode: "DETERMINISTIC",
+    feedsSubscores: SKILL_FEEDS.READING,
+    blurb:
+      "A short passage with letters missing from some words. Use the sentence around each gap to work out the word, and type the letters that are missing.",
+    // Flipped to true when the authored passages land. Until then the practice
+    // hub shows "Coming soon" and MOCK_ORDER (derived from `live`) skips it, so
+    // a registered-but-empty type can never strand a session on a missing item.
+    live: false,
+  },
   LISTEN_AND_TYPE: {
     taskType: "LISTEN_AND_TYPE",
     slug: "listen-and-type",
@@ -93,6 +112,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
 
 export const TASK_ORDER: DetTaskType[] = [
   "READ_AND_SELECT",
+  "READ_AND_COMPLETE",
   "LISTEN_AND_TYPE",
   "WRITE_ABOUT_THE_PHOTO",
   "SPEAK_ABOUT_THE_PHOTO",
@@ -129,6 +149,14 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
       const p = readAndSelectPayloadSchema.parse(payload);
       const r = readAndSelectResponseSchema.parse(response);
       return scoreReadAndSelect(p, r);
+    },
+  },
+  READ_AND_COMPLETE: {
+    mode: "DETERMINISTIC",
+    run: async ({ payload, response }) => {
+      const p = readAndCompletePayloadSchema.parse(payload);
+      const r = readAndCompleteResponseSchema.parse(response);
+      return scoreReadAndComplete(p, r);
     },
   },
   LISTEN_AND_TYPE: {

@@ -47,6 +47,33 @@ export type ReadAndSelectPayload = {
 };
 export type ReadAndSelectResponse = { selected: string[] };
 
+// ---- READ AND COMPLETE (cloze) ----
+// The passage renders as tokens joined by a single space. A "blank" token shows
+// `visiblePrefix` followed by one underscore per missing letter; the test-taker
+// types the rest of the word.
+//
+// SERVER-ONLY on a blank: `missingLetters` and `alsoAccept`. Both are the key.
+// `blankLength` (the count, not the letters) IS projected — real DET renders one
+// underscore per missing letter, so the length is part of the stimulus.
+export type ReadAndCompleteToken =
+  | { kind: "text"; text: string }
+  | {
+      kind: "blank";
+      id: string;
+      visiblePrefix: string;
+      /** SERVER-ONLY — the keyed completion. */
+      missingLetters: string;
+      /** SERVER-ONLY — other completions that fit the letters AND the sentence.
+       *  Marking a valid, context-fitting English word wrong would be unfair, and
+       *  most prefixes admit several dictionary words. */
+      alsoAccept?: string[];
+      /** Punctuation riding the word, e.g. "," or "." — rendered, not typed. */
+      suffix?: string;
+    };
+
+export type ReadAndCompletePayload = { passage: ReadAndCompleteToken[] };
+export type ReadAndCompleteResponse = { filled: Record<string, string> };
+
 export type ListenAndTypePayload = { sentence: string; audioScript?: string };
 export type ListenAndTypeResponse = { typed: string };
 

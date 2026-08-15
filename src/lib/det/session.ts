@@ -12,17 +12,16 @@
 import { Prisma } from "@prisma/client";
 import type { DetDifficulty, DetTaskType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { DET_TASKS } from "@/lib/det/registry";
+import { DET_TASKS, TASK_ORDER } from "@/lib/det/registry";
 import { fractionToRange, snapRange } from "@/lib/det/scale";
 import { combineSubscores, provisionalSubscores } from "@/lib/det/subscores";
 import type { DetSkill, Range, SubscoreEstimate, SubscoreKey } from "@/lib/det/types";
 
-export const MOCK_ORDER: DetTaskType[] = [
-  "READ_AND_SELECT",
-  "LISTEN_AND_TYPE",
-  "WRITE_ABOUT_THE_PHOTO",
-  "SPEAK_ABOUT_THE_PHOTO",
-];
+// DERIVED, not hand-listed: one representative item per LIVE task type, in
+// registry order. A type registered with live:false (built, no content yet) is
+// skipped automatically, so it can never strand a mock on an item that does not
+// exist — and flipping live:true is all it takes to include it.
+export const MOCK_ORDER: DetTaskType[] = TASK_ORDER.filter((t) => DET_TASKS[t].live);
 
 const DIFFICULTIES: DetDifficulty[] = ["FOUNDATION", "CORE", "STRETCH"];
 const ADAPTIVE_OBJECTIVE_STEPS = 5;

@@ -152,6 +152,7 @@ model AICostLedger {
 
 enum DetTaskType {
   READ_AND_SELECT // Reading,  deterministic
+  READ_AND_COMPLETE // Reading,  deterministic (cloze)
   LISTEN_AND_TYPE // Listening, deterministic
   WRITE_ABOUT_THE_PHOTO // Writing,   AI
   SPEAK_ABOUT_THE_PHOTO // Speaking,  AI (Phase 3 — Whisper transcript)

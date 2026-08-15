@@ -8,7 +8,8 @@
 // the session aggregate.
 
 import Link from "next/link";
-import type { DetAttempt, DetItem } from "@prisma/client";
+import type { ReactNode } from "react";
+import type { DetAttempt, DetItem, DetTaskType } from "@prisma/client";
 import type { DetSkill, SubscoreEstimate } from "@/lib/det/types";
 import { overallReadiness } from "@/lib/det/subscores";
 import type { TaskDef } from "@/lib/det/registry";
@@ -19,6 +20,11 @@ import {
   readAndSelectResponseSchema,
   scoreReadAndSelect,
 } from "@/lib/det/tasks/read-and-select";
+import {
+  readAndCompletePayloadSchema,
+  readAndCompleteResponseSchema,
+  scoreReadAndComplete,
+} from "@/lib/det/tasks/read-and-complete";
 import {
   listenAndTypePayloadSchema,
   listenAndTypeResponseSchema,
@@ -56,6 +62,46 @@ function ReadAndSelectReview({ item, attempt }: { item: DetItem; attempt: DetAtt
             {w.real ? "Real word" : "Not a word"}
             {w.picked !== w.real && (w.real ? " · you missed it" : " · you marked it")}
           </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ReadAndCompleteReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = readAndCompletePayloadSchema.safeParse(item.payload);
+  const response = readAndCompleteResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreReadAndComplete(payload.data, response.data);
+  return (
+    <div className="space-y-2">
+      {detail.blanks.map((b) => (
+        <div
+          key={b.id}
+          className={`rounded-lg border px-3 py-2 text-sm ${
+            b.correct ? "border-almi-teal/40 bg-almi-teal/5" : "border-almi-coral/40 bg-almi-coral/5"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-medium text-almi-ink">
+              {b.visiblePrefix}
+              <span className="text-almi-teal">{b.missingLetters}</span>
+            </span>
+            <span aria-hidden>{b.correct ? "✓" : "✗"}</span>
+          </div>
+          {!b.correct && (
+            <p className="text-xs text-almi-text-muted">
+              You typed{" "}
+              {b.typed.trim() ? (
+                <span className="font-medium">
+                  {b.visiblePrefix}
+                  {b.typed}
+                </span>
+              ) : (
+                "nothing"
+              )}
+            </p>
+          )}
         </div>
       ))}
     </div>
@@ -183,19 +229,25 @@ function TraitFeedback({
   );
 }
 
+// EXHAUSTIVE by type, not by switch-with-default. The old `default: return null`
+// meant a newly added task type rendered a BLANK review pane after scoring —
+// silent, and only visible to someone who happened to finish that task. A total
+// Record makes the compiler demand a reviewer for every DetTaskType, the same
+// way client-payload.ts demands a projector.
+const REVIEWERS: Record<
+  DetTaskType,
+  (a: { item: DetItem; attempt: DetAttempt }) => ReactNode
+> = {
+  READ_AND_SELECT: ({ item, attempt }) => <ReadAndSelectReview item={item} attempt={attempt} />,
+  READ_AND_COMPLETE: ({ item, attempt }) => <ReadAndCompleteReview item={item} attempt={attempt} />,
+  LISTEN_AND_TYPE: ({ item, attempt }) => <ListenAndTypeReview item={item} attempt={attempt} />,
+  WRITE_ABOUT_THE_PHOTO: ({ attempt }) => <WritePhotoReview attempt={attempt} />,
+  SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,
+};
+
 export function TaskReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
-  switch (attempt.taskType) {
-    case "READ_AND_SELECT":
-      return <ReadAndSelectReview item={item} attempt={attempt} />;
-    case "LISTEN_AND_TYPE":
-      return <ListenAndTypeReview item={item} attempt={attempt} />;
-    case "WRITE_ABOUT_THE_PHOTO":
-      return <WritePhotoReview attempt={attempt} />;
-    case "SPEAK_ABOUT_THE_PHOTO":
-      return <SpeakPhotoReview attempt={attempt} />;
-    default:
-      return null;
-  }
+  const render = REVIEWERS[attempt.taskType];
+  return <>{render({ item, attempt })}</>;
 }
 
 export function DetResult({

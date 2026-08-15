@@ -60,6 +60,15 @@ export default defineGate("gate:uniformity", async (bank: Bank) => {
   const stimulus = (i: (typeof bank.items)[number]): string | null => {
     if (typeof i.payload.sentence === "string") return `sentence:${i.payload.sentence.toLowerCase().trim()}`;
     if (typeof i.payload.imageUrl === "string") return `image:${String(i.payload.imageUrl).split("?")[0]}`;
+    if (Array.isArray(i.payload.passage)) {
+      // Without this branch a duplicated passage returns null and is silently
+      // skipped — the exact shape of gap this check exists to close.
+      return `passage:${(i.payload.passage as { kind: string; text?: string; visiblePrefix?: string; missingLetters?: string }[])
+        .map((t) => (t.kind === "text" ? t.text : `${t.visiblePrefix}${t.missingLetters}`))
+        .join(" ")
+        .toLowerCase()
+        .trim()}`;
+    }
     if (Array.isArray(i.payload.words)) {
       return `words:${(i.payload.words as { text: string }[]).map((w) => w.text.toLowerCase()).sort().join(",")}`;
     }

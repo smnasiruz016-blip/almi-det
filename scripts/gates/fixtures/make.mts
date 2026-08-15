@@ -132,6 +132,106 @@ async function main(): Promise<void> {
     write("uniformity-red.json", items, "duplicate (taskType,title); duplicate sentence");
   }
 
+  // ================= READ_AND_COMPLETE (cloze) =================
+  //
+  // These passages are GATE TEST DATA, not candidate content — they are built
+  // mechanically so each check can be seen firing. Real passages are authored.
+  const { createRequire } = await import("node:module");
+  const { readFileSync } = await import("node:fs");
+  const req = createRequire(import.meta.url);
+  const freq: string[] = readFileSync(
+    req.resolve("most-common-words-by-language/build/resources/english.txt"),
+    "utf8",
+  )
+    .split(String.fromCharCode(10))
+    .map((w) => w.trim().toLowerCase())
+    .filter(Boolean);
+  const dictMod = await import("an-array-of-english-words");
+  const DICT = new Set(((dictMod.default ?? dictMod) as unknown as string[]).map((w) => w.toLowerCase()));
+
+  /** Words at a given rarity band that are also in the dictionary and long
+   *  enough to split into a prefix plus >=2 missing letters. */
+  const band = (from: number, to: number, n: number): string[] =>
+    freq.slice(from, to).filter((w) => w.length >= 6 && DICT.has(w)).slice(0, n);
+
+  const RARE = ["meticulous", "ubiquitous", "ephemeral", "resilient", "pragmatic", "coherent"]
+    .filter((w) => DICT.has(w));
+
+  const blank = (w: string) => {
+    const keep = Math.ceil(w.length / 2);
+    return { kind: "blank", visiblePrefix: w.slice(0, keep), missingLetters: w.slice(keep) };
+  };
+
+  const clozeItem = (title: string, difficulty: string, words: string[]) => {
+    let n = 0;
+    const passage: Record<string, unknown>[] = [{ kind: "text", text: "In the report we read that" }];
+    for (const w of words) {
+      passage.push({ ...blank(w), id: `b${++n}` });
+      passage.push({ kind: "text", text: "and then the next line said" });
+    }
+    passage.push({ kind: "text", text: "which closed the section." });
+    return {
+      taskType: "READ_AND_COMPLETE",
+      skill: "READING",
+      title,
+      prompt: "Type the missing letters.",
+      difficulty,
+      topicTag: "gate-fixture",
+      guidanceNote: "Use the sentence around each gap.",
+      payload: { passage },
+    };
+  };
+
+  const clozeGreen = () => [
+    clozeItem("Cloze fixture — A1", "FOUNDATION", band(150, 600, 6)),
+    clozeItem("Cloze fixture — B1", "CORE", band(2500, 4000, 6)),
+    clozeItem("Cloze fixture — C1", "STRETCH", RARE.slice(0, 6)),
+  ];
+
+  {
+    write("cloze-green.json", [...clone(all), ...(clozeGreen() as unknown as BankItem[])],
+      "valid cloze: >=5 blanks, real words, context, rising rarity");
+  }
+  {
+    const c = clozeGreen();
+    (c[0].payload.passage as Record<string, unknown>[])[1].missingLetters = "zzqx";
+    write("cloze-red-notword.json", [...clone(all), ...(c as unknown as BankItem[])],
+      "a completion that is not an English word");
+  }
+  {
+    const c = clozeGreen();
+    (c[0].payload.passage as Record<string, unknown>[])[1].missingLetters = "te-r";
+    write("cloze-red-key.json", [...clone(all), ...(c as unknown as BankItem[])],
+      "missingLetters containing punctuation (untypable as keyed)");
+  }
+  {
+    const c = clozeGreen();
+    const p = c[0].payload.passage as Record<string, unknown>[];
+    const full = `${p[1].visiblePrefix}${p[1].missingLetters}`;
+    p[2] = { kind: "text", text: `the word ${full} appeared again in full` };
+    write("cloze-red-giveaway.json", [...clone(all), ...(c as unknown as BankItem[])],
+      "the blanked word printed un-blanked in the same passage");
+  }
+  {
+    const c = clozeGreen();
+    c[0].payload.passage = (c[0].payload.passage as Record<string, unknown>[]).filter((t) => t.kind === "blank");
+    write("cloze-red-nocontext.json", [...clone(all), ...(c as unknown as BankItem[])],
+      "a passage of bare gaps with no readable text");
+  }
+  {
+    const c = clozeGreen();
+    c[0].payload.passage = (c[0].payload.passage as Record<string, unknown>[]).slice(0, 7);
+    write("cloze-red-thin.json", [...clone(all), ...(c as unknown as BankItem[])],
+      "a passage below the 5-blank floor");
+  }
+  {
+    const c = clozeGreen();
+    // STRETCH built from the SAME common band as FOUNDATION -> flat rarity ladder
+    c[2] = clozeItem("Cloze fixture — C1", "STRETCH", band(150, 600, 6));
+    write("cloze-red-rarity.json", [...clone(all), ...(c as unknown as BankItem[])],
+      "STRETCH words no rarer than FOUNDATION (cosmetic difficulty)");
+  }
+
   console.log("");
 }
 

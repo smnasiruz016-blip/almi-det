@@ -22,6 +22,8 @@
 //
 // What each type withholds, and why:
 //   READ_AND_SELECT        `real` — the answer key itself.
+//   READ_AND_COMPLETE      `missingLetters` and `alsoAccept` — the key. Only the
+//                          blank's LENGTH crosses to the client.
 //   LISTEN_AND_TYPE        everything — the sentence IS the answer; audio is
 //                          fetched separately through a server route.
 //   WRITE/SPEAK_ABOUT_THE_PHOTO
@@ -43,6 +45,24 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
       id: w.id,
       text: w.text,
     })),
+  }),
+
+  // Projects the passage with the KEY REMOVED from every blank: `missingLetters`
+  // and `alsoAccept` are dropped, and only the COUNT survives as `blankLength`.
+  // Real DET renders one underscore per missing letter, so the length is part of
+  // the stimulus; the letters are not.
+  READ_AND_COMPLETE: (p) => ({
+    passage: ((p.passage as Record<string, unknown>[] | undefined) ?? []).map((t) =>
+      t.kind === "blank"
+        ? {
+            kind: "blank",
+            id: t.id,
+            visiblePrefix: t.visiblePrefix,
+            blankLength: String(t.missingLetters ?? "").length,
+            suffix: t.suffix,
+          }
+        : { kind: "text", text: t.text },
+    ),
   }),
 
   LISTEN_AND_TYPE: () => ({}),

@@ -14,6 +14,7 @@ import type { DetTaskType } from "@prisma/client";
 import { ReadAndSelectComposer } from "@/components/det/ReadAndSelectComposer";
 import { WriteAboutPhotoComposer } from "@/components/det/WriteAboutPhotoComposer";
 import { ListenAndTypeComposer } from "@/components/det/ListenAndTypeComposer";
+import { ReadAndCompleteComposer, type ClientToken } from "@/components/det/ReadAndCompleteComposer";
 import { SpeakAboutPhotoComposer } from "@/components/det/SpeakAboutPhotoComposer";
 
 type Args = { attemptId: string; prompt: string; title: string; payload: unknown };
@@ -22,6 +23,10 @@ const RENDERERS: Partial<Record<DetTaskType, (a: Args) => ReactNode>> = {
   READ_AND_SELECT: ({ attemptId, prompt, payload }) => {
     const p = payload as { words: { id: string; text: string }[] };
     return <ReadAndSelectComposer attemptId={attemptId} prompt={prompt} words={p.words} />;
+  },
+  READ_AND_COMPLETE: ({ attemptId, prompt, payload }) => {
+    const p = payload as { passage: ClientToken[] };
+    return <ReadAndCompleteComposer attemptId={attemptId} prompt={prompt} passage={p.passage} />;
   },
   LISTEN_AND_TYPE: ({ attemptId, prompt }) => {
     return <ListenAndTypeComposer attemptId={attemptId} prompt={prompt} />;

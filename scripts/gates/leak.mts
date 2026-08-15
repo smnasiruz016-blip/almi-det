@@ -126,6 +126,19 @@ export default defineGate("gate:leak", async (bank: Bank) => {
     if (it.taskType === "READ_AND_SELECT" && /"real"\s*:/.test(wire)) {
       l3.push(`${it.taskType} / ${it.title}: word "real" flags present in the client payload`);
     }
+    // READ_AND_COMPLETE: neither the keyed letters nor the alternatives may
+    // survive projection — only the blank LENGTH is allowed across.
+    if (it.taskType === "READ_AND_COMPLETE") {
+      if (/"missingLetters"\s*:/.test(wire) || /"alsoAccept"\s*:/.test(wire)) {
+        l3.push(`${it.taskType} / ${it.title}: cloze answer key present in the client payload`);
+      }
+      for (const t of (it.payload.passage as { kind: string; missingLetters?: string }[] | undefined) ?? []) {
+        if (t.kind !== "blank" || !t.missingLetters || t.missingLetters.length < 4) continue;
+        if (wire.includes(t.missingLetters)) {
+          l3.push(`${it.taskType} / ${it.title}: keyed letters "${t.missingLetters}" reach the client verbatim`);
+        }
+      }
+    }
   }
   report.push(`  L3 client projection executed: ${projected}/${bank.items.length} items, ${l3.length} exposing a server-only field`);
   if (l3.length) {
