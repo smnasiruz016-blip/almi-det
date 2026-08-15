@@ -117,6 +117,7 @@ export async function loadBank(): Promise<Bank> {
     const mods = await Promise.all([
       import("../seed/read-and-select"),
       import("../seed/read-and-complete"),
+      import("../seed/interactive-reading"),
       import("../seed/listen-and-type"),
       import("../seed/write-about-photo"),
       import("../seed/speak-about-photo"),

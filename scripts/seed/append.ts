@@ -15,6 +15,7 @@
 import { PrismaClient } from "@prisma/client";
 import { ITEMS as READ_AND_SELECT } from "./read-and-select";
 import { ITEMS as READ_AND_COMPLETE } from "./read-and-complete";
+import { ITEMS as INTERACTIVE_READING } from "./interactive-reading";
 import { ITEMS as LISTEN_AND_TYPE } from "./listen-and-type";
 import { ITEMS as WRITE_ABOUT_THE_PHOTO } from "./write-about-photo";
 import { ITEMS as SPEAK_ABOUT_THE_PHOTO } from "./speak-about-photo";
@@ -25,6 +26,7 @@ const DRY = process.argv.includes("--dry");
 const ALL = [
   ...READ_AND_SELECT,
   ...READ_AND_COMPLETE,
+  ...INTERACTIVE_READING,
   ...LISTEN_AND_TYPE,
   ...WRITE_ABOUT_THE_PHOTO,
   ...SPEAK_ABOUT_THE_PHOTO,

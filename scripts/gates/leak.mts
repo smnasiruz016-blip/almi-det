@@ -126,6 +126,45 @@ export default defineGate("gate:leak", async (bank: Bank) => {
     if (it.taskType === "READ_AND_SELECT" && /"real"\s*:/.test(wire)) {
       l3.push(`${it.taskType} / ${it.title}: word "real" flags present in the client payload`);
     }
+    // INTERACTIVE_READING: spans and options must cross in FULL (the taker has
+    // to read and choose among them) while correctId / correctSpanId must not.
+    // The key here is an ID — often two characters — so a whole-wire substring
+    // scan would false-positive on the first option id it met. Checked
+    // field by field on the projected question objects instead, the same way the
+    // cloze key is, and for the same reason.
+    if (it.taskType === "INTERACTIVE_READING") {
+      if (/"correctId"\s*:/.test(wire) || /"correctSpanId"\s*:/.test(wire)) {
+        l3.push(`${it.taskType} / ${it.title}: answer key present in the client payload`);
+      }
+      const authored = (it.payload.questions as Record<string, unknown>[] | undefined) ?? [];
+      const keyByQid = new Map(
+        authored.map((q) => [String(q.id), String(q.correctId ?? q.correctSpanId ?? "")]),
+      );
+      const projectedQs = (client.questions as Record<string, unknown>[] | undefined) ?? [];
+      for (const q of projectedQs) {
+        const secret = keyByQid.get(String(q.id));
+        if (!secret) continue;
+        // Every scalar this question carries, plus its options' ids and texts.
+        const carried: string[] = [];
+        for (const [k, v] of Object.entries(q)) {
+          if (k === "id" || v === undefined || v === null) continue;
+          if (Array.isArray(v)) {
+            for (const o of v as Record<string, unknown>[]) {
+              for (const [ok, ov] of Object.entries(o)) {
+                if (ok === "id") continue; // option ids legitimately cross
+                if (ov !== undefined && ov !== null) carried.push(String(ov));
+              }
+            }
+          } else {
+            carried.push(String(v));
+          }
+        }
+        if (carried.some((v) => v === secret)) {
+          l3.push(`${it.taskType} / ${it.title} / ${q.id}: answer id "${secret}" carried in a projected field`);
+        }
+      }
+    }
+
     // READ_AND_COMPLETE: neither the keyed letters nor the alternatives may
     // survive projection — only the blank LENGTH is allowed across.
     //

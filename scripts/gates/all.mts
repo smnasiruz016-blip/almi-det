@@ -18,10 +18,11 @@ import minItems from "./min-items.mjs";
 import leak from "./leak.mjs";
 import degame from "./degame.mjs";
 import cloze from "./cloze.mjs";
+import readingSet from "./reading-set.mjs";
 import keyTypable from "./key-typable.mjs";
 import uniformity from "./uniformity.mjs";
 
-const GATES: GateDef[] = [minItems, leak, degame, cloze, keyTypable, uniformity];
+const GATES: GateDef[] = [minItems, leak, degame, cloze, readingSet, keyTypable, uniformity];
 
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice("--only=".length);
 

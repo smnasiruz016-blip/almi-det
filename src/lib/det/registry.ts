@@ -16,6 +16,11 @@ import {
   scoreReadAndSelect,
 } from "@/lib/det/tasks/read-and-select";
 import {
+  interactiveReadingPayloadSchema,
+  interactiveReadingResponseSchema,
+  scoreInteractiveReading,
+} from "@/lib/det/tasks/interactive-reading";
+import {
   readAndCompletePayloadSchema,
   readAndCompleteResponseSchema,
   scoreReadAndComplete,
@@ -72,6 +77,19 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "A short passage with letters missing from some words. Use the sentence around each gap to work out the word, and type the letters that are missing.",
     live: true,
   },
+  INTERACTIVE_READING: {
+    taskType: "INTERACTIVE_READING",
+    slug: "interactive-reading",
+    label: "Interactive Reading",
+    skill: "READING",
+    scoringMode: "DETERMINISTIC",
+    feedsSubscores: SKILL_FEEDS.READING,
+    blurb:
+      "One passage, several questions: complete the sentences, choose what belongs in a gap, pick out the sentence that answers a question, and judge the main idea and the best title.",
+    // Flipped to true when the authored sets land. Until then the practice hub
+    // shows "Coming soon" and MOCK_ORDER (derived from `live`) skips it.
+    live: false,
+  },
   LISTEN_AND_TYPE: {
     taskType: "LISTEN_AND_TYPE",
     slug: "listen-and-type",
@@ -110,6 +128,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
 export const TASK_ORDER: DetTaskType[] = [
   "READ_AND_SELECT",
   "READ_AND_COMPLETE",
+  "INTERACTIVE_READING",
   "LISTEN_AND_TYPE",
   "WRITE_ABOUT_THE_PHOTO",
   "SPEAK_ABOUT_THE_PHOTO",
@@ -154,6 +173,14 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
       const p = readAndCompletePayloadSchema.parse(payload);
       const r = readAndCompleteResponseSchema.parse(response);
       return scoreReadAndComplete(p, r);
+    },
+  },
+  INTERACTIVE_READING: {
+    mode: "DETERMINISTIC",
+    run: async ({ payload, response }) => {
+      const p = interactiveReadingPayloadSchema.parse(payload);
+      const r = interactiveReadingResponseSchema.parse(response);
+      return scoreInteractiveReading(p, r);
     },
   },
   LISTEN_AND_TYPE: {

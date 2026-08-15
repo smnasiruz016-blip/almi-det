@@ -60,6 +60,12 @@ export default defineGate("gate:uniformity", async (bank: Bank) => {
   const stimulus = (i: (typeof bank.items)[number]): string | null => {
     if (typeof i.payload.sentence === "string") return `sentence:${i.payload.sentence.toLowerCase().trim()}`;
     if (typeof i.payload.imageUrl === "string") return `image:${String(i.payload.imageUrl).split("?")[0]}`;
+    const p = i.payload.passage as { spans?: { text: string }[] } | undefined;
+    if (p && !Array.isArray(p) && Array.isArray(p.spans)) {
+      // Interactive Reading stores its passage as spans. Without this branch a
+      // duplicated set returns null and is silently skipped.
+      return `spans:${p.spans.map((x) => x.text).join(" ").toLowerCase().trim()}`;
+    }
     if (Array.isArray(i.payload.passage)) {
       // Without this branch a duplicated passage returns null and is silently
       // skipped — the exact shape of gap this check exists to close.

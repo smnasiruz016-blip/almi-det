@@ -26,6 +26,11 @@ import {
   scoreReadAndComplete,
 } from "@/lib/det/tasks/read-and-complete";
 import {
+  interactiveReadingPayloadSchema,
+  interactiveReadingResponseSchema,
+  scoreInteractiveReading,
+} from "@/lib/det/tasks/interactive-reading";
+import {
   listenAndTypePayloadSchema,
   listenAndTypeResponseSchema,
   scoreListenAndType,
@@ -100,6 +105,38 @@ function ReadAndCompleteReview({ item, attempt }: { item: DetItem; attempt: DetA
               ) : (
                 "nothing"
               )}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InteractiveReadingReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = interactiveReadingPayloadSchema.safeParse(item.payload);
+  const response = interactiveReadingResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreInteractiveReading(payload.data, response.data);
+  return (
+    <div className="space-y-3">
+      {detail.questions.map((q, i) => (
+        <div
+          key={q.id}
+          className={`rounded-lg border px-3 py-2 text-sm ${
+            q.correct ? "border-almi-teal/40 bg-almi-teal/5" : "border-almi-coral/40 bg-almi-coral/5"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-medium text-almi-ink">
+              {i + 1}. {q.stem}
+            </p>
+            <span aria-hidden>{q.correct ? "✓" : "✗"}</span>
+          </div>
+          {!q.correct && (
+            <p className="mt-1 text-xs text-almi-text-muted">
+              You chose {q.chosenText ? `"${q.chosenText}"` : "nothing"} · answer:{" "}
+              <span className="font-medium text-almi-ink">{q.expectedText}</span>
             </p>
           )}
         </div>
@@ -240,6 +277,7 @@ const REVIEWERS: Record<
 > = {
   READ_AND_SELECT: ({ item, attempt }) => <ReadAndSelectReview item={item} attempt={attempt} />,
   READ_AND_COMPLETE: ({ item, attempt }) => <ReadAndCompleteReview item={item} attempt={attempt} />,
+  INTERACTIVE_READING: ({ item, attempt }) => <InteractiveReadingReview item={item} attempt={attempt} />,
   LISTEN_AND_TYPE: ({ item, attempt }) => <ListenAndTypeReview item={item} attempt={attempt} />,
   WRITE_ABOUT_THE_PHOTO: ({ attempt }) => <WritePhotoReview attempt={attempt} />,
   SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,

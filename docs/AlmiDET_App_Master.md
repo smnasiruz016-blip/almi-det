@@ -53,6 +53,12 @@ the current test. The 2026-06-24 Phase-0 pass recorded the exact opposite on bot
 Both passes cite official sources, so one is wrong and the difference is not cosmetic — it decides
 which speaking types get built. Recorded as a conflict rather than resolved by recency.
 
+**ALSO FOR THAT SAME VERIFICATION PASS — Highlight the Answer granularity.** AlmiDET builds
+sentence-level selection (each sentence is a span; the taker picks a sentence). If DET's actual
+interaction is finer — dragging over an arbitrary word range — the payload needs character offsets
+instead of span ids and only the Highlight renderer changes. Sentence-level is the safer, credible
+build and is NOT blocking; refine afterwards if the pass shows finer selection.
+
 **BLOCKING: no speaking task type may be built until a dedicated speaking-format verification
 settles this.** Do not build from a blog list or from either record above. Note that the two
 already-shipped speaking types are unaffected — Speak About the Photo is a deliberate AlmiDET

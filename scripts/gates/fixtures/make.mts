@@ -232,6 +232,97 @@ async function main(): Promise<void> {
       "STRETCH words no rarer than FOUNDATION (cosmetic difficulty)");
   }
 
+  // ================= INTERACTIVE_READING =================
+  // Gate test data, built mechanically so each IR check can be seen firing.
+  const irBand = (from: number, to: number, n: number): string[] =>
+    freq.slice(from, to).filter((w) => w.length >= 5 && DICT.has(w)).slice(0, n);
+
+  const irSet = (title: string, difficulty: string, vocab: string[], opts: {
+    optionLens?: number[];
+    correctPos?: number;
+    echoStem?: boolean;
+    kinds?: string[];
+    spanCount?: number;
+    breakKey?: boolean;
+    tooFewOptions?: boolean;
+  } = {}) => {
+    const spanCount = opts.spanCount ?? 5;
+    const spans = Array.from({ length: spanCount }, (_, i) => ({
+      id: `s${i + 1}`,
+      text: `A ${vocab[i % vocab.length]} may be a ${vocab[(i + 1) % vocab.length]} or a ${vocab[(i + 2) % vocab.length]}.`,
+    }));
+    const kinds = opts.kinds ?? [
+      "COMPLETE_THE_SENTENCES",
+      "COMPLETE_THE_PASSAGE",
+      "HIGHLIGHT_THE_ANSWER",
+      "IDENTIFY_THE_IDEA",
+      "TITLE_THE_PASSAGE",
+      "COMPLETE_THE_SENTENCES",
+    ];
+    let n = 0;
+    const questions = kinds.map((kind) => {
+      const id = `q${++n}`;
+      if (kind === "HIGHLIGHT_THE_ANSWER") {
+        return {
+          kind,
+          id,
+          stem: "Which sentence reports the finding?",
+          correctSpanId: opts.breakKey ? "sZZ" : spans[1].id,
+        };
+      }
+      const lens = opts.optionLens ?? [30, 30, 30, 30];
+      const tags = ["Alpha", "Betaa", "Gamma", "Delta"];
+      const texts = lens.map((L, i) => `${tags[i]} ${"x".repeat(Math.max(1, L - tags[i].length - 1))}`);
+      const pos = opts.correctPos ?? n % texts.length;
+      const stem = opts.echoStem
+        ? `Which choice mentions the ${vocab[0]} directly?`
+        : "Which choice best matches the passage?";
+      if (opts.echoStem) texts[pos] = `${texts[pos]} ${vocab[0]}`;
+      let options = texts.map((text, i) => ({ id: `${id}o${i + 1}`, text }));
+      if (opts.tooFewOptions) options = options.slice(0, 2);
+      return { kind, id, stem, options, correctId: options[Math.min(pos, options.length - 1)].id };
+    });
+    return {
+      taskType: "INTERACTIVE_READING",
+      skill: "READING",
+      title,
+      prompt: "Read the passage, then answer the questions.",
+      difficulty,
+      topicTag: "gate-fixture",
+      guidanceNote: "Look back at the passage.",
+      payload: { passage: { spans }, questions },
+    };
+  };
+
+  const irGreen = (o = {}) => [
+    irSet("IR fixture — A1", "FOUNDATION", irBand(150, 600, 6), o),
+    irSet("IR fixture — B1", "CORE", irBand(2500, 4000, 6), o),
+    irSet("IR fixture — C1", "STRETCH", irBand(8500, 9999, 6), o),
+  ];
+
+  const withIR = (sets: unknown[]) => [...clone(all), ...(sets as unknown as BankItem[])];
+
+  write("ir-green.json", withIR(irGreen()), "valid IR sets: all 5 kinds, balanced options, rising rarity");
+  write("ir-red-lengthtell.json", withIR(irGreen({ optionLens: [10, 10, 10, 60], correctPos: 3 })),
+    "correct option is always the longest");
+  write("ir-red-position.json", withIR(irGreen({ correctPos: 0 })),
+    "correct option is always first");
+  write("ir-red-stemoverlap.json", withIR(irGreen({ echoStem: true })),
+    "correct option echoes a distinctive stem word the distractors lack");
+  write("ir-red-options.json", withIR(irGreen({ tooFewOptions: true })),
+    "fewer than three options");
+  write("ir-red-spans.json", withIR(irGreen({ spanCount: 2 })),
+    "passage spanned too coarsely to hide the highlight answer");
+  write("ir-red-key.json", withIR(irGreen({ breakKey: true })),
+    "highlight key names a span that does not exist");
+  write("ir-red-kinds.json", withIR(irGreen({ kinds: ["COMPLETE_THE_SENTENCES", "IDENTIFY_THE_IDEA", "TITLE_THE_PASSAGE", "COMPLETE_THE_PASSAGE", "COMPLETE_THE_SENTENCES"] })),
+    "no HIGHLIGHT_THE_ANSWER anywhere in the bank");
+  {
+    const sets = irGreen();
+    sets[2] = irSet("IR fixture — C1", "STRETCH", irBand(150, 600, 6));
+    write("ir-red-rarity.json", withIR(sets), "STRETCH passages no rarer than FOUNDATION");
+  }
+
   console.log("");
 }
 

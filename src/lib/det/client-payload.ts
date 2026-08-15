@@ -24,6 +24,8 @@
 //   READ_AND_SELECT        `real` — the answer key itself.
 //   READ_AND_COMPLETE      `missingLetters` and `alsoAccept` — the key. Only the
 //                          blank's LENGTH crosses to the client.
+//   INTERACTIVE_READING    `correctId` / `correctSpanId` — the key. Spans and
+//                          options cross in full; which one is right does not.
 //   LISTEN_AND_TYPE        everything — the sentence IS the answer; audio is
 //                          fetched separately through a server route.
 //   WRITE/SPEAK_ABOUT_THE_PHOTO
@@ -64,6 +66,34 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
         : { kind: "text", text: t.text },
     ),
   }),
+
+  // Projects the passage spans in full (the taker must read them, and uniform
+  // spans are what keep Highlight the Answer honest) and every option in full
+  // (the taker must choose among them) — while dropping correctId /
+  // correctSpanId. The key is an ID, so it is short: gate:leak checks the
+  // projected objects FIELD BY FIELD rather than scanning the wire for a
+  // substring, which a two-character id would trip on immediately.
+  INTERACTIVE_READING: (p) => {
+    const passage = (p.passage as { spans?: Record<string, unknown>[] } | undefined) ?? {};
+    return {
+      passage: {
+        spans: (passage.spans ?? []).map((s) => ({ id: s.id, text: s.text })),
+      },
+      questions: ((p.questions as Record<string, unknown>[] | undefined) ?? []).map((q) =>
+        q.kind === "HIGHLIGHT_THE_ANSWER"
+          ? { kind: q.kind, id: q.id, stem: q.stem }
+          : {
+              kind: q.kind,
+              id: q.id,
+              stem: q.stem,
+              options: ((q.options as Record<string, unknown>[] | undefined) ?? []).map((o) => ({
+                id: o.id,
+                text: o.text,
+              })),
+            },
+      ),
+    };
+  },
 
   LISTEN_AND_TYPE: () => ({}),
 
