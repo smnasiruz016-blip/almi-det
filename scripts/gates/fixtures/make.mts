@@ -323,6 +323,49 @@ async function main(): Promise<void> {
     write("ir-red-rarity.json", withIR(sets), "STRETCH passages no rarer than FOUNDATION");
   }
 
+  // ================= FILL_IN_THE_BLANKS (sentence-scope cloze) =================
+  const fibItem = (title: string, difficulty: string, word: string, opts: {
+    blanks?: number;
+    twoSentences?: number;
+    shortPrefix?: boolean;
+  } = {}) => {
+    const keep = opts.shortPrefix ? 2 : Math.ceil(word.length / 2);
+    const mk = (w: string, k: number) => ({
+      kind: "blank",
+      visiblePrefix: w.slice(0, k),
+      missingLetters: w.slice(k),
+    });
+    const passage: Record<string, unknown>[] = [{ kind: "text", text: "The visitor asked whether the" }];
+    const n = opts.blanks ?? 1;
+    for (let i = 0; i < n; i++) {
+      passage.push({ ...mk(word, keep), id: `b${i + 1}` });
+      if (i < n - 1) passage.push({ kind: "text", text: "and also the" });
+    }
+    passage.push({ kind: "text", text: opts.twoSentences ? "was ready. It had been ready for hours." : "was ready." });
+    return {
+      taskType: "FILL_IN_THE_BLANKS",
+      skill: "READING",
+      title,
+      prompt: "Complete the word.",
+      difficulty,
+      topicTag: "gate-fixture",
+      guidanceNote: "Read to the end.",
+      payload: { passage },
+    };
+  };
+
+  const fibGreen = (o = {}) => [
+    fibItem("FIB fixture — A1", "FOUNDATION", band(150, 600, 1)[0], o),
+    fibItem("FIB fixture — B1", "CORE", band(2500, 4000, 1)[0], o),
+    fibItem("FIB fixture — C1", "STRETCH", RARE[0], o),
+  ];
+  const withFIB = (sets: unknown[]) => [...clone(all), ...(sets as unknown as BankItem[])];
+
+  write("fib-green.json", withFIB(fibGreen()), "valid sentence cloze: one blank, one sentence, rising rarity");
+  write("fib-red-blanks.json", withFIB(fibGreen({ blanks: 3 })), "three blanks in a sentence-scope item");
+  write("fib-red-twosentences.json", withFIB(fibGreen({ twoSentences: 1 })), "two sentences — a passage wearing the name");
+  write("fib-red-ambiguous.json", withFIB(fibGreen({ shortPrefix: true })), "two-letter prefix: far too many words fit for one sentence to resolve");
+
   console.log("");
 }
 

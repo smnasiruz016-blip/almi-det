@@ -118,6 +118,7 @@ export async function loadBank(): Promise<Bank> {
       import("../seed/read-and-select"),
       import("../seed/read-and-complete"),
       import("../seed/interactive-reading"),
+      import("../seed/fill-in-the-blanks"),
       import("../seed/listen-and-type"),
       import("../seed/write-about-photo"),
       import("../seed/speak-about-photo"),

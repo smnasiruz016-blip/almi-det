@@ -41,6 +41,23 @@ export type ClientPayload = Record<string, unknown>;
 
 type Projector = (payload: Record<string, unknown>) => ClientPayload;
 
+/** Cloze projection: drop missingLetters and alsoAccept, keep only the COUNT.
+ *  Shared by READ_AND_COMPLETE (passage scope) and FILL_IN_THE_BLANKS (sentence
+ *  scope) — same payload shape, same key to withhold, so one projector. */
+const projectCloze: Projector = (p) => ({
+  passage: ((p.passage as Record<string, unknown>[] | undefined) ?? []).map((t) =>
+    t.kind === "blank"
+      ? {
+          kind: "blank",
+          id: t.id,
+          visiblePrefix: t.visiblePrefix,
+          blankLength: String(t.missingLetters ?? "").length,
+          suffix: t.suffix,
+        }
+      : { kind: "text", text: t.text },
+  ),
+});
+
 const PROJECTORS: Record<DetTaskType, Projector> = {
   READ_AND_SELECT: (p) => ({
     words: ((p.words as { id: string; text: string }[] | undefined) ?? []).map((w) => ({
@@ -49,23 +66,8 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
     })),
   }),
 
-  // Projects the passage with the KEY REMOVED from every blank: `missingLetters`
-  // and `alsoAccept` are dropped, and only the COUNT survives as `blankLength`.
-  // Real DET renders one underscore per missing letter, so the length is part of
-  // the stimulus; the letters are not.
-  READ_AND_COMPLETE: (p) => ({
-    passage: ((p.passage as Record<string, unknown>[] | undefined) ?? []).map((t) =>
-      t.kind === "blank"
-        ? {
-            kind: "blank",
-            id: t.id,
-            visiblePrefix: t.visiblePrefix,
-            blankLength: String(t.missingLetters ?? "").length,
-            suffix: t.suffix,
-          }
-        : { kind: "text", text: t.text },
-    ),
-  }),
+  READ_AND_COMPLETE: projectCloze,
+  FILL_IN_THE_BLANKS: projectCloze,
 
   // Projects the passage spans in full (the taker must read them, and uniform
   // spans are what keep Highlight the Answer honest) and every option in full

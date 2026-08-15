@@ -29,7 +29,14 @@ const RENDERERS: Partial<Record<DetTaskType, (a: Args) => ReactNode>> = {
     const p = payload as { words: { id: string; text: string }[] };
     return <ReadAndSelectComposer attemptId={attemptId} prompt={prompt} words={p.words} />;
   },
+  // Same payload shape, same renderer. Fill in the Blanks is READ_AND_COMPLETE
+  // at sentence scope; the difference is a content rule the gate enforces, not a
+  // different interaction.
   READ_AND_COMPLETE: ({ attemptId, prompt, payload }) => {
+    const p = payload as { passage: ClientToken[] };
+    return <ReadAndCompleteComposer attemptId={attemptId} prompt={prompt} passage={p.passage} />;
+  },
+  FILL_IN_THE_BLANKS: ({ attemptId, prompt, payload }) => {
     const p = payload as { passage: ClientToken[] };
     return <ReadAndCompleteComposer attemptId={attemptId} prompt={prompt} passage={p.passage} />;
   },

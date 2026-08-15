@@ -88,6 +88,18 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "One passage, several questions: complete the sentences, choose what belongs in a gap, pick out the sentence that answers a question, and judge the main idea and the best title.",
     live: true,
   },
+  FILL_IN_THE_BLANKS: {
+    taskType: "FILL_IN_THE_BLANKS",
+    slug: "fill-in-the-blanks",
+    label: "Fill in the Blanks",
+    skill: "READING",
+    scoringMode: "DETERMINISTIC",
+    feedsSubscores: SKILL_FEEDS.READING,
+    blurb:
+      "One sentence with letters missing from a single word. There is no passage to fall back on — the sentence itself has to tell you which word belongs.",
+    // Flipped to true when the authored sentences land.
+    live: false,
+  },
   LISTEN_AND_TYPE: {
     taskType: "LISTEN_AND_TYPE",
     slug: "listen-and-type",
@@ -127,6 +139,7 @@ export const TASK_ORDER: DetTaskType[] = [
   "READ_AND_SELECT",
   "READ_AND_COMPLETE",
   "INTERACTIVE_READING",
+  "FILL_IN_THE_BLANKS",
   "LISTEN_AND_TYPE",
   "WRITE_ABOUT_THE_PHOTO",
   "SPEAK_ABOUT_THE_PHOTO",
@@ -179,6 +192,14 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
       const p = interactiveReadingPayloadSchema.parse(payload);
       const r = interactiveReadingResponseSchema.parse(response);
       return scoreInteractiveReading(p, r);
+    },
+  },
+  FILL_IN_THE_BLANKS: {
+    mode: "DETERMINISTIC",
+    run: async ({ payload, response }) => {
+      const p = readAndCompletePayloadSchema.parse(payload);
+      const r = readAndCompleteResponseSchema.parse(response);
+      return scoreReadAndComplete(p, r);
     },
   },
   LISTEN_AND_TYPE: {

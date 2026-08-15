@@ -277,6 +277,7 @@ const REVIEWERS: Record<
 > = {
   READ_AND_SELECT: ({ item, attempt }) => <ReadAndSelectReview item={item} attempt={attempt} />,
   READ_AND_COMPLETE: ({ item, attempt }) => <ReadAndCompleteReview item={item} attempt={attempt} />,
+  FILL_IN_THE_BLANKS: ({ item, attempt }) => <ReadAndCompleteReview item={item} attempt={attempt} />,
   INTERACTIVE_READING: ({ item, attempt }) => <InteractiveReadingReview item={item} attempt={attempt} />,
   LISTEN_AND_TYPE: ({ item, attempt }) => <ListenAndTypeReview item={item} attempt={attempt} />,
   WRITE_ABOUT_THE_PHOTO: ({ attempt }) => <WritePhotoReview attempt={attempt} />,

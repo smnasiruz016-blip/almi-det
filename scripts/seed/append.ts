@@ -16,6 +16,7 @@ import { PrismaClient } from "@prisma/client";
 import { ITEMS as READ_AND_SELECT } from "./read-and-select";
 import { ITEMS as READ_AND_COMPLETE } from "./read-and-complete";
 import { ITEMS as INTERACTIVE_READING } from "./interactive-reading";
+import { ITEMS as FILL_IN_THE_BLANKS } from "./fill-in-the-blanks";
 import { ITEMS as LISTEN_AND_TYPE } from "./listen-and-type";
 import { ITEMS as WRITE_ABOUT_THE_PHOTO } from "./write-about-photo";
 import { ITEMS as SPEAK_ABOUT_THE_PHOTO } from "./speak-about-photo";
@@ -27,6 +28,7 @@ const ALL = [
   ...READ_AND_SELECT,
   ...READ_AND_COMPLETE,
   ...INTERACTIVE_READING,
+  ...FILL_IN_THE_BLANKS,
   ...LISTEN_AND_TYPE,
   ...WRITE_ABOUT_THE_PHOTO,
   ...SPEAK_ABOUT_THE_PHOTO,

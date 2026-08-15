@@ -1,5 +1,15 @@
 // gate:cloze — the axes that only a fill-in-the-letters task has.
 //
+// Covers BOTH cloze types, which share a payload shape and a grader and differ
+// only in scope — a difference this gate is what enforces:
+//   READ_AND_COMPLETE   passage scope, >= 5 blanks
+//   FILL_IN_THE_BLANKS  sentence scope, EXACTLY 1 blank, one sentence only
+//
+// Scope changes what the checks have to be. With a paragraph, a loose gap is
+// usually pinned down by the sentence before it, so form ambiguity is advisory.
+// With one sentence and nothing else, there is no such rescue — so for
+// FILL_IN_THE_BLANKS an unresolved ambiguous gap BLOCKS rather than warns.
+//
 //   C1 REAL WORD     visiblePrefix + missingLetters must be a real English word.
 //   C2 TYPABLE KEY   missingLetters is letters only, non-empty; ids unique.
 //   C3 NO GIVEAWAY   the completed word must not appear un-blanked elsewhere in
@@ -20,8 +30,24 @@
 
 import { defineGate, DIFFICULTIES, type Bank, type Finding } from "./_bank.mjs";
 
+const CLOZE_TYPES = ["READ_AND_COMPLETE", "FILL_IN_THE_BLANKS"];
+
+/** Blanks required per item, by scope. */
+const BLANK_RULE: Record<string, { min: number; max: number; label: string }> = {
+  READ_AND_COMPLETE: { min: 5, max: Infinity, label: ">= 5" },
+  FILL_IN_THE_BLANKS: { min: 1, max: 1, label: "exactly 1" },
+};
+
+/** Types that must be a single self-contained sentence, not a passage. */
+const SENTENCE_SCOPE = new Set(["FILL_IN_THE_BLANKS"]);
+
 const MIN_BLANKS = 5;
 const TARGET_BLANKS = 6;
+
+/** With only one sentence of context, a gap this ambiguous and with no keyed
+ *  alternative is one the sentence probably cannot resolve — blocking, not
+ *  advisory, for sentence-scope items. */
+const SENTENCE_AMBIGUITY_FAIL = 12;
 /** Median frequency rank must rise by at least this much per difficulty step,
  *  so "harder" cannot be satisfied by a trivial reshuffle. */
 const MIN_RARITY_STEP = 400;
@@ -51,9 +77,9 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
   const findings: Finding[] = [];
   const report: string[] = [];
 
-  const items = bank.items.filter((i) => i.taskType === "READ_AND_COMPLETE");
+  const items = bank.items.filter((i) => CLOZE_TYPES.includes(i.taskType));
   if (items.length === 0) {
-    report.push("  no READ_AND_COMPLETE items authored yet — nothing to check");
+    report.push("  no cloze items authored yet — nothing to check");
     return { findings, report };
   }
 
@@ -72,7 +98,9 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
   const giveaway: string[] = [];
   const noContext: string[] = [];
   const thin: string[] = [];
+  const notSentence: string[] = [];
   const ambiguous: string[] = [];
+  const sentenceAmbiguous: string[] = [];
   const byDiff = new Map<string, number[]>();
   const densityByDiff = new Map<string, number[]>();
 
@@ -85,9 +113,28 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
       .map((t) => t.text.toLowerCase())
       .join(" ");
 
-    // ---- C6 density ----
-    if (blanks.length < MIN_BLANKS) {
-      thin.push(`${it.title}: ${blanks.length} blank(s), floor is ${MIN_BLANKS}`);
+    // ---- C6 density, by scope ----
+    const rule = BLANK_RULE[it.taskType] ?? { min: MIN_BLANKS, max: Infinity, label: `>= ${MIN_BLANKS}` };
+    if (blanks.length < rule.min || blanks.length > rule.max) {
+      thin.push(`${it.taskType} / ${it.title}: ${blanks.length} blank(s), rule is ${rule.label}`);
+    }
+
+    // ---- C7 sentence scope ----
+    // Fill in the Blanks must be ONE self-contained sentence. A second sentence
+    // turns it into a miniature passage — a different task with different
+    // difficulty, sharing this one's name.
+    if (SENTENCE_SCOPE.has(it.taskType)) {
+      const full = passage
+        .map((t) => (t.kind === "text" ? t.text : `${t.visiblePrefix}${t.missingLetters}${t.suffix ?? ""}`))
+        .join(" ")
+        .trim();
+      const terminals = (full.match(/[.!?]/g) ?? []).length;
+      const endsWithTerminal = /[.!?]['")\]]?$/.test(full);
+      if (terminals !== 1 || !endsWithTerminal) {
+        notSentence.push(
+          `${it.title}: ${terminals} sentence-ending mark(s)${endsWithTerminal ? "" : ", and does not end with one"} — "${full.slice(0, 70)}"`,
+        );
+      }
     }
     densityByDiff.set(it.difficulty, [
       ...(densityByDiff.get(it.difficulty) ?? []),
@@ -133,7 +180,14 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
 
       // ---- reported: form ambiguity ----
       const fits = countFits(DICT, b.visiblePrefix.toLowerCase(), b.missingLetters.length);
-      if (fits > AMBIGUITY_NOTE && !(b.alsoAccept ?? []).length) {
+      const noAlt = !(b.alsoAccept ?? []).length;
+      if (SENTENCE_SCOPE.has(it.taskType)) {
+        if (fits > SENTENCE_AMBIGUITY_FAIL && noAlt) {
+          sentenceAmbiguous.push(
+            `${it.title} / ${b.id}: "${b.visiblePrefix}" + ${b.missingLetters.length} fits ${fits} words, and one sentence must resolve it alone`,
+          );
+        }
+      } else if (fits > AMBIGUITY_NOTE && noAlt) {
         ambiguous.push(`${it.title} / ${b.id}: "${b.visiblePrefix}" + ${b.missingLetters.length} fits ${fits} words, no alsoAccept keyed`);
       }
     }
@@ -154,13 +208,16 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
   report.push(`    C2 key typable + ids unique       : ${badKey.length === 0 ? "clean" : `${badKey.length} problem(s)`}`);
   report.push(`    C3 no un-blanked giveaway         : ${giveaway.length === 0 ? "clean" : `${giveaway.length} problem(s)`}`);
   report.push(`    C4 every gap has context          : ${noContext.length === 0 ? "clean" : `${noContext.length} problem(s)`}`);
-  report.push(`    C6 >= ${MIN_BLANKS} blanks per passage      : ${thin.length === 0 ? "clean" : `${thin.length} thin passage(s)`}`);
+  report.push(`    C6 blanks per item (by scope)     : ${thin.length === 0 ? "clean" : `${thin.length} item(s) off-rule`}`);
+  report.push(`    C7 sentence scope where required  : ${notSentence.length === 0 ? "clean" : `${notSentence.length} problem(s)`}`);
 
   if (notWord.length) findings.push({ severity: "FAIL", code: "CLOZE-NOT-A-WORD", message: "A completion is not an English word.", items: notWord });
   if (badKey.length) findings.push({ severity: "FAIL", code: "CLOZE-KEY-UNTYPABLE", message: "A blank's key cannot be typed as keyed.", items: badKey });
   if (giveaway.length) findings.push({ severity: "FAIL", code: "CLOZE-GIVEAWAY", message: "The answer is readable elsewhere on the page.", items: giveaway });
   if (noContext.length) findings.push({ severity: "FAIL", code: "CLOZE-NO-CONTEXT", message: "A gap has no surrounding text, so context cannot resolve it.", items: noContext });
-  if (thin.length) findings.push({ severity: "FAIL", code: "CLOZE-TOO-FEW-BLANKS", message: `Passages must carry at least ${MIN_BLANKS} blanks (target ~${TARGET_BLANKS}).`, items: thin });
+  if (thin.length) findings.push({ severity: "FAIL", code: "CLOZE-BLANK-COUNT", message: `Blank count is wrong for the type's scope (passage cloze >= ${MIN_BLANKS}, target ~${TARGET_BLANKS}; sentence cloze exactly 1).`, items: thin });
+  if (notSentence.length) findings.push({ severity: "FAIL", code: "CLOZE-NOT-ONE-SENTENCE", message: `Fill in the Blanks must be a single self-contained sentence. More than one sentence makes it a small passage — a different task wearing this one's name.`, items: notSentence });
+  if (sentenceAmbiguous.length) findings.push({ severity: "FAIL", code: "CLOZE-SENTENCE-AMBIGUOUS", message: `A sentence-scope gap admits too many words and keys no alternative. With a passage, context narrows a loose gap; with one sentence there is nothing to fall back on — reveal more prefix, tighten the sentence, or key the alternative.`, items: sentenceAmbiguous });
 
   // ---- C5 rarity ladder ----
   report.push("");

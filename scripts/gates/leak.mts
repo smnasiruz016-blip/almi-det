@@ -174,7 +174,7 @@ export default defineGate("gate:leak", async (bank: Bank) => {
     // very" — so the scan fired on two clean items. A gate that cries wolf on
     // correct content is a gate someone switches off, and the structured check
     // below is both exact and immune to what the passage happens to say.
-    if (it.taskType === "READ_AND_COMPLETE") {
+    if (it.taskType === "READ_AND_COMPLETE" || it.taskType === "FILL_IN_THE_BLANKS") {
       if (/"missingLetters"\s*:/.test(wire) || /"alsoAccept"\s*:/.test(wire)) {
         l3.push(`${it.taskType} / ${it.title}: cloze answer key present in the client payload`);
       }

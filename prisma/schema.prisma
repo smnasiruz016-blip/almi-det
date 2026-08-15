@@ -154,6 +154,7 @@ enum DetTaskType {
   READ_AND_SELECT // Reading,  deterministic
   READ_AND_COMPLETE // Reading,  deterministic (cloze)
   INTERACTIVE_READING // Reading,  deterministic (passage + 5 select sub-kinds)
+  FILL_IN_THE_BLANKS // Reading,  deterministic (sentence-scope cloze, one gap)
   LISTEN_AND_TYPE // Listening, deterministic
   WRITE_ABOUT_THE_PHOTO // Writing,   AI
   SPEAK_ABOUT_THE_PHOTO // Speaking,  AI (Phase 3 — Whisper transcript)
