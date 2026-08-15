@@ -42,7 +42,21 @@ export const PLAN_DISPLAY_NAME: Record<PlanKey, string> = {
   PRO_YEARLY: "Pro Yearly",
 };
 
-const ACTIVE_STATUSES = new Set(["trialing", "active"]);
+/**
+ * The Stripe subscription statuses that count as active access.
+ *
+ * EXPORTED on purpose: the admin's SQL status filter is built from this same
+ * list rather than a hand-copied `["active","trialing"]`. A second copy of the
+ * rule is how a badge and a paywall come to disagree — the admin showing "Pro"
+ * while the product refuses access, with nothing failing loudly.
+ *
+ * Note for any SQL that filters on it: status alone is NOT sufficient.
+ * isProActive() also requires subscriptionCurrentPeriodEnd to be in the future,
+ * so a query must mirror BOTH clauses or it will disagree with the runtime.
+ */
+export const ACTIVE_STATUSES = ["trialing", "active"] as const;
+
+const ACTIVE_STATUS_SET = new Set<string>(ACTIVE_STATUSES);
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 type ProUserShape = Pick<
@@ -71,7 +85,7 @@ export function getCompProDaysRemaining(
 export function isProActive(user: ProUserShape): boolean {
   if (isComped(user)) return true;
   if (!user.subscriptionStatus) return false;
-  if (!ACTIVE_STATUSES.has(user.subscriptionStatus)) return false;
+  if (!ACTIVE_STATUS_SET.has(user.subscriptionStatus)) return false;
   if (!user.subscriptionCurrentPeriodEnd) return false;
   return user.subscriptionCurrentPeriodEnd.getTime() > Date.now();
 }

@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { verifyRouterSignature } from "@/lib/router-auth";
 import { prisma } from "@/lib/prisma";
-import { isBillingEnabled, priceIdToPlanLabel } from "@/lib/billing/plans";
+import { isBillingEnabled, priceIdToPlanLabel, ACTIVE_STATUSES } from "@/lib/billing/plans";
 import { sendSubscriptionConfirmationEmail } from "@/lib/email";
 
 // Stripe needs the raw request body for signature verification — must not
@@ -12,7 +12,12 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const TRIAL_STATUSES = new Set(["trialing"]);
-const ACTIVE_STATUSES = new Set(["trialing", "active"]);
+
+// The active-access statuses come from lib/billing/plans.ts, not a local copy.
+// This function writes subscriptionTier, so a drifted copy here would persist
+// the WRONG tier to the database — worse than a mislabelled admin badge, which
+// is at least read-only. Same values as before; behaviour is unchanged.
+const ACTIVE_STATUS_SET = new Set<string>(ACTIVE_STATUSES);
 
 function logPrefix(): string {
   return isBillingEnabled() ? "[stripe-webhook]" : "[stripe-webhook DRY-RUN]";
@@ -50,7 +55,7 @@ async function findUserByCustomerId(customerId: string): Promise<{ id: string } 
 
 function statusToTier(status: string | null | undefined): "FREE" | "PREMIUM" {
   if (!status) return "FREE";
-  return ACTIVE_STATUSES.has(status) ? "PREMIUM" : "FREE";
+  return ACTIVE_STATUS_SET.has(status) ? "PREMIUM" : "FREE";
 }
 
 async function syncSubscriptionToUser(

@@ -1,17 +1,22 @@
 "use client";
 
-// Comp Accounts UI: grant a comp Pro (email + days + reason), and manage active
-// + expired grants (+30 days, revoke). All mutations go through the gated server
-// actions; we refresh after each.
+// Comp Accounts — the grants AUDIT TRAIL: every comp ever issued, active and
+// expired, with its reason and who granted it. None of that history is visible
+// on /admin/accounts, which shows current status only.
+//
+// Granting moved to /admin/accounts, where the row already knows the email. The
+// form that used to live here asked an admin to retype an address they were
+// looking at, which is slower and a way to comp the wrong person.
+//
+// Extend and Revoke stay, because they are the only way to act on an EXPIRED
+// grant: extendCompPro() tops up in place and preserves the original
+// compGrantedAt / compGrantedBy / compReason, whereas re-granting from the
+// accounts table would reset that provenance. Both call the same gated server
+// actions; nothing is reimplemented here.
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  grantCompPro,
-  revokeCompPro,
-  extendCompPro,
-  type CompRow,
-} from "@/lib/admin/comp-accounts";
+import { revokeCompPro, extendCompPro, type CompRow } from "@/lib/admin/comp-accounts";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -26,31 +31,8 @@ export function CompAccountsClient({
   expired: CompRow[];
 }) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [days, setDays] = useState("90");
-  const [reason, setReason] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
-
-  function grant() {
-    setMsg(null);
-    startTransition(async () => {
-      const res = await grantCompPro({
-        email,
-        days: Number(days),
-        reason: reason || undefined,
-      });
-      if (res.ok) {
-        setMsg({ ok: true, text: `Comp Pro granted to ${email.trim().toLowerCase()}.` });
-        setEmail("");
-        setReason("");
-        setDays("90");
-        router.refresh();
-      } else {
-        setMsg({ ok: false, text: res.error ?? "Could not grant." });
-      }
-    });
-  }
 
   function extend(userId: string) {
     setMsg(null);
@@ -74,56 +56,16 @@ export function CompAccountsClient({
   const rows = [...active, ...expired];
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-almi-bg-peach bg-almi-paper p-6">
-        <h2 className="text-lg font-semibold text-almi-ink">Grant comp Pro</h2>
-        <p className="mt-1 text-sm text-almi-text-muted">
-          Gives an existing user full Pro access — AI feedback on Write &amp; Speak About the Photo and
-          the full-length mock — without Stripe, with an expiry. No payment, no email-verify needed.
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-almi-bg-peach bg-almi-bg px-4 py-3">
+        <p className="text-sm text-almi-text-muted">
+          Every comp grant, active and expired. To <strong>grant</strong> a new comp, use the Comp
+          column on{" "}
+          <a href="/admin/accounts" className="font-medium text-almi-coral hover:underline">
+            Accounts
+          </a>{" "}
+          — the row already knows the email.
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_120px]">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="user@email.com"
-            className="rounded-xl border border-almi-ink/15 bg-almi-bg px-4 py-2.5 text-sm text-almi-ink focus:border-almi-coral focus:outline-none"
-          />
-          <input
-            type="number"
-            min={1}
-            max={1825}
-            value={days}
-            onChange={(e) => setDays(e.target.value)}
-            placeholder="Days"
-            aria-label="Days"
-            className="rounded-xl border border-almi-ink/15 bg-almi-bg px-4 py-2.5 text-sm text-almi-ink focus:border-almi-coral focus:outline-none"
-          />
-        </div>
-        <input
-          type="text"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          placeholder="Reason (optional)"
-          className="mt-3 w-full rounded-xl border border-almi-ink/15 bg-almi-bg px-4 py-2.5 text-sm text-almi-ink focus:border-almi-coral focus:outline-none"
-        />
-        <button
-          type="button"
-          onClick={grant}
-          disabled={pending || !email.trim()}
-          className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full bg-almi-coral px-6 py-3 text-sm font-semibold text-almi-ink hover:bg-almi-coral-deep disabled:opacity-60"
-        >
-          {pending ? "Working…" : "Grant comp Pro"}
-        </button>
-        {msg && (
-          <p
-            className={`mt-3 text-sm font-medium ${
-              msg.ok ? "text-almi-teal" : "text-almi-coral-deep"
-            }`}
-          >
-            {msg.text}
-          </p>
-        )}
       </section>
 
       <section>
@@ -133,6 +75,16 @@ export function CompAccountsClient({
             {active.length} active · {expired.length} expired
           </p>
         </div>
+
+        {msg && (
+          <p
+            className={`mt-3 text-sm font-medium ${
+              msg.ok ? "text-almi-teal" : "text-almi-coral-deep"
+            }`}
+          >
+            {msg.text}
+          </p>
+        )}
 
         {rows.length === 0 ? (
           <p className="mt-4 rounded-xl border border-almi-bg-peach bg-almi-bg px-4 py-6 text-center text-sm text-almi-text-muted">
