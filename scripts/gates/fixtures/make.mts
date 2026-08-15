@@ -359,12 +359,30 @@ async function main(): Promise<void> {
     fibItem("FIB fixture — B1", "CORE", band(2500, 4000, 1)[0], o),
     fibItem("FIB fixture — C1", "STRETCH", RARE[0], o),
   ];
-  const withFIB = (sets: unknown[]) => [...clone(all), ...(sets as unknown as BankItem[])];
+  // The real bank now HOLDS authored FILL_IN_THE_BLANKS items. A fixture that
+  // merely appends would be averaged in with them and could not prove anything
+  // about its own type — so the fixture replaces that type entirely.
+  const withFIB = (sets: unknown[]) => [
+    ...clone(all).filter((i) => i.taskType !== "FILL_IN_THE_BLANKS"),
+    ...(sets as unknown as BankItem[]),
+  ];
 
   write("fib-green.json", withFIB(fibGreen()), "valid sentence cloze: one blank, one sentence, rising rarity");
   write("fib-red-blanks.json", withFIB(fibGreen({ blanks: 3 })), "three blanks in a sentence-scope item");
   write("fib-red-twosentences.json", withFIB(fibGreen({ twoSentences: 1 })), "two sentences — a passage wearing the name");
   write("fib-red-ambiguous.json", withFIB(fibGreen({ shortPrefix: true })), "two-letter prefix: far too many words fit for one sentence to resolve");
+  {
+    // All three FIB levels drawn from the SAME common band, while the real
+    // READ_AND_COMPLETE bank keeps its good ladder. A blended check would be
+    // dragged green by the larger type; a per-type check must fail.
+    const w = band(150, 600, 1)[0];
+    const flat = [
+      fibItem("FIB fixture — A1", "FOUNDATION", w),
+      fibItem("FIB fixture — B1", "CORE", w + ""),
+      fibItem("FIB fixture — C1", "STRETCH", w + ""),
+    ];
+    write("fib-red-rarity.json", withFIB(flat), "FIB ladder flat while the passage-cloze ladder stays good");
+  }
 
   console.log("");
 }

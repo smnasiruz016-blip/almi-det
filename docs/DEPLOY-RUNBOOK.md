@@ -87,7 +87,7 @@ Run one per built type. Each seeder skips when rows already exist for that task 
 | Listen and Type | `npm run seed:listen` | 18 | ✅ in prod |
 | Write About the Photo | `npm run seed:write-photo` | 18 | ✅ in prod |
 | Speak About the Photo | `npm run seed:speak` | 18 | ✅ in prod |
-| Fill in the Blanks | `npm run seed:fill-blanks` | — | ⚙️ built, `live:false`, awaiting content |
+| Fill in the Blanks | `npm run seed:fill-blanks` | 18 | ❌ pending (built + live) |
 | Interactive Reading | `npm run seed:interactive-reading` | 18 | ❌ pending (built + live) |
 | Interactive Listening | `npm run seed:interactive-listening` | — | ⬜ not built (also needs an audio render pass, §D) |
 | Interactive Writing | `npm run seed:interactive-writing` | — | ⬜ not built |

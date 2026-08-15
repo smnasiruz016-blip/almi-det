@@ -136,10 +136,8 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
         );
       }
     }
-    densityByDiff.set(it.difficulty, [
-      ...(densityByDiff.get(it.difficulty) ?? []),
-      blanks.length,
-    ]);
+    const dk = `${it.taskType}|${it.difficulty}`;
+    densityByDiff.set(dk, [...(densityByDiff.get(dk) ?? []), blanks.length]);
 
     const ids = blanks.map((b) => b.id);
     if (new Set(ids).size !== ids.length) badKey.push(`${it.title}: duplicate blank id`);
@@ -176,7 +174,8 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
       }
 
       // ---- rarity sample (C5) ----
-      byDiff.set(it.difficulty, [...(byDiff.get(it.difficulty) ?? []), rarity(full)]);
+      const rk = `${it.taskType}|${it.difficulty}`;
+      byDiff.set(rk, [...(byDiff.get(rk) ?? []), rarity(full)]);
 
       // ---- reported: form ambiguity ----
       const fits = countFits(DICT, b.visiblePrefix.toLowerCase(), b.missingLetters.length);
@@ -203,7 +202,8 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
     });
   }
 
-  report.push(`  READ_AND_COMPLETE: ${items.length} passage(s)`);
+  const byType = CLOZE_TYPES.filter((t) => items.some((i) => i.taskType === t));
+  report.push(`  cloze items: ${items.length} across ${byType.join(", ")}`);
   report.push(`    C1 completed word is real English : ${notWord.length === 0 ? "clean" : `${notWord.length} problem(s)`}`);
   report.push(`    C2 key typable + ids unique       : ${badKey.length === 0 ? "clean" : `${badKey.length} problem(s)`}`);
   report.push(`    C3 no un-blanked giveaway         : ${giveaway.length === 0 ? "clean" : `${giveaway.length} problem(s)`}`);
@@ -221,30 +221,35 @@ export default defineGate("gate:cloze", async (bank: Bank) => {
 
   // ---- C5 rarity ladder ----
   report.push("");
-  report.push(`  C5 difficulty by WORD RARITY (median frequency rank of blanked words; ${freqList.length} ranked words, absent = rarest)`);
-  const medians: { d: string; m: number; n: number }[] = [];
-  for (const d of DIFFICULTIES) {
-    const xs = byDiff.get(d) ?? [];
-    if (!xs.length) continue;
-    const m = median(xs);
-    medians.push({ d, m, n: xs.length });
-    const dens = densityByDiff.get(d) ?? [];
-    report.push(
-      `    ${d.padEnd(11)} median rank ${String(m).padStart(6)}  over ${String(xs.length).padStart(3)} blanked word(s)` +
-        `   blanks/passage ${dens.length ? (dens.reduce((a, b) => a + b, 0) / dens.length).toFixed(1) : "-"}`,
-    );
-  }
-  for (let i = 1; i < medians.length; i++) {
-    const prev = medians[i - 1];
-    const cur = medians[i];
-    if (cur.m < prev.m + MIN_RARITY_STEP) {
-      findings.push({
-        severity: "FAIL",
-        code: "CLOZE-DIFFICULTY-NOT-RARITY",
-        message:
-          `${cur.d} blanked words are not meaningfully rarer than ${prev.d} (median rank ${cur.m} vs ${prev.m}; ` +
-          `at least +${MIN_RARITY_STEP} required). Difficulty must come from vocabulary, not passage length.`,
-      });
+  report.push(`  C5 difficulty by WORD RARITY, PER TYPE (${freqList.length} ranked words, absent = rarest)`);
+  report.push(`     A blended ladder can hide a flat one: two types averaged together look`);
+  report.push(`     graded while either alone may not be. Each type is checked on its own.`);
+
+  for (const t of byType) {
+    const medians: { d: string; m: number }[] = [];
+    for (const d of DIFFICULTIES) {
+      const xs = byDiff.get(`${t}|${d}`) ?? [];
+      if (!xs.length) continue;
+      const m = median(xs);
+      medians.push({ d, m });
+      const dens = densityByDiff.get(`${t}|${d}`) ?? [];
+      report.push(
+        `    ${t.padEnd(19)} ${d.padEnd(11)} median rank ${String(m).padStart(6)}  over ${String(xs.length).padStart(3)} blanked word(s)` +
+          `   blanks/item ${dens.length ? (dens.reduce((a, b) => a + b, 0) / dens.length).toFixed(1) : "-"}`,
+      );
+    }
+    for (let i = 1; i < medians.length; i++) {
+      const prev = medians[i - 1];
+      const cur = medians[i];
+      if (cur.m < prev.m + MIN_RARITY_STEP) {
+        findings.push({
+          severity: "FAIL",
+          code: "CLOZE-DIFFICULTY-NOT-RARITY",
+          message:
+            `${t}: ${cur.d} blanked words are not meaningfully rarer than ${prev.d} (median rank ${cur.m} vs ${prev.m}; ` +
+            `at least +${MIN_RARITY_STEP} required). Difficulty must come from vocabulary, not item length.`,
+        });
+      }
     }
   }
 

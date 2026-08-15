@@ -97,8 +97,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.READING,
     blurb:
       "One sentence with letters missing from a single word. There is no passage to fall back on — the sentence itself has to tell you which word belongs.",
-    // Flipped to true when the authored sentences land.
-    live: false,
+    live: true,
   },
   LISTEN_AND_TYPE: {
     taskType: "LISTEN_AND_TYPE",
