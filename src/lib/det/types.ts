@@ -50,8 +50,15 @@ export type ReadAndSelectResponse = { selected: string[] };
 export type ListenAndTypePayload = { sentence: string; audioScript?: string };
 export type ListenAndTypeResponse = { typed: string };
 
+// SERVER-ONLY FIELD, both photo tasks: `imageAlt` is the scene description the
+// AI rater judges the response against — an answer key in prose form, not
+// decoration. It must never be projected to the client; see
+// src/lib/det/client-payload.ts, which withholds it, and gate:leak, which
+// proves it stays withheld. The <img> alt text comes from the item title.
+
 export type WriteAboutPhotoPayload = {
   imageUrl: string;
+  /** Server-only — the rater's target. Never sent to the browser. */
   imageAlt: string;
   minWords: number;
 };
@@ -59,6 +66,7 @@ export type WriteAboutPhotoResponse = { text: string };
 
 export type SpeakAboutPhotoPayload = {
   imageUrl: string;
+  /** Server-only — the rater's target. Never sent to the browser. */
   imageAlt: string;
   prepSeconds: number;
   speakSeconds: number;

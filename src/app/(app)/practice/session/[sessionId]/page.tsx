@@ -10,19 +10,7 @@ import { DET_TASKS } from "@/lib/det/registry";
 import { DetComposer } from "@/components/det/composer-map";
 import { DetResult } from "@/components/det/DetResult";
 import { DetSessionResult } from "@/components/det/DetSessionResult";
-import type { DetTaskType } from "@prisma/client";
-
-// Strip any server-only answer key before sending the payload to the client.
-function sanitizePayload(taskType: DetTaskType, payload: unknown): unknown {
-  if (taskType === "READ_AND_SELECT") {
-    const p = payload as { words: { id: string; text: string; real: boolean }[] };
-    return { words: p.words.map((w) => ({ id: w.id, text: w.text })) };
-  }
-  if (taskType === "LISTEN_AND_TYPE") {
-    return {}; // audio is fetched server-side; the sentence never goes to the client
-  }
-  return payload;
-}
+import { toClientPayload } from "@/lib/det/client-payload";
 
 export default async function SessionPage({
   params,
@@ -85,7 +73,11 @@ export default async function SessionPage({
         attemptId={current.id}
         taskType={current.taskType}
         prompt={current.item.prompt}
-        payload={sanitizePayload(current.taskType, current.item.payload)}
+        // `title` is already rendered as the <h1> above, so reusing it as the
+        // image's alt text adds no information the taker cannot already see —
+        // unlike the rater target, which is now withheld entirely.
+        title={current.item.title}
+        payload={toClientPayload(current.taskType, current.item.payload)}
       />
     </div>
   );

@@ -26,10 +26,11 @@ import type {
 const TRAIT = z.enum(["strong", "adequate", "limited"]);
 
 export const writeAboutPhotoPayloadSchema = z.object({
-  // Optional real photo URL. When empty, the composer shows a captioned scene
-  // placeholder (the imageAlt). The AI rater always judges against imageAlt, so
-  // the human and the rater see a consistent scene either way.
   imageUrl: z.string(),
+  // SERVER-ONLY. The rater judges the response against this description, which
+  // makes it an answer key in prose form. It used to be sent to the browser as
+  // the <img alt>, so a taker could copy the exact text they were scored on.
+  // client-payload.ts now withholds it; the composer's alt is the item title.
   imageAlt: z.string().min(1),
   minWords: z.number().int().nonnegative(),
 });

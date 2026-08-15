@@ -13,13 +13,13 @@ export function SpeakAboutPhotoComposer({
   attemptId,
   prompt,
   imageUrl,
-  imageAlt,
+  alt,
   speakSeconds,
 }: {
   attemptId: string;
   prompt: string;
   imageUrl: string;
-  imageAlt: string;
+  alt: string;
   speakSeconds: number;
 }) {
   const router = useRouter();
@@ -139,10 +139,10 @@ export function SpeakAboutPhotoComposer({
       <figure className="overflow-hidden rounded-2xl border border-almi-bg-peach bg-almi-bg">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={imageAlt} className="h-56 w-full object-cover" />
+          <img src={imageUrl} alt={alt} className="h-56 w-full object-cover" />
         ) : (
           <div className="flex h-56 items-center justify-center bg-almi-accent/10 px-6 text-center">
-            <span className="text-sm font-medium text-almi-ink">{imageAlt}</span>
+            <span className="text-sm font-medium text-almi-ink">{alt}</span>
           </div>
         )}
         <figcaption className="border-t border-almi-bg-peach px-4 py-2 text-xs text-almi-text-muted">

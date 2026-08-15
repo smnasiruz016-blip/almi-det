@@ -1,7 +1,23 @@
-// Seeds original "Read and Select" items across the three difficulty pools so
-// the adaptive set has room to move. Each item mixes real English words with
-// invented non-words; the test-taker marks the real ones. All words are
-// original to AlmiDET — never copied from Duolingo.
+// Seeds original "Read and Select" items. The test-taker marks the real English
+// words and leaves the invented ones unmarked. All words are original to
+// AlmiDET — never copied from Duolingo.
+//
+// AUTHORING RULES (enforced by `npm run gate:degame`, do not hand-wave them):
+//   · Difficulty is REAL, not a label. Each pool draws only from its own CEFR
+//     vocabulary band, and the invented words match that band's phonetic feel —
+//     short and simple at FOUNDATION, Latinate at STRETCH.
+//   · Every one of the 18 real/invented masks is DISTINCT, each of the 8 slots
+//     is real 30-70% of the time, the real-word count varies 3-6, and no run
+//     shape repeats across half the set. An earlier version of this file used
+//     one identical mask for all 18 items, so selecting slots 1,3,5,7,8 scored
+//     100% without reading a word.
+//   · Every "real" word is confirmed present in an English word list and every
+//     "invented" word confirmed absent from it.
+//   · No invented word sits within 2 edits of — or shares a 5-character stem
+//     with — a word keyed REAL anywhere in this task type. "nopple" next to a
+//     keyed "apple" tests our spelling choices, not English. Lures whose real
+//     counterpart is NOT keyed in the set (sagacitous, garrulent, perspicuant,
+//     deliberous, judicorous, pellucidate) are fair and are kept deliberately.
 //
 // Run: npm run seed:read-select  (needs DATABASE_URL set)
 
@@ -14,97 +30,161 @@ type W = { id: string; text: string; real: boolean };
 const words = (list: [string, boolean][]): W[] =>
   list.map(([text, real], i) => ({ id: `w${i + 1}`, text, real }));
 
-const PROMPT =
-  "Some of these are real English words and some are invented. Mark only the real ones.";
+type Level = "FOUNDATION" | "CORE" | "STRETCH";
+
+// Instruction and coaching note are per level, so the wording matches the
+// vocabulary the taker is actually facing.
+const PROMPT: Record<Level, string> = {
+  FOUNDATION:
+    "Some of these are real English words and some are made up. Tap only the ones that are real.",
+  CORE:
+    "Mark every entry below that is a genuine English word. The rest have been invented.",
+  STRETCH:
+    "Only some of these are genuine English words. Select those; leave the invented forms unmarked.",
+};
+
+const GUIDANCE: Record<Level, string> = {
+  FOUNDATION:
+    "Sound each one out. If it looks like something you have seen in class or at home, it is probably real.",
+  CORE:
+    "Invented forms often borrow endings you already know. Trust the whole shape, not just how it finishes.",
+  STRETCH:
+    "At this level the invented forms are built from Latin-looking pieces. Judge the complete form, not its parts.",
+};
+
+const TOPIC: Record<Level, string> = {
+  FOUNDATION: "everyday-vocabulary",
+  CORE: "general-vocabulary",
+  STRETCH: "academic-vocabulary",
+};
 
 function item(
   title: string,
-  difficulty: "FOUNDATION" | "CORE" | "STRETCH",
+  difficulty: Level,
   list: [string, boolean][],
 ): Prisma.DetItemCreateManyInput {
   return {
     taskType: "READ_AND_SELECT",
     title,
-    prompt: PROMPT,
+    prompt: PROMPT[difficulty],
     difficulty,
-    topicTag: "vocabulary",
+    topicTag: TOPIC[difficulty],
     payload: { words: words(list) },
-    guidanceNote: "Trust the spelling patterns you know; invented words often copy real ones.",
+    guidanceNote: GUIDANCE[difficulty],
   };
 }
 
 export const ITEMS: Prisma.DetItemCreateManyInput[] = [
-  item("Real words — A1", "FOUNDATION", [
-    ["garden", true], ["blornic", false], ["river", true], ["tewdle", false],
-    ["happy", true], ["grummel", false], ["table", true], ["pencil", true],
+  // ---- FOUNDATION ----
+  item("Everyday words — A1", "FOUNDATION", [
+    ["fremble", false], ["pemble", false],
+    ["happy", true], ["flimper", false],
+    ["yellow", true], ["jomber", false],
+    ["pocket", true], ["glonket", false],
   ]),
-  item("Real words — A2", "FOUNDATION", [
-    ["water", true], ["flopen", false], ["apple", true], ["denvil", false],
-    ["green", true], ["morbick", false], ["house", true], ["friend", true],
+  item("Everyday words — A2", "FOUNDATION", [
+    ["bimmock", false], ["brimmet", false],
+    ["school", true], ["crodge", false],
+    ["table", true], ["morning", true],
+    ["dombit", false], ["cratell", false],
   ]),
-  item("Real words — A3", "FOUNDATION", [
-    ["school", true], ["gruppen", false], ["bread", true], ["snodder", false],
-    ["music", true], ["frunce", false], ["winter", true], ["orange", true],
+  item("Everyday words — A3", "FOUNDATION", [
+    ["murnel", false], ["bread", true],
+    ["narvic", false], ["house", true],
+    ["water", true], ["dorlet", false],
+    ["grummel", false], ["river", true],
   ]),
-  item("Real words — B1", "CORE", [
-    ["weather", true], ["tarnical", false], ["honest", true], ["quempo", false],
-    ["picture", true], ["sprodge", false], ["market", true], ["travel", true],
+  item("Everyday words — A4", "FOUNDATION", [
+    ["music", true], ["splunt", false],
+    ["plodkin", false], ["krelly", false],
+    ["window", true], ["winter", true],
+    ["sister", true], ["quembo", false],
   ]),
-  item("Real words — B2", "CORE", [
-    ["purpose", true], ["drazzle", false], ["reason", true], ["splound", false],
-    ["notice", true], ["gorthen", false], ["village", true], ["promise", true],
+  item("Everyday words — A5", "FOUNDATION", [
+    ["quilber", false], ["chair", true],
+    ["friend", true], ["tewdle", false],
+    ["pencil", true], ["rabbit", true],
+    ["apple", true], ["lorbit", false],
   ]),
-  item("Real words — B3", "CORE", [
-    ["comfort", true], ["trunble", false], ["feature", true], ["blurnce", false],
-    ["section", true], ["prendle", false], ["capture", true], ["reply", true],
+  item("Everyday words — A6", "FOUNDATION", [
+    ["parvit", false], ["kitchen", true],
+    ["candle", true], ["garden", true],
+    ["flower", true], ["basket", true],
+    ["jinket", false], ["gippet", false],
   ]),
-  item("Real words — C1", "STRETCH", [
-    ["deliberate", true], ["vorthly", false], ["scenery", true], ["crundle", false],
-    ["manuscript", true], ["flandor", false], ["hesitant", true], ["voyage", true],
+  // ---- CORE ----
+  item("General vocabulary — B1", "CORE", [
+    ["kelvary", false], ["protect", true],
+    ["quintrel", false], ["arrange", true],
+    ["blornic", false], ["picture", true],
+    ["brimolic", false], ["tervane", false],
   ]),
-  item("Real words — C2", "STRETCH", [
-    ["meticulous", true], ["quandle", false], ["eloquent", true], ["blensome", false],
-    ["persuasive", true], ["wendelo", false], ["reluctant", true], ["threshold", true],
+  item("General vocabulary — B2", "CORE", [
+    ["quandric", false], ["benefit", true],
+    ["yarnest", false], ["condrel", false],
+    ["jorvath", false], ["quality", true],
+    ["honest", true], ["familiar", true],
   ]),
-  item("Real words — C3", "STRETCH", [
-    ["ambiguous", true], ["plimber", false], ["coherent", true], ["gorphic", false],
-    ["substantial", true], ["snarvle", false], ["nuance", true], ["inevitable", true],
+  item("General vocabulary — B3", "CORE", [
+    ["weather", true], ["ulmanic", false],
+    ["government", true], ["generous", true],
+    ["pelvane", false], ["sprodge", false],
+    ["nostrel", false], ["respond", true],
   ]),
-  item("Real words — A4", "FOUNDATION", [
-    ["chair", true], ["dremmle", false], ["window", true], ["blunto", false],
-    ["milk", true], ["frabel", false], ["spoon", true], ["finger", true],
+  item("General vocabulary — B4", "CORE", [
+    ["environment", true], ["berrantic", false],
+    ["opportunity", true], ["sorvent", false],
+    ["measure", true], ["halvicent", false],
+    ["vodric", false], ["achieve", true],
   ]),
-  item("Real words — A5", "FOUNDATION", [
-    ["bottle", true], ["grendle", false], ["candle", true], ["sworple", false],
-    ["ticket", true], ["plimby", false], ["morning", true], ["sister", true],
+  item("General vocabulary — B5", "CORE", [
+    ["grendale", false], ["travel", true],
+    ["market", true], ["ordanic", false],
+    ["decision", true], ["remember", true],
+    ["wombrel", false], ["evantic", false],
   ]),
-  item("Real words — A6", "FOUNDATION", [
-    ["kitchen", true], ["brundel", false], ["mountain", true], ["snarpy", false],
-    ["summer", true], ["drofen", false], ["evening", true], ["sandwich", true],
+  item("General vocabulary — B6", "CORE", [
+    ["murvane", false], ["purpose", true],
+    ["rembold", false], ["discover", true],
+    ["sincere", true], ["experience", true],
+    ["improve", true], ["lomberic", false],
   ]),
-  item("Real words — B4", "CORE", [
-    ["balance", true], ["quorfen", false], ["decision", true], ["splithe", false],
-    ["address", true], ["gandor", false], ["monitor", true], ["courage", true],
+  // ---- STRETCH ----
+  item("Academic vocabulary — C1", "STRETCH", [
+    ["threshold", true], ["circumvane", false],
+    ["tenebrient", false], ["resplendicate", false],
+    ["coherent", true], ["brelmontic", false],
+    ["contradicent", false], ["pragmatic", true],
   ]),
-  item("Real words — B5", "CORE", [
-    ["neighbour", true], ["trindle", false], ["schedule", true], ["brovish", false],
-    ["attention", true], ["glomber", false], ["package", true], ["distance", true],
+  item("Academic vocabulary — C2", "STRETCH", [
+    ["nuance", true], ["perspicuant", false],
+    ["quiescible", false], ["eloquent", true],
+    ["articulate", true], ["exorbicate", false],
+    ["fastidion", false], ["judicorous", false],
   ]),
-  item("Real words — B6", "CORE", [
-    ["industry", true], ["speward", false], ["increase", true], ["dwomble", false],
-    ["evidence", true], ["prombic", false], ["signal", true], ["council", true],
+  item("Academic vocabulary — C3", "STRETCH", [
+    ["ambiguous", true], ["garrulent", false],
+    ["ubiquitous", true], ["sceptical", true],
+    ["ambivature", false], ["prevalent", true],
+    ["vandrelose", false], ["sagacitous", false],
   ]),
-  item("Real words — C4", "STRETCH", [
-    ["ambitious", true], ["vornicate", false], ["prevalent", true], ["glunthor", false],
-    ["intricate", true], ["swelden", false], ["candidate", true], ["momentum", true],
+  item("Academic vocabulary — C4", "STRETCH", [
+    ["ephemeral", true], ["profound", true],
+    ["scrutiny", true], ["fendrolic", false],
+    ["zealotrous", false], ["resilient", true],
+    ["elucidorous", false], ["deliberous", false],
   ]),
-  item("Real words — C5", "STRETCH", [
-    ["spontaneous", true], ["plimbeous", false], ["articulate", true], ["grondical", false],
-    ["susceptible", true], ["fendarial", false], ["hypothesis", true], ["credible", true],
+  item("Academic vocabulary — C5", "STRETCH", [
+    ["wendelo", false], ["blensome", false],
+    ["tarnical", false], ["discern", true],
+    ["obstruvent", false], ["versatile", true],
+    ["notorious", true], ["cohesive", true],
   ]),
-  item("Real words — C6", "STRETCH", [
-    ["unprecedented", true], ["quorbital", false], ["conscientious", true], ["blandocate", false],
-    ["perpetual", true], ["swarndle", false], ["ostensible", true], ["reservoir", true],
+  item("Academic vocabulary — C6", "STRETCH", [
+    ["susceptible", true], ["inevitable", true],
+    ["persuasive", true], ["pellucidate", false],
+    ["tangible", true], ["quiddlesome", false],
+    ["meticulous", true], ["reluctant", true],
   ]),
 ];
 
