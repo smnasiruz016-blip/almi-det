@@ -47,6 +47,7 @@ Pending as of this writing:
 |---|---|---|
 | `3_det_item_audio` | `DetItemAudio` table for pre-rendered TTS | ✅ applied 2026-08-15 |
 | `4_read_and_complete` | adds `READ_AND_COMPLETE` to the `DetTaskType` enum | ❌ pending |
+| _(one enum migration per future task type — append as they land)_ | | |
 
 ⚠️ Postgres will not let a new enum value be **used** in the same transaction that adds it.
 Migration and seeding are therefore separate steps — never combine them.
@@ -84,6 +85,12 @@ Run one per built type. Each seeder skips when rows already exist for that task 
 | Listen and Type | `npm run seed:listen` | 18 | ✅ in prod |
 | Write About the Photo | `npm run seed:write-photo` | 18 | ✅ in prod |
 | Speak About the Photo | `npm run seed:speak` | 18 | ✅ in prod |
+| Fill in the Blanks | `npm run seed:fill-blanks` | — | ⬜ not built |
+| Interactive Reading | `npm run seed:interactive-reading` | — | ⬜ next |
+| Interactive Listening | `npm run seed:interactive-listening` | — | ⬜ not built (also needs an audio render pass, §D) |
+| Interactive Writing | `npm run seed:interactive-writing` | — | ⬜ not built |
+| Writing Sample | `npm run seed:writing-sample` | — | ⬜ not built (ungraded) |
+| Speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
 | _(append one row per new type as it lands)_ | | | |
 
 ---
