@@ -54,6 +54,28 @@ const subActive = (now: Date): Prisma.UserWhereInput => ({
   subscriptionCurrentPeriodEnd: { gt: now },
 });
 
+/**
+ * The NEGATION of subActive, written out clause by clause.
+ *
+ * It cannot be expressed as `{ NOT: subActive }`. That compiles to
+ * `NOT (status IN (...) AND periodEnd > now)`, and SQL's three-valued logic
+ * makes the whole expression NULL — not TRUE — for any row where
+ * subscriptionStatus IS NULL. WHERE keeps only TRUE, so every user who never
+ * subscribed silently disappeared from the Free count and the Free filter.
+ * Measured on production: Total 3, Free 1, the two never-subscribed users lost.
+ *
+ * Spelling out the four ways isProActive() can be false keeps NULL handling
+ * explicit instead of leaving it to the database's idea of unknown.
+ */
+const notSubActive = (now: Date): Prisma.UserWhereInput => ({
+  OR: [
+    { subscriptionStatus: null },
+    { NOT: { subscriptionStatus: { in: [...ACTIVE_STATUSES] } } },
+    { subscriptionCurrentPeriodEnd: null },
+    { subscriptionCurrentPeriodEnd: { lte: now } },
+  ],
+});
+
 function statusWhere(status: Status, now: Date): Prisma.UserWhereInput | undefined {
   switch (status) {
     case "comp":
@@ -63,7 +85,7 @@ function statusWhere(status: Status, now: Date): Prisma.UserWhereInput | undefin
     case "pro":
       return { AND: [notComped(now), subActive(now)] };
     case "free":
-      return { AND: [notComped(now), { NOT: subActive(now) }] };
+      return { AND: [notComped(now), notSubActive(now)] };
     default:
       return undefined;
   }
