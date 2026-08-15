@@ -192,8 +192,46 @@ model DetItem {
   createdAt        DateTime @default(now())
 
   attempts DetAttempt[]
+  audio    DetItemAudio[]
 
   @@index([taskType, active, difficulty])
+}
+
+// Pre-rendered TTS audio, one row per audio SEGMENT of an item.
+//
+// A separate table rather than an `audioUrl` column on DetItem, for two reasons:
+//
+//   1. Interactive Listening is a multi-turn conversation — several clips per
+//      item. A column holds one URL and would have to be rewritten into a table
+//      the moment that task type lands. `seg` is 0 for the single-clip case
+//      (Listen and Type) and 0..N for a conversation, so that type slots in with
+//      no migration.
+//   2. audioUrl is DB-ONLY and must never appear in a seed file. Seeds create
+//      DetItem rows; they cannot reach this table, so the rule is enforced by
+//      the shape rather than by convention.
+//
+// Written only by scripts/generate-det-audio.mts. Read by the audio route, which
+// redirects to `audioUrl` and skips OpenAI entirely.
+model DetItemAudio {
+  id     String @id @default(cuid())
+  itemId String
+  // 0 for single-clip tasks; the turn index for multi-clip conversations.
+  seg    Int    @default(0)
+
+  // Public Vercel Blob URL. Empty string means "row exists but not rendered".
+  audioUrl String @default("")
+  // Measured from the MP3 frame headers — 0 when unparsable, never guessed.
+  durationSec Int    @default(0)
+  chars       Int    @default(0)
+  voice       String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item DetItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, seg])
+  @@index([itemId])
 }
 
 model DetAttempt {
