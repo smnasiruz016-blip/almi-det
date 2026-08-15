@@ -53,6 +53,13 @@ the current test. The 2026-06-24 Phase-0 pass recorded the exact opposite on bot
 Both passes cite official sources, so one is wrong and the difference is not cosmetic — it decides
 which speaking types get built. Recorded as a conflict rather than resolved by recency.
 
+**ALSO FOR THAT SAME VERIFICATION PASS — Complete the Sentences scope.** Does DET gap a sentence
+drawn FROM the passage (rendered WITH the gap, so nothing is visible to copy), or a fresh sentence
+testing the word in new context? AlmiDET renders the full passage beside a separate stem, so a key
+appearing in the passage is copyable either way — gate:reading-set IR8 now forbids it, and that fix
+is correct for the current rendering regardless of the answer. If DET gaps the passage itself, we
+may restructure this sub-kind's RENDERING later; the content does not become wrong.
+
 **ALSO FOR THAT SAME VERIFICATION PASS — Highlight the Answer granularity.** AlmiDET builds
 sentence-level selection (each sentence is a span; the taker picks a sentence). If DET's actual
 interaction is finer — dragging over an arbitrary word range — the payload needs character offsets

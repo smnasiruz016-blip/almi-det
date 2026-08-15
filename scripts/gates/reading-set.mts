@@ -17,6 +17,10 @@
 //   IR6 REACHABLE     ids unique, every key resolves, every question gradable.
 //   IR7 COVERAGE      all five sub-kinds appear somewhere in the bank, and
 //                     difficulty rises by passage vocabulary RARITY, not length.
+//   IR8 COPYABLE KEY  the passage is on screen beside the stem, so for a
+//                     sub-kind whose answer is not meant to come from the
+//                     passage, a key that appears in it is findable rather than
+//                     known. Highlight and Complete the Passage are exempt.
 
 import { defineGate, DIFFICULTIES, type Bank, type Finding } from "./_bank.mjs";
 
@@ -29,6 +33,9 @@ const LENGTH_TELL_FAIL = 0.45;
 const POSITION_FAIL = 0.5;
 /** Median frequency rank must rise by at least this much per difficulty step. */
 const MIN_RARITY_STEP = 400;
+/** IR8: sub-kinds whose answer is NOT meant to come from the passage. For these
+ *  the key must not appear in the passage at all — the passage is on screen. */
+const COPYABLE_KINDS = new Set(["COMPLETE_THE_SENTENCES"]);
 
 const ALL_KINDS = [
   "COMPLETE_THE_SENTENCES",
@@ -85,6 +92,7 @@ export default defineGate("gate:reading-set", async (bank: Bank) => {
   const malformed: string[] = [];
   const lengthTell: string[] = [];
   const stemOverlap: string[] = [];
+  const copyable: string[] = [];
   const spanProblem: string[] = [];
   const unreachable: string[] = [];
 
@@ -110,6 +118,16 @@ export default defineGate("gate:reading-set", async (bank: Bank) => {
     if (spans.some((s) => !s.text || !s.text.trim())) {
       spanProblem.push(`${it.title}: a span carries no text — an empty selectable region`);
     }
+
+    // Every word the passage puts on screen, for the IR8 copyable-key check.
+    const passageTokens = new Set(
+      spans
+        .map((sp) => sp.text.toLowerCase())
+        .join(" ")
+        .replace(/[^a-z]+/g, " ")
+        .split(" ")
+        .filter(Boolean),
+    );
 
     // ---- passage rarity (IR7) ----
     const passageWords = words(spans.map((s) => s.text).join(" "));
@@ -172,6 +190,30 @@ export default defineGate("gate:reading-set", async (bank: Bank) => {
           `${it.title} / ${q.id}: correct option shares ${correctOverlap} word(s) with the stem, distractors at most ${bestDistractor}`,
         );
       }
+
+      // ---- IR8 copyable key ----
+      // The passage is on screen in full beside the stem. So for a sub-kind
+      // whose answer is NOT meant to come from the passage, a key that appears
+      // anywhere in the passage is COPYABLE — findable rather than known, and
+      // answerable without English. That is the class this whole audit exists
+      // to remove.
+      //
+      // The first version of this check required the stem to duplicate >=50% of
+      // the sentence holding the key. Too narrow: a stem that paraphrases just
+      // enough slips under the threshold while the key sits four lines above in
+      // plain view. Measured on the first authored bank, that let 18 of 36
+      // Complete the Sentences keys through. The rule is now absolute.
+      //
+      // HIGHLIGHT_THE_ANSWER and COMPLETE_THE_PASSAGE are exempt by design —
+      // for those the answer legitimately comes from the passage.
+      if (COPYABLE_KINDS.has(q.kind)) {
+        const key = correct.text.trim().toLowerCase();
+        if (passageTokens.has(key)) {
+          copyable.push(
+            `${it.title} / ${q.id}: key "${correct.text}" appears in the passage — it can be copied rather than chosen`,
+          );
+        }
+      }
     }
   }
 
@@ -221,6 +263,7 @@ export default defineGate("gate:reading-set", async (bank: Bank) => {
   }
 
   report.push(`    IR4 stem-overlap tell          : ${stemOverlap.length === 0 ? "clean" : `${stemOverlap.length} question(s)`}`);
+  report.push(`    IR8 key not copyable           : ${copyable.length === 0 ? "clean" : `${copyable.length} question(s)`}`);
   if (stemOverlap.length) {
     findings.push({
       severity: "FAIL",
@@ -229,6 +272,18 @@ export default defineGate("gate:reading-set", async (bank: Bank) => {
         `The correct option repeats words from the stem that the distractors do not. Word-matching answers it ` +
         `without comprehension — either echo the wording in a distractor too, or paraphrase the key.`,
       items: stemOverlap,
+    });
+  }
+
+  if (copyable.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "IR-COPYABLE-KEY",
+      message:
+        `A Complete the Sentences stem duplicates a passage sentence that already contains the key, so the ` +
+        `answer can be copied across rather than chosen. Paraphrase the stem, or test a word the passage ` +
+        `does not supply.`,
+      items: copyable,
     });
   }
 

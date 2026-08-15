@@ -86,9 +86,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.READING,
     blurb:
       "One passage, several questions: complete the sentences, choose what belongs in a gap, pick out the sentence that answers a question, and judge the main idea and the best title.",
-    // Flipped to true when the authored sets land. Until then the practice hub
-    // shows "Coming soon" and MOCK_ORDER (derived from `live`) skips it.
-    live: false,
+    live: true,
   },
   LISTEN_AND_TYPE: {
     taskType: "LISTEN_AND_TYPE",
