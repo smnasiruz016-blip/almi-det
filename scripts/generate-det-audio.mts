@@ -54,10 +54,27 @@ const BUDGET_USD = 5;
 const FEATURE_BY_TYPE: Record<string, string> = {
   LISTEN_AND_TYPE: "listen-and-type.tts",
   INTERACTIVE_LISTENING: "interactive-listening.tts",
+  LISTEN_THEN_SPEAK: "listen-then-speak.tts",
+  INTERACTIVE_SPEAKING: "interactive-speaking.tts",
 };
 const ALL_FEATURES = [...new Set(Object.values(FEATURE_BY_TYPE))];
-const featureOf = (taskType: string): string =>
-  FEATURE_BY_TYPE[taskType] ?? `det-tts.${taskType.toLowerCase()}`;
+
+/**
+ * A task type MUST be named above. The fallback used to invent a label, which
+ * looked harmless and was not: an invented label is absent from ALL_FEATURES, so
+ * that type's spend would never count toward the shared $5 cap — every new audio
+ * type would silently unlock another $5. Refusing is the honest failure.
+ */
+const featureOf = (taskType: string): string => {
+  const f = FEATURE_BY_TYPE[taskType];
+  if (!f) {
+    throw new Error(
+      `No AICostLedger feature declared for ${taskType} in FEATURE_BY_TYPE. ` +
+        `Add one — an undeclared type is spend the shared cap cannot see.`,
+    );
+  }
+  return f;
+};
 
 // Matches the voice the on-demand path uses, so pre-rendered clips are
 // indistinguishable from the fallback.

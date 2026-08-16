@@ -168,9 +168,13 @@ over — no network, no database:
 
     Interactive Listening   12 conversations x 5 clips = 60 clips, 7,936 chars   $0.1190
     Listen Then Speak       12 question clips                    967 chars   $0.0145
-    Interactive Speaking    10 interviews x 4 turns = 40 clips, 2,586 chars   $0.0388
+    Interactive Speaking    10 interviews x 4 turns = 40 clips, 2,820 chars   $0.0423
     ------------------------------------------------------------------------------
-    TOTAL                                       112 clips,    11,489 chars   $0.1723
+    TOTAL                                       112 clips,    11,723 chars   $0.1758
+
+    (Interactive Speaking was written here as 2,586 chars before it was ever
+    measured; the dry run says 2,820. Numbers in this file come from
+    `npm run audio:render` DRY RUN, never from arithmetic done by hand.)
 
     Interactive Listening renders segs 0, 2, 3, 4, 5 per item; Listen Then Speak
     renders seg 0 only (one question per item).

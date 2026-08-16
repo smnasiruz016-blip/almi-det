@@ -152,7 +152,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.LISTENING,
     blurb:
       "One conversation, three parts: fill the gaps in what you hear, choose the best reply at each turn, then summarize the whole exchange in your own words.",
-    live: false,
+    live: true,
   },
   WRITE_ABOUT_THE_PHOTO: {
     taskType: "WRITE_ABOUT_THE_PHOTO",
@@ -177,7 +177,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.WRITING,
     blurb:
       "Two linked prompts. Write your view first — it locks when you submit — then answer a follow-up that asks you to argue the other side fairly.",
-    live: false,
+    live: true,
   },
   // In the official DET this sample is sent to institutions UNSCORED. We rate it
   // because this is a practice tool and feedback is the point; the composer says
@@ -192,7 +192,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.WRITING,
     blurb:
       "Read the prompt for 30 seconds, then write 100-130+ words in five minutes. The real test sends this to universities unscored — here you get feedback on it.",
-    live: false,
+    live: true,
   },
   // DETERMINISTIC and PAID — the two are not in tension here. Grading is
   // arithmetic on two strings, so `scoringMode` is honest; the paid gate comes
@@ -208,7 +208,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.SPEAKING,
     blurb:
       "Read one sentence aloud. We transcribe the recording and check it word by word against the sentence — this measures what was heard, not your accent.",
-    live: false,
+    live: true,
   },
   // The three rubric-based speaking types. All AI, all paid — the paid gate and
   // the daily cap come from being SPEAKING tasks, checked by both submit routes.
@@ -223,7 +223,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.SPEAKING,
     blurb:
       "Read a prompt on screen, then speak about it for up to 90 seconds. We rate the ideas, flow, vocabulary and grammar from a transcript — not your accent.",
-    live: false,
+    live: true,
   },
   LISTEN_THEN_SPEAK: {
     taskType: "LISTEN_THEN_SPEAK",
@@ -234,7 +234,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.SPEAKING,
     blurb:
       "Listen to a spoken question — there is no text to read — then answer it aloud for up to 90 seconds. Understanding the question by ear is part of the task.",
-    live: false,
+    live: true,
   },
   SPEAKING_SAMPLE: {
     taskType: "SPEAKING_SAMPLE",
@@ -245,7 +245,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.SPEAKING,
     blurb:
       "Speak for up to three minutes on one topic. The real test sends this to universities unscored; here you get feedback on it.",
-    live: false,
+    live: true,
   },
   // The last speaking type: staged AND spoken. One interview is ONE attempt
   // against the daily cap and costs four transcriptions plus a single holistic
@@ -259,7 +259,7 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
     feedsSubscores: SKILL_FEEDS.SPEAKING,
     blurb:
       "A short spoken interview: you hear each question, answer it aloud, and the next one follows. Rated across the whole exchange from a transcript — not on your accent.",
-    live: false,
+    live: true,
   },
   SPEAK_ABOUT_THE_PHOTO: {
     taskType: "SPEAK_ABOUT_THE_PHOTO",
