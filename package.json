@@ -34,6 +34,7 @@
     "seed:fill-blanks": "tsx scripts/seed/fill-in-the-blanks.ts",
     "seed:interactive-listening": "tsx scripts/seed/interactive-listening.ts",
     "seed:il-check": "tsx scripts/seed/il-data-check.mts",
+    "seed:writing-check": "tsx scripts/seed/writing-data-check.mts",
     "seed:speak": "tsx scripts/seed/speak-about-photo.ts",
     "seed:interactive-writing": "tsx scripts/seed/interactive-writing.ts",
     "seed:writing-sample": "tsx scripts/seed/writing-sample.ts",

@@ -116,6 +116,14 @@ which is a legitimate state, so nothing errors.
       expected 11. Run it before migrating anything: seeding one item and seeding twelve look
       identical from the command's own output otherwise.
 
+**Interactive Writing and Writing Sample read their content from data files too**, through the
+same shared loader (`scripts/seed/_data-loader.ts`). The reference item of each type is inline;
+`interactive-writing.data.mjs` and `writing-sample.data.mjs` carry the rest.
+
+- [ ] **`npm run seed:writing-check` FIRST**, for the same reason — it prints both types' source,
+      counts, per-item table and level/register/category spreads, and EXITS NON-ZERO if either
+      file is missing or either count is not 11.
+
 | Type | Command | Items | Status |
 |---|---|---|---|
 | Read and Select | `npm run seed:read-select` | 18 | ⚠️ retire-and-replace, see B |
@@ -126,8 +134,8 @@ which is a legitimate state, so nothing errors.
 | Fill in the Blanks | `npm run seed:fill-blanks` | 18 | ❌ pending (built + live) |
 | Interactive Reading | `npm run seed:interactive-reading` | 18 | ❌ pending (built + live) |
 | Interactive Listening | `npm run seed:interactive-listening` | 12 | ❌ pending — **`live: false`** (also needs an audio render pass, §D) |
-| Interactive Writing | `npm run seed:interactive-writing` | 1 | ❌ pending — **`live: false`**, one reference item; no audio needed |
-| Writing Sample | `npm run seed:writing-sample` | 1 | ❌ pending — **`live: false`**, one reference item. Unscored in the real DET; graded here, and the composer says so |
+| Interactive Writing | `npm run seed:interactive-writing` | 12 | ❌ pending — **`live: false`**; no audio needed |
+| Writing Sample | `npm run seed:writing-sample` | 12 | ❌ pending — **`live: false`**. Unscored in the real DET; graded here, and the composer says so |
 | Speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
 | _(append one row per new type as it lands)_ | | | |
 

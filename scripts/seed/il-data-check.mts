@@ -21,7 +21,7 @@ async function main(): Promise<void> {
   let IL_SOURCE: {
     dataFilePresent: boolean;
     dataFile: string;
-    scenarioCount: number;
+    itemCount: number;
     note: string | null;
     referenceCount: number;
     totalCount: number;
@@ -45,7 +45,7 @@ async function main(): Promise<void> {
   console.log(
     `  present             ${IL_SOURCE.dataFilePresent ? "YES" : `NO  (${IL_SOURCE.note})`}`,
   );
-  console.log(`  scenarios loaded    ${IL_SOURCE.scenarioCount}`);
+  console.log(`  scenarios loaded    ${IL_SOURCE.itemCount}`);
   console.log(`  reference (inline)  ${IL_SOURCE.referenceCount}`);
   console.log(`  ITEMS total         ${IL_SOURCE.totalCount}`);
 
@@ -81,9 +81,9 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if (IL_SOURCE.scenarioCount !== EXPECTED_SCENARIOS) {
+  if (IL_SOURCE.itemCount !== EXPECTED_SCENARIOS) {
     console.log(
-      `\n⚠ COUNT MISMATCH: ${IL_SOURCE.scenarioCount} scenario(s) loaded, expected ${EXPECTED_SCENARIOS}.\n` +
+      `\n⚠ COUNT MISMATCH: ${IL_SOURCE.itemCount} scenario(s) loaded, expected ${EXPECTED_SCENARIOS}.\n` +
         `  Not fatal on its own — but check nothing was dropped before seeding.\n`,
     );
     process.exit(1);

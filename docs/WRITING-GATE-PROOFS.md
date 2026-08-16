@@ -64,6 +64,26 @@ duplicate check cannot be moved by mutating a single item — the same lesson th
 Listening length-tell fixture taught when the bank grew from 1 to 12. A check that compares items
 needs a fixture with more than one.
 
+## What the full bank found that one item could not
+
+The 11 authored items per type arrived after the gates were written. Running the gates over them
+changed WP6, and the way it changed is the point.
+
+**The first WP6 was a phrase list** — `"the option you"`, `"you mentioned"`, `"opposite"` and so
+on — and on real content it flagged **7 of 12** Interactive Writing items. Five of those seven
+were plainly dependent on Part 1 and the list simply did not know the words: *"this hobby"*,
+*"your usual method"*, *"your method"*, *"the other actor"*, *"Whatever you argued"*. A check that
+is wrong 70% of the time is a check someone switches off.
+
+The signal that actually separates them is simpler than any phrase list. A Part 2 that builds on
+Part 1 either **addresses the candidate** (`you` / `your`) or **points at something already
+established** (`this` / `that` / `the other` / `the opposite`). One that does neither reads as a
+fresh standalone question. Measured on the 12 items: 10 carry at least one, and the 2 that carry
+none — *Devices in class* and *Online university study* — are the two that genuinely stand alone.
+
+Same lesson as the Interactive Listening hyphen fix, one type over: **fixtures prove a gate CAN
+fire; real content shows whether it is aimed at the right thing.**
+
 **WP6 is a WARN, deliberately.** It flags an Interactive Writing Part 2 with no wording that
 refers back to Part 1, because a genuinely free-standing Part 2 means the whole locked design is
 protecting nothing. But it is a heuristic on prose, and a gate that blocks a build over word

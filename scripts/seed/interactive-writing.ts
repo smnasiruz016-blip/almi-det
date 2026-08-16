@@ -20,20 +20,27 @@
 
 import { PrismaClient, Prisma } from "@prisma/client";
 import { isDirectRun } from "./_entry";
+import { loadAuthoredInteractiveWriting, type IWSource } from "./interactive-writing.loader";
 
 const prisma = new PrismaClient();
 
 const PROMPT = "Answer both parts. Part 1 locks when you submit it.";
 
-export const ITEMS: Prisma.DetItemCreateManyInput[] = [
+const GUIDANCE =
+  "Take a clear position in Part 1 and support it with specific examples. Part 2 is not a reversal — it asks you to be fair to the other side and practical about your own objection.";
+
+/** The reference item, authored inline and proven end to end before the rest
+ *  were written. Kept here rather than folded into the data file: it is the
+ *  worked example the authoring contract above describes, and the gate fixtures
+ *  are derived from it. */
+const REFERENCE: Prisma.DetItemCreateManyInput[] = [
   {
     taskType: "INTERACTIVE_WRITING",
     title: "Working from home — preference and counter-case",
     prompt: PROMPT,
     difficulty: "CORE",
-    topicTag: "work",
-    guidanceNote:
-      "Take a clear position in Part 1 and support it with specific examples. Part 2 is not a reversal — it asks you to be fair to the other side and practical about your own objection.",
+    topicTag: "Working from home",
+    guidanceNote: GUIDANCE,
     payload: {
       topic: "Working from home",
       register: "general",
@@ -60,6 +67,24 @@ export const ITEMS: Prisma.DetItemCreateManyInput[] = [
     } as unknown as Prisma.InputJsonValue,
   },
 ];
+
+// Cowork's authored items, when the data file has been dropped in. Absent = the
+// reference alone, which is exactly the state this type shipped in.
+const authored = loadAuthoredInteractiveWriting({
+  prompt: PROMPT,
+  guidanceNote: GUIDANCE,
+  reservedTitles: REFERENCE.map((i) => i.title),
+});
+
+/** Where the bank came from. Printed by `npm run seed:writing-check` so "1 item"
+ *  never gets mistaken for "12 items and the gates passed". */
+export const IW_SOURCE: IWSource & { referenceCount: number; totalCount: number } = {
+  ...authored.source,
+  referenceCount: REFERENCE.length,
+  totalCount: REFERENCE.length + authored.items.length,
+};
+
+export const ITEMS: Prisma.DetItemCreateManyInput[] = [...REFERENCE, ...authored.items];
 
 async function main() {
   const existing = await prisma.detItem.count({ where: { taskType: "INTERACTIVE_WRITING" } });

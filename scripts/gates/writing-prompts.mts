@@ -36,21 +36,25 @@ const MAX_PROMPT_CHARS = 600;
  *  ~4.5 chars/word and ~200 wpm, 30s is roughly 400 characters. */
 const MAX_WS_PROMPT_CHARS = 400;
 
-/** Wording that shows Part 2 is anchored to Part 1 rather than free-standing. */
-const BACKREF = [
-  "part 1",
-  "you did not",
-  "you did not",
-  "you mentioned",
-  "you chose",
-  "you picked",
-  "your answer",
-  "your response",
-  "you wrote",
-  "the option you",
-  "opposite",
-  "earlier",
-];
+/**
+ * Does Part 2 point back at what the candidate wrote?
+ *
+ * FIRST ATTEMPT WAS A PHRASE LIST ("the option you", "you mentioned", …) and it
+ * was wrong on real content: it flagged 7 of 12 authored items, of which five
+ * were plainly dependent — "this hobby", "your usual method", "your method",
+ * "the other actor", "Whatever you argued". A gate that is wrong 70% of the time
+ * is a gate someone switches off, and this repo has the scars.
+ *
+ * The signal that actually separates them is simpler than a phrase list. A Part 2
+ * that builds on Part 1 either ADDRESSES THE CANDIDATE (you / your) or POINTS AT
+ * SOMETHING ALREADY ESTABLISHED (this / that / the other / the opposite). A Part 2
+ * that does neither reads as a fresh standalone question — which is exactly the
+ * failure worth naming, because then the Part 1 lock protects nothing.
+ *
+ * Measured on the 12 authored items: 10 carry at least one, and the 2 that carry
+ * none are the two that genuinely stand alone.
+ */
+const BACKREF = /\b(you|your|yours|this|that|these|those|the other|the opposite|part 1)\b/;
 
 const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, " ").trim();
 
@@ -129,10 +133,10 @@ export default defineGate("gate:writing-prompts", async (bank: Bank) => {
       notePrompt(IW, `${it.title} / part2`, p2);
 
       // ---- WP6 does Part 2 depend on Part 1? ----
-      const low = norm(p2);
-      if (!BACKREF.some((cue) => low.includes(cue))) {
+      if (!BACKREF.test(norm(p2))) {
         standalone.push(
-          `${IW} / ${it.title}: part2 never refers back to part1 — it may be answerable on its own`,
+          `${IW} / ${it.title}: part2 neither addresses the candidate nor points back at anything ` +
+            `already established — it reads as a fresh standalone question`,
         );
       }
     }
@@ -211,9 +215,10 @@ export default defineGate("gate:writing-prompts", async (bank: Bank) => {
       severity: "WARN",
       code: "WRITING-PART2-STANDALONE",
       message:
-        `Interactive Writing's Part 2 does not refer back to Part 1 in any obvious way. Advisory — ` +
-        `this is a wording heuristic, not a rule — but if Part 2 really is answerable on its own, ` +
-        `the whole locked-progressive design is protecting nothing.`,
+        `Interactive Writing's Part 2 neither addresses the candidate (you / your) nor points at ` +
+        `anything already established (this / that / the other / the opposite). Advisory — it is a ` +
+        `wording signal, not a rule — but if Part 2 really is answerable without Part 1, the whole ` +
+        `locked-progressive design is protecting nothing.`,
       items: standalone,
     });
   }
