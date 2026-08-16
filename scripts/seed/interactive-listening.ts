@@ -42,21 +42,28 @@
 
 import { PrismaClient, Prisma } from "@prisma/client";
 import { isDirectRun } from "./_entry";
+import { loadAuthoredScenarios, type ILSource } from "./interactive-listening.loader";
 
 const prisma = new PrismaClient();
 
 const PROMPT =
   "Listen to the message and fill the gaps, reply at each turn, then summarize the conversation.";
 
-export const ITEMS: Prisma.DetItemCreateManyInput[] = [
+const GUIDANCE =
+  "You hear each part once. Type the exact word you hear in each gap, then choose the reply that keeps the conversation moving.";
+
+/** The reference conversation, authored inline and proven end to end before the
+ *  rest were written. Kept here rather than folded into the data file: it is the
+ *  worked example the authoring contract at the top of this file describes, and
+ *  it is what the gate fixtures are derived from. */
+const REFERENCE: Prisma.DetItemCreateManyInput[] = [
   {
     taskType: "INTERACTIVE_LISTENING",
     title: "Group project — booking the study room",
     prompt: PROMPT,
     difficulty: "CORE",
     topicTag: "study",
-    guidanceNote:
-      "You hear each part once. Type the exact word you hear in each gap, then choose the reply that keeps the conversation moving.",
+    guidanceNote: GUIDANCE,
     payload: {
       scenario: {
         register: "casual",
@@ -145,6 +152,24 @@ export const ITEMS: Prisma.DetItemCreateManyInput[] = [
     } as unknown as Prisma.InputJsonValue,
   },
 ];
+
+// Cowork's authored scenarios, when the data file has been dropped in. Absent =
+// the reference alone, which is exactly the state this type shipped in.
+const authored = loadAuthoredScenarios({
+  prompt: PROMPT,
+  guidanceNote: GUIDANCE,
+  reservedTitles: REFERENCE.map((i) => i.title),
+});
+
+/** Where the bank came from. Printed by `npm run seed:il-check` so "1 item"
+ *  never gets mistaken for "12 items and the gates passed". */
+export const IL_SOURCE: ILSource & { referenceCount: number; totalCount: number } = {
+  ...authored.source,
+  referenceCount: REFERENCE.length,
+  totalCount: REFERENCE.length + authored.items.length,
+};
+
+export const ITEMS: Prisma.DetItemCreateManyInput[] = [...REFERENCE, ...authored.items];
 
 async function main() {
   const existing = await prisma.detItem.count({

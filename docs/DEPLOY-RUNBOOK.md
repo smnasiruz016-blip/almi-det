@@ -45,12 +45,30 @@ Pending as of this writing:
 
 | Migration | What it does | Applied to prod? |
 |---|---|---|
-| `3_det_item_audio` | `DetItemAudio` table for pre-rendered TTS | ✅ applied 2026-08-15 |
+| `3_det_item_audio` | `DetItemAudio` table for pre-rendered TTS | ✅ applied |
 | `4_read_and_complete` | adds `READ_AND_COMPLETE` to the `DetTaskType` enum | ❌ pending |
 | `5_interactive_reading` | adds `INTERACTIVE_READING` to the `DetTaskType` enum | ❌ pending |
 | `6_fill_in_the_blanks` | adds `FILL_IN_THE_BLANKS` to the `DetTaskType` enum | ❌ pending |
 | `7_interactive_listening` | adds `INTERACTIVE_LISTENING` to the `DetTaskType` enum | ❌ pending |
 | _(one enum migration per future task type — append as they land)_ | | |
+
+**Verified against the live database 2026-08-16** (read-only probe, `.env.local` credentials):
+`_prisma_migrations` holds `0_init`, `1_comp_pro`, `2_reviews`, `3_det_item_audio` and nothing
+else. `DetTaskType` has exactly four labels — `READ_AND_SELECT`, `LISTEN_AND_TYPE`,
+`WRITE_ABOUT_THE_PHOTO`, `SPEAK_ABOUT_THE_PHOTO`. `DetItem` holds 72 rows, 18 of each of those
+four. `DetItemAudio` holds 18 rows, all with URLs. `AICostLedger` totals **$0.0152** across 3
+rows, all `listen-and-type.tts`. There are **3 users and 14 attempts** — this is live data.
+
+⚠️ **AUDIO CANNOT BE RENDERED BEFORE THE MIGRATE + SEED STEPS.**
+`scripts/generate-det-audio.mts` derives its work list from `prisma.detItem.findMany` — it can
+only render clips for items that EXIST IN A DATABASE. So the order is forced:
+
+    migrate deploy  ->  seed the type  ->  audio:render  ->  live: true
+
+and there is no way to pre-render audio for a type that has not been seeded. Since `.env.local`
+points at the endpoint that serves production, running that chain locally IS the production
+content deploy — it is not a separate, reversible step. Do it in the one careful session this
+runbook describes, in the order below, or not at all.
 
 `7_interactive_listening` adds **no audio table and no audio column**. `DetItemAudio`
 (migration 3) already keys on `(itemId, seg)` with an integer `seg`, which is exactly what a
@@ -85,6 +103,18 @@ Production holds the **OLD 18 gameable** Read and Select items: every one shares
 
 Run one per built type. Each seeder skips when rows already exist for that task type.
 
+**Interactive Listening reads its content from a data file.** The reference conversation is
+inline in `scripts/seed/interactive-listening.ts`; the authored scenarios come from
+`scripts/seed/interactive-listening.data.mjs` (default-exports the array), mapped by
+`interactive-listening.loader.ts`. When that file is absent the bank is the reference alone —
+which is a legitimate state, so nothing errors.
+
+- [ ] **`npm run seed:il-check` FIRST.** No database, no network. It prints whether the data file
+      is present, how many scenarios parsed, the title/level/topic/blank/turn table, and the
+      difficulty spread — and it EXITS NON-ZERO when the file is missing or the count is not the
+      expected 11. Run it before migrating anything: seeding one item and seeding twelve look
+      identical from the command's own output otherwise.
+
 | Type | Command | Items | Status |
 |---|---|---|---|
 | Read and Select | `npm run seed:read-select` | 18 | ⚠️ retire-and-replace, see B |
@@ -94,7 +124,7 @@ Run one per built type. Each seeder skips when rows already exist for that task 
 | Speak About the Photo | `npm run seed:speak` | 18 | ✅ in prod |
 | Fill in the Blanks | `npm run seed:fill-blanks` | 18 | ❌ pending (built + live) |
 | Interactive Reading | `npm run seed:interactive-reading` | 18 | ❌ pending (built + live) |
-| Interactive Listening | `npm run seed:interactive-listening` | 1 | ❌ pending — **`live: false`**, one reference conversation only (also needs an audio render pass, §D) |
+| Interactive Listening | `npm run seed:interactive-listening` | see `seed:il-check` | ❌ pending — **`live: false`** (also needs an audio render pass, §D) |
 | Interactive Writing | `npm run seed:interactive-writing` | — | ⬜ not built |
 | Writing Sample | `npm run seed:writing-sample` | — | ⬜ not built (ungraded) |
 | Speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
