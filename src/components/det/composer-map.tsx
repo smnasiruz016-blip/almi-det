@@ -30,6 +30,8 @@ import {
   type IWView,
 } from "@/components/det/InteractiveWritingComposer";
 import { WritingSampleComposer, type WSView } from "@/components/det/WritingSampleComposer";
+import { ReadAloudComposer, type ReadAloudView } from "@/components/det/ReadAloudComposer";
+import { speakingTaskFor } from "@/lib/det/speaking-tasks";
 
 type Args = { attemptId: string; prompt: string; title: string; payload: unknown };
 
@@ -100,6 +102,18 @@ const RENDERERS: Partial<Record<DetTaskType, (a: Args) => ReactNode>> = {
         imageUrl={p.imageUrl}
         alt={title}
         minWords={p.minWords}
+      />
+    );
+  },
+  // The recording limit comes from the speaking registry, not a literal here —
+  // it is the same number that bounds what one attempt can be billed at.
+  READ_ALOUD: ({ attemptId, prompt, payload }) => {
+    return (
+      <ReadAloudComposer
+        attemptId={attemptId}
+        prompt={prompt}
+        view={payload as ReadAloudView}
+        recordSeconds={speakingTaskFor("READ_ALOUD")?.recordSeconds ?? 30}
       />
     );
   },

@@ -125,6 +125,7 @@ export async function loadBank(): Promise<Bank> {
       import("../seed/interactive-writing"),
       import("../seed/writing-sample"),
       import("../seed/speak-about-photo"),
+      import("../seed/read-aloud"),
     ]);
     raw = mods.flatMap((m) => m.ITEMS as unknown as Record<string, unknown>[]);
   }

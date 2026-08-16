@@ -76,7 +76,19 @@ export async function transcribeAudio(args: {
   filename: string;
   durationSeconds: number;
   userId: string | null;
+  /**
+   * AICostLedger label for this call. Defaults to the photo task, which was the
+   * only caller when this was written.
+   *
+   * PARAMETERISED because Read Aloud transcribes too, and every speaking type
+   * added after it will. Leaving the label hardcoded would make the ledger say
+   * "speak-about-photo" for a Read Aloud call, and a per-feature reconciliation
+   * would be reading a number that is not about the thing it names — the same
+   * accounting defect already fixed once in the TTS generator.
+   */
+  feature?: string;
 }): Promise<string> {
+  const feature = args.feature ?? "speak-about-photo.transcribe";
   const form = new FormData();
   form.append("file", args.file, args.filename);
   form.append("model", "whisper-1");
@@ -91,7 +103,7 @@ export async function transcribeAudio(args: {
   } catch (err) {
     await recordTranscriptionCost({
       userId: args.userId,
-      feature: "speak-about-photo.transcribe",
+      feature,
       model: "whisper-1",
       durationSeconds: args.durationSeconds,
       success: false,
@@ -102,7 +114,7 @@ export async function transcribeAudio(args: {
   if (!res.ok) {
     await recordTranscriptionCost({
       userId: args.userId,
-      feature: "speak-about-photo.transcribe",
+      feature,
       model: "whisper-1",
       durationSeconds: args.durationSeconds,
       success: false,
@@ -112,7 +124,7 @@ export async function transcribeAudio(args: {
   }
   await recordTranscriptionCost({
     userId: args.userId,
-    feature: "speak-about-photo.transcribe",
+    feature,
     model: "whisper-1",
     durationSeconds: args.durationSeconds,
     success: true,

@@ -23,6 +23,7 @@ import { ITEMS as WRITE_ABOUT_THE_PHOTO } from "./write-about-photo";
 import { ITEMS as INTERACTIVE_WRITING } from "./interactive-writing";
 import { ITEMS as WRITING_SAMPLE } from "./writing-sample";
 import { ITEMS as SPEAK_ABOUT_THE_PHOTO } from "./speak-about-photo";
+import { ITEMS as READ_ALOUD } from "./read-aloud";
 
 const prisma = new PrismaClient();
 const DRY = process.argv.includes("--dry");
@@ -38,6 +39,7 @@ const ALL = [
   ...INTERACTIVE_WRITING,
   ...WRITING_SAMPLE,
   ...SPEAK_ABOUT_THE_PHOTO,
+  ...READ_ALOUD,
 ];
 
 const key = (taskType: string, title: string) => `${taskType}::${title}`;

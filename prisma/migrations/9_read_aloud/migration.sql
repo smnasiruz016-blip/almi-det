@@ -1,0 +1,16 @@
+-- Read Aloud — the first Speaking type after Speak About the Photo, and the
+-- cheapest: the taker reads a KNOWN sentence aloud and the transcript is scored
+-- against it word by word. No AI rater, so an attempt costs one Whisper call and
+-- nothing else.
+--
+-- ENUM ONLY. Speaking reuses DetItem/DetAttempt and the existing AICostLedger;
+-- the per-user daily cap counts DetAttempt rows, so it needs no new column
+-- either.
+--
+-- Hand-written rather than `prisma migrate dev` (Neon shadow-database flake);
+-- applied with `prisma migrate deploy`.
+--
+-- Postgres 12+ permits ALTER TYPE ... ADD VALUE inside a transaction provided
+-- the new label is not USED in the same transaction. This migration only adds
+-- the label; seeding runs separately.
+ALTER TYPE "DetTaskType" ADD VALUE IF NOT EXISTS 'READ_ALOUD';

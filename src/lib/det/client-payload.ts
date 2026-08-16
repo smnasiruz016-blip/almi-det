@@ -185,6 +185,14 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
   // someone believe otherwise has misled them about the exam.
   WRITING_SAMPLE: (p) => projectWSView(p) as unknown as ClientPayload,
 
+  // THE ONLY TYPE WITH NOTHING TO WITHHOLD, and that is a decision rather than
+  // an oversight. Read Aloud shows the sentence because READING IT ALOUD IS THE
+  // TASK — the target is the stimulus, and the grader compares the transcript
+  // against the same text the taker can see. A future speaking type with a
+  // rubric will have a server-only reference like the writing types do; this one
+  // genuinely has no key.
+  READ_ALOUD: (p) => ({ text: p.text }),
+
   WRITE_ABOUT_THE_PHOTO: (p) => ({
     imageUrl: p.imageUrl,
     minWords: p.minWords,

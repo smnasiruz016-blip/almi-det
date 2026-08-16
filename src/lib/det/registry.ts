@@ -194,6 +194,22 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "Read the prompt for 30 seconds, then write 100-130+ words in five minutes. The real test sends this to universities unscored — here you get feedback on it.",
     live: false,
   },
+  // DETERMINISTIC and PAID — the two are not in tension here. Grading is
+  // arithmetic on two strings, so `scoringMode` is honest; the paid gate comes
+  // from being a SPEAKING task, which both submit routes check independently of
+  // scoringMode. Labelling it "AI" to buy the paid gate would have been a lie
+  // about how it is marked.
+  READ_ALOUD: {
+    taskType: "READ_ALOUD",
+    slug: "read-aloud",
+    label: "Read Aloud",
+    skill: "SPEAKING",
+    scoringMode: "DETERMINISTIC",
+    feedsSubscores: SKILL_FEEDS.SPEAKING,
+    blurb:
+      "Read one sentence aloud. We transcribe the recording and check it word by word against the sentence — this measures what was heard, not your accent.",
+    live: false,
+  },
   SPEAK_ABOUT_THE_PHOTO: {
     taskType: "SPEAK_ABOUT_THE_PHOTO",
     slug: "speak-about-the-photo",
@@ -217,6 +233,7 @@ export const TASK_ORDER: DetTaskType[] = [
   "WRITE_ABOUT_THE_PHOTO",
   "INTERACTIVE_WRITING",
   "WRITING_SAMPLE",
+  "READ_ALOUD",
   "SPEAK_ABOUT_THE_PHOTO",
 ];
 

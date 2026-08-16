@@ -161,6 +161,7 @@ enum DetTaskType {
   INTERACTIVE_WRITING // Writing,   AI (two locked parts, progressive)
   WRITING_SAMPLE // Writing,   AI (unscored in the real DET; graded here for practice)
   SPEAK_ABOUT_THE_PHOTO // Speaking,  AI (Phase 3 — Whisper transcript)
+  READ_ALOUD // Speaking,  deterministic (Whisper transcript vs a KNOWN target)
 }
 
 enum DetAttemptStatus {

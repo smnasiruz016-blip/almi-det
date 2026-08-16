@@ -27,6 +27,10 @@ import ilClozeAudio from "./il-cloze-audio.mjs";
 import ilAudioCoverage from "./il-audio-coverage.mjs";
 import writingLeak from "./writing-leak.mjs";
 import writingPrompts from "./writing-prompts.mjs";
+import speakingAccess from "./speaking-access.mjs";
+import speakingMetered from "./speaking-metered.mjs";
+import speakingLeak from "./speaking-leak.mjs";
+import readAloudContent from "./read-aloud-content.mjs";
 
 const GATES: GateDef[] = [
   minItems,
@@ -42,6 +46,10 @@ const GATES: GateDef[] = [
   ilAudioCoverage,
   writingLeak,
   writingPrompts,
+  speakingAccess,
+  speakingMetered,
+  speakingLeak,
+  readAloudContent,
 ];
 
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice("--only=".length);

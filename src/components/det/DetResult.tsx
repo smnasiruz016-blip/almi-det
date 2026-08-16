@@ -55,6 +55,11 @@ import {
   WRITING_TRAIT_LABEL,
   type WritingFeedback,
 } from "@/lib/det/tasks/writing-rater";
+import {
+  readAloudPayloadSchema,
+  readAloudResponseSchema,
+  scoreReadAloud,
+} from "@/lib/det/tasks/read-aloud";
 import type {
   WriteAboutPhotoFeedback,
   TraitFeedback as TraitFeedbackShape,
@@ -185,6 +190,43 @@ function ListenAndTypeReview({ item, attempt }: { item: DetItem; attempt: DetAtt
       </div>
       <p className="text-xs text-almi-text-muted">
         {detail.matched} of {detail.total} words matched (case, punctuation and small typos forgiven).
+      </p>
+    </div>
+  );
+}
+
+// Read Aloud shows WHAT WAS HEARD against what was on screen. It deliberately
+// does not phrase this as a pronunciation verdict: the score is a word match on
+// a machine transcript, and presenting that as an accent judgement would claim a
+// measurement we do not make.
+function ReadAloudReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = readAloudPayloadSchema.safeParse(item.payload);
+  const response = readAloudResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreReadAloud(payload.data, response.data);
+  return (
+    <div className="space-y-3 text-sm">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">The sentence</p>
+        <p className="mt-1 text-almi-ink">{detail.target}</p>
+      </div>
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          What we heard
+        </p>
+        <p className="mt-1 text-almi-text">{detail.transcript.trim() || "(nothing)"}</p>
+      </div>
+      {detail.missed.length > 0 && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-almi-accent-deep">
+            Words not picked up
+          </p>
+          <p className="mt-1 text-almi-text">{detail.missed.join(", ")}</p>
+        </div>
+      )}
+      <p className="text-xs text-almi-text-muted">
+        {detail.matched} of {detail.total} words matched, in order. This checks which words came
+        through the transcript — it is not a rating of your accent.
       </p>
     </div>
   );
@@ -509,6 +551,7 @@ const REVIEWERS: Record<
     <InteractiveWritingReview item={item} attempt={attempt} />
   ),
   WRITING_SAMPLE: ({ item, attempt }) => <WritingSampleReview item={item} attempt={attempt} />,
+  READ_ALOUD: ({ item, attempt }) => <ReadAloudReview item={item} attempt={attempt} />,
   SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,
 };
 

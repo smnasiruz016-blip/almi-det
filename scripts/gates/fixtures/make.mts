@@ -620,6 +620,64 @@ async function main(): Promise<void> {
     write("wr-red-prompt-duplicate.json", items, "two Writing Sample items sharing one prompt");
   }
 
+  // ================= READ_ALOUD =================
+  //
+  // The access and metering gates are properties of CODE — no JSON can make an
+  // unpaid user slip through or a transcription skip the ledger. Those are proven
+  // by sabotaging the source; recorded in docs/SPEAKING-GATE-PROOFS.md. These
+  // fixtures cover what a bad SENTENCE can do.
+  type RAItem = BankItem & { payload: Record<string, unknown> };
+  const readAloudOnly = (mutate: (it: RAItem) => void): BankItem[] => {
+    const items = clone(all);
+    const it = items.find((i) => i.taskType === "READ_ALOUD") as RAItem | undefined;
+    if (!it) throw new Error("no READ_ALOUD item in the bank to derive a fixture from");
+    mutate(it);
+    return items;
+  };
+
+  write(
+    "ra-red-empty.json",
+    readAloudOnly((it) => {
+      it.payload.text = "   ";
+    }),
+    "an empty Read Aloud sentence",
+  );
+
+  write(
+    "ra-red-toolong.json",
+    readAloudOnly((it) => {
+      it.payload.text = `${"The committee reconvened to reconsider the postponed recommendation once more. ".repeat(4)}`;
+    }),
+    "a sentence far longer than one breath (past the recording limit)",
+  );
+
+  write(
+    "ra-red-noterminal.json",
+    readAloudOnly((it) => {
+      it.payload.text = String(it.payload.text).replace(/[.!?]+$/, "");
+    }),
+    "a sentence with no terminal punctuation",
+  );
+
+  write(
+    "ra-red-notword.json",
+    readAloudOnly((it) => {
+      it.payload.text = "The children played zqxvlorn in the park after school.";
+    }),
+    "a sentence containing an unpronounceable non-word",
+  );
+
+  {
+    // A duplicate needs TWO items, so this clones one under a new title — the
+    // same reason gate:writing-prompts' duplicate fixture had to add an item.
+    const items = clone(all);
+    const ra = items.find((i) => i.taskType === "READ_ALOUD") as RAItem;
+    const twin = JSON.parse(JSON.stringify(ra)) as RAItem;
+    twin.title = `${ra.title} (second)`;
+    items.push(twin);
+    write("ra-red-duplicate.json", items, "two Read Aloud items sharing one sentence");
+  }
+
   console.log("");
 }
 

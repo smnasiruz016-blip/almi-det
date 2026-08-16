@@ -51,6 +51,7 @@ Pending as of this writing:
 | `6_fill_in_the_blanks` | adds `FILL_IN_THE_BLANKS` to the `DetTaskType` enum | ❌ pending |
 | `7_interactive_listening` | adds `INTERACTIVE_LISTENING` to the `DetTaskType` enum | ❌ pending |
 | `8_writing_types` | adds `INTERACTIVE_WRITING` and `WRITING_SAMPLE` to the `DetTaskType` enum | ❌ pending |
+| `9_read_aloud` | adds `READ_ALOUD` to the `DetTaskType` enum | ❌ pending |
 | _(one enum migration per future task type — append as they land)_ | | |
 
 **Verified against the live database 2026-08-16** (read-only probe, `.env.local` credentials):
@@ -136,7 +137,8 @@ same shared loader (`scripts/seed/_data-loader.ts`). The reference item of each 
 | Interactive Listening | `npm run seed:interactive-listening` | 12 | ❌ pending — **`live: false`** (also needs an audio render pass, §D) |
 | Interactive Writing | `npm run seed:interactive-writing` | 12 | ❌ pending — **`live: false`**; no audio needed |
 | Writing Sample | `npm run seed:writing-sample` | 12 | ❌ pending — **`live: false`**. Unscored in the real DET; graded here, and the composer says so |
-| Speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
+| Read Aloud | `npm run seed:read-aloud` | 18 | ❌ pending — **`live: false`**; PAID-ONLY + daily cap, see §G |
+| Other speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
 | _(append one row per new type as it lands)_ | | | |
 
 ---
@@ -219,3 +221,32 @@ not in this change.
 - **`live: false` types** are invisible to the practice hub and excluded from `MOCK_ORDER`
   (which is derived). Flipping `live: true` without seeding leaves the hub offering a task that
   dead-ends on an empty pool.
+
+---
+
+## G. Speaking — paid-only, capped, and metered
+
+Speaking is the only skill where an attempt **costs money before it can be graded**, so it ships
+with cost control rather than acquiring it later.
+
+- **PAID-ONLY.** `hasPaidAccess()` is checked before anything is spent, on BOTH routes that can
+  accept a recording (`/api/det/speak/submit` and `/api/det/submit`, where Speak About the Photo
+  still arrives).
+- **PER-USER DAILY CAP** — `SPEAKING_DAILY_CAP` in `src/lib/det/speaking.ts`, currently **40
+  attempts per user per day across all speaking types**. One constant, one place to tune it. At
+  whisper-1's $0.006/minute and a ~20-second Read Aloud recording that is roughly **$0.08 per user
+  per day** — it exists to bound a runaway loop, not to ration honest practice.
+- **EVERY transcription metered**, one `AICostLedger` row per call, on success, HTTP failure and
+  network failure alike. Each speaking type bills to its **own** feature label
+  (`read-aloud.transcribe`, `speak-about-photo.transcribe`) so a per-feature total is about the
+  thing it names.
+- **Read Aloud costs one Whisper call and no rater** — grading is arithmetic against the known
+  sentence. It is the cheapest speaking type, which is why it was built first.
+
+- [ ] Before enabling speaking in production, re-read the cap against real usage: 40/user/day is a
+      guess made with zero speaking attempts on record.
+- [ ] `npm run seed:speaking-check` FIRST — no database, no network, **no transcription**. Prints
+      the item table, the difficulty spread, the cap and each type's ledger label.
+- [ ] After the first live attempts, confirm `AICostLedger` shows rows under `read-aloud.transcribe`
+      and that the count matches the attempts. An empty result means zero attempts, not a broken
+      query.

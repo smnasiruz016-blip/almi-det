@@ -13,6 +13,13 @@ import { DET_HANDLERS, DET_TASKS } from "@/lib/det/registry";
 import { fractionToRange } from "@/lib/det/scale";
 import { subscoreEstimateFromSkill } from "@/lib/det/subscores";
 import { transcribeAudio } from "@/lib/ai/openai";
+import {
+  SPEAKING_DAILY_CAP,
+  SPEAKING_UNPAID_MESSAGE,
+  speakingCapMessage,
+  startOfDay,
+} from "@/lib/det/speaking";
+import { isSpeakingTask, speakingTaskFor, speakingTaskTypes } from "@/lib/det/speaking-tasks";
 
 export const runtime = "nodejs";
 
@@ -73,6 +80,36 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
+  // SPEAKING GUARDS, before anything is spent.
+  //
+  // Speak About the Photo still submits through this route rather than
+  // /api/det/speak/submit, and it transcribes — so without this it would be the
+  // one microphone task with no daily cap, and the cap would bound every
+  // speaking type except the one that has been live longest. The kernel owns the
+  // numbers and the wording; this is the same guard, applied where that type
+  // actually arrives.
+  if (isSpeakingTask(attempt.taskType)) {
+    if (!hasPaidAccess(user)) {
+      return NextResponse.json(
+        { ok: false, error: SPEAKING_UNPAID_MESSAGE, upgradeUrl: "/pricing" },
+        { status: 402 },
+      );
+    }
+    const usedToday = await prisma.detAttempt.count({
+      where: {
+        userId: user.id,
+        taskType: { in: speakingTaskTypes() },
+        submittedAt: { gte: startOfDay(new Date()) },
+      },
+    });
+    if (usedToday >= SPEAKING_DAILY_CAP) {
+      return NextResponse.json(
+        { ok: false, error: speakingCapMessage(SPEAKING_DAILY_CAP) },
+        { status: 429 },
+      );
+    }
+  }
+
   // AI feedback is a paid feature; objective auto-marking is free practice.
   if (handler.mode === "AI" && !hasPaidAccess(user)) {
     return NextResponse.json(
@@ -89,6 +126,9 @@ export async function POST(req: Request): Promise<NextResponse> {
         filename: "speech.webm",
         durationSeconds: audio.durationSeconds,
         userId: user.id,
+        // Explicit rather than relying on the default, so this type's ledger
+        // label comes from the same registry every other speaking type reads.
+        feature: speakingTaskFor(attempt.taskType)?.transcribeFeature,
       });
       responseValue = { transcript };
     } catch (err) {
