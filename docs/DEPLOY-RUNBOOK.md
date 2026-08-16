@@ -130,6 +130,17 @@ opener is silent by design). Two things follow:
 - [ ] After rendering, confirm `DetItemAudio` holds **5 rows per Interactive Listening item**
       with segs `0, 2, 3, 4, 5` (seg 1 is the opener and is deliberately absent).
 
+**The clips are released one stage at a time.** `toClientPayload()` returns Stage A only; each
+turn's URL arrives from `POST /api/det/il/advance` when that turn is reached. So an item whose
+audio has not been rendered still runs — every segment projects `audioUrl: null` and the
+composer says so rather than dead-ending — and a taker cannot read ahead to later clips.
+
+⚠️ **"Listen once" is enforced for the honest path, not absolutely.** Blob audio is stored
+`access: "public"`, so a URL that has already been released can be re-fetched by anyone reading
+the network tab. Progressive delivery narrows that to the single turn currently in play; it does
+not make replay impossible. Closing it fully needs short-lived signed URLs (private Blob) and is
+not in this change.
+
 ---
 
 ## E. Verification — the numbers, not the vibes

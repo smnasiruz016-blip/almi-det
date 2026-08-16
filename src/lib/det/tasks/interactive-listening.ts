@@ -56,10 +56,34 @@ export const interactiveListeningPayloadSchema = z.object({
   }),
 });
 
+/**
+ * Where the taker has got to. Stored ON THE RESPONSE, because the response is
+ * the one row the taker's own progress belongs to and it is already written on
+ * every stage submission — a second table would be a second thing to keep in
+ * step.
+ *
+ * This is the SERVER'S copy of the stage lock. The composer enforces the same
+ * sequence in the UI, but a UI lock is a courtesy: it stops an honest taker
+ * skipping ahead and stops nobody else. `stage` is what makes Stage A actually
+ * final — /api/det/il/advance refuses a second Stage A submission outright, so
+ * the typed blanks cannot be revised after the conversation has been heard.
+ */
+export const ilProgressSchema = z.object({
+  stage: z.enum(["A", "B", "C"]),
+  /** Index of the turn currently released. -1 before Stage B starts. */
+  turn: z.number().int(),
+});
+
+export type ILProgress = z.infer<typeof ilProgressSchema>;
+
+export const IL_PROGRESS_START: ILProgress = { stage: "A", turn: -1 };
+
 export const interactiveListeningResponseSchema = z.object({
   filled: z.record(z.string(), z.string()).default({}),
   chosen: z.record(z.string(), z.number().int()).default({}),
   summary: z.string().default(""),
+  /** Optional so a response written before this existed still parses. */
+  progress: ilProgressSchema.optional(),
 });
 
 // ------------------------------------------------------- audio segments ----

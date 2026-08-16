@@ -100,11 +100,20 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
   }
 
+  // Multi-stage tasks record their earlier answers server-side as they go, so
+  // what the client posts at the end is not the whole response. The handler
+  // reconciles the two; without this the last request would overwrite every
+  // stored answer and the stage locks would protect nothing. Single-stage tasks
+  // declare no hook and their posted response is used verbatim, as before.
+  const scoredResponse = handler.prepareResponse
+    ? handler.prepareResponse({ stored: attempt.response, incoming: responseValue })
+    : responseValue;
+
   let run;
   try {
     run = await handler.run({
       payload: attempt.item.payload,
-      response: responseValue,
+      response: scoredResponse,
       userId: user.id,
     });
   } catch (err) {
@@ -124,7 +133,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     where: { id: attempt.id },
     data: {
       status: "SCORED",
-      response: (responseValue ?? {}) as Prisma.InputJsonValue,
+      response: (scoredResponse ?? {}) as Prisma.InputJsonValue,
       pointsEarned: run.pointsEarned,
       pointsMax: run.pointsMax,
       subscoreEstimate: subscoreEstimate as unknown as Prisma.InputJsonValue,

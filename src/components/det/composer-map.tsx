@@ -21,6 +21,10 @@ import {
   type ClientSpan,
 } from "@/components/det/InteractiveReadingComposer";
 import { SpeakAboutPhotoComposer } from "@/components/det/SpeakAboutPhotoComposer";
+import {
+  InteractiveListeningComposer,
+  type ILView,
+} from "@/components/det/InteractiveListeningComposer";
 
 type Args = { attemptId: string; prompt: string; title: string; payload: unknown };
 
@@ -53,6 +57,18 @@ const RENDERERS: Partial<Record<DetTaskType, (a: Args) => ReactNode>> = {
   },
   LISTEN_AND_TYPE: ({ attemptId, prompt }) => {
     return <ListenAndTypeComposer attemptId={attemptId} prompt={prompt} />;
+  },
+  // The "payload" here is a STAGE VIEW, not the item — it carries only what the
+  // taker has reached. Later turns and the summary prompt arrive from
+  // /api/det/il/advance as each stage is submitted.
+  INTERACTIVE_LISTENING: ({ attemptId, prompt, payload }) => {
+    return (
+      <InteractiveListeningComposer
+        attemptId={attemptId}
+        prompt={prompt}
+        view={payload as ILView}
+      />
+    );
   },
   WRITE_ABOUT_THE_PHOTO: ({ attemptId, prompt, title, payload }) => {
     const p = payload as { imageUrl: string; minWords: number };

@@ -15,21 +15,54 @@ never authored, so it cannot drift away from the shape of real content.
 GATE_FIXTURE=scripts/gates/fixtures/<name>.json npx tsx scripts/gates/all.mts --only=<gate>
 ```
 
-**CODE SABOTAGE** — three checks describe properties of *code*, not of content, and no JSON file
+**CODE SABOTAGE** — five checks describe properties of *code*, not of content, and no JSON file
 can trip them. For those the source was edited, the gate run, the output recorded, and the edit
 reverted. Where that is the case it is said so plainly below rather than dressed up as a fixture.
 
 ---
 
+## The delivery model these checks defend
+
+Interactive Listening does **not** ship its item to the browser. `toClientPayload()` returns
+Stage A only — the scenario, the gapped transcript and the scenario clip. Each turn is released
+by `POST /api/det/il/advance` when it is reached, and the summary prompt last of all.
+
+That is not cosmetic. Several reply options legitimately name words that were blanked in Part 1
+("The library usually closes at five-thirty" against a gap keyed `library`), because it is one
+conversation and topic words recur — that is what makes it coherent. Under a single payload,
+Part 1 would be answerable by reading the wire. Under progressive delivery it is not, and the
+protection is structural rather than a rule about vocabulary.
+
+Measured on the reference conversation: the Stage A wire is **770 bytes**; the stored payload is
+**2,905**. The difference is the part of the test that has not happened yet.
+
+`prepareResponse` on the registry handler closes the other end: Parts 1 and 2 are read from the
+database at scoring time, so the final submit cannot post its own answers for stages that are
+already locked.
+
+---
+
 ## gate:il-leak
+
+Interactive Listening is delivered **progressively**, so this gate checks three
+projections per item — Stage A, every turn view, and the summarize view. The turns never
+pass through `toClientPayload()`, so a gate that only looked there would be blind to the half
+of the wire that carries the conversation.
 
 | Check | Proof | Output on the broken bank |
 |---|---|---|
 | IL-L3 server-only value on the wire | fixture `il-red-leak-line.json` — a turn's spoken line pasted into one of its options | `[FAIL] IL-LEAK-VALUE` · `turns[2].line: value reaches the client verbatim` |
 | IL-L1 forbidden key | **code sabotage** — projector emits `line`, `correct`, `missing`, `reference`, `keyPoints` | `[FAIL] IL-LEAK-KEY-FIELD` — all five named separately: `"line" appears as a key in the client payload`, and the same for `correct`, `reference`, `keyPoints`, `missing` |
-| IL-L2 field whitelist | same sabotage | `[FAIL] IL-LEAK-SHAPE` · 16 problems, e.g. `complete.text[1]: unexpected field "missing" projected` |
+| IL-L2 field whitelist | same sabotage | `[FAIL] IL-LEAK-SHAPE` · e.g. `complete.text[1]: unexpected field "missing" projected` |
+| IL-L5 nothing released early | **code sabotage** — `projectILView` regressed to the single-payload model (`turns` emitted in Stage A) | `[FAIL] IL-STAGE-RELEASED-EARLY` · 15 problems · `Stage A: turns[0].options[0] is already on the wire before Part 1 is submitted` — plus `IL-LEAK-SHAPE: Stage A (root): unexpected field "turns" projected` |
+| IL-L6 one turn per turn view | **code sabotage** — `projectILTurn` appends the next turn's options | `[FAIL] IL-STAGE-RELEASED-EARLY` · 12 problems · `turn 1: carries an option belonging to turn 2` — plus `IL-OPTIONS-NOT-PERMUTED` |
 
-The sabotage was reverted and the gate re-run green before committing.
+Every sabotage was reverted and the gate re-run green before committing.
+
+**IL-L5 is the check that guards the delivery model.** It is what would catch a future
+change quietly reverting Interactive Listening to a single payload — which would look like a
+simplification and would silently turn Part 1 back into a search through the wire, because
+several reply options name the words that were blanked.
 
 **Why the key fields are checked structurally and not by scanning the wire.** The blanked word
 `library` appears legitimately inside a turn option (*"The library usually closes at

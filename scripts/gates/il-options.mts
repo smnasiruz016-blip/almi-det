@@ -62,7 +62,9 @@ export default defineGate("gate:il-options", async (bank: Bank) => {
   const { turnOrder, scoreInteractiveListeningObjective } = await import(
     "../../src/lib/det/tasks/interactive-listening"
   );
-  const { toClientPayload } = await import("../../src/lib/det/client-payload");
+  // The turn views, not toClientPayload: Interactive Listening is delivered
+  // progressively, so the options never appear in the initial payload at all.
+  const { projectILTurn } = await import("../../src/lib/det/il-stages");
 
   const roundTrip: string[] = [];
   const malformed: string[] = [];
@@ -72,7 +74,7 @@ export default defineGate("gate:il-options", async (bank: Bank) => {
   let longestCorrect = 0;
   let turnCount = 0;
 
-  for (const { title, payload, item } of il.parsed) {
+  for (const { title, payload } of il.parsed) {
     // ---- O1 conversation structure ----
     if (payload.turns.length < MIN_TURNS || payload.turns.length > MAX_TURNS) {
       structure.push(
@@ -124,8 +126,7 @@ export default defineGate("gate:il-options", async (bank: Bank) => {
     // ---- O4 round trip through the real projection and the real scorer ----
     let shown: { options: string[] }[];
     try {
-      shown = (toClientPayload("INTERACTIVE_LISTENING" as never, item.payload).turns ??
-        []) as { options: string[] }[];
+      shown = payload.turns.map((_, i) => projectILTurn(payload, i) ?? { options: [] });
     } catch (e) {
       roundTrip.push(
         `${title}: projection threw, so no answer can be graded — ${e instanceof Error ? e.message : String(e)}`,

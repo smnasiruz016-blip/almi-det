@@ -197,7 +197,7 @@ function InteractiveListeningReview({ item, attempt }: { item: DetItem; attempt:
     <div className="space-y-5">
       <div>
         <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">
-          What you heard — the gaps
+          Part 1 · the gaps you typed
         </p>
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {detail.blanks.map((b) => (
@@ -221,7 +221,7 @@ function InteractiveListeningReview({ item, attempt }: { item: DetItem; attempt:
       </div>
 
       <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Your replies</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Part 2 · your replies, turn by turn</p>
         <div className="mt-2 space-y-2">
           {detail.turns.map((t) => (
             <div
@@ -246,10 +246,31 @@ function InteractiveListeningReview({ item, attempt }: { item: DetItem; attempt:
         </div>
       </div>
 
-      {fb && (
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Your summary</p>
-          <div className="mt-2">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Part 3 · your summary</p>
+        <p className="mt-2 rounded-lg border border-almi-bg-peach bg-almi-paper px-3 py-2 text-sm text-almi-text">
+          {response.data.summary.trim() || "(nothing written)"}
+        </p>
+
+        {/* The key points are the rater's checklist. Shown only HERE, after
+            scoring — during the attempt they are withheld, because knowing what
+            the summary must cover is knowing what to listen for. */}
+        <p className="mt-3 text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          What a full summary covers
+        </p>
+        <ul className="mt-1 space-y-1 text-sm text-almi-text">
+          {payload.data.summarize.keyPoints.map((k, i) => (
+            <li key={i} className="flex gap-2">
+              <span aria-hidden className="text-almi-teal">
+                ·
+              </span>
+              {k}
+            </li>
+          ))}
+        </ul>
+
+        {fb && (
+          <div className="mt-4">
             <TraitFeedback
               traits={[
                 ["taskRelevance", fb.taskRelevance],
@@ -260,8 +281,8 @@ function InteractiveListeningReview({ item, attempt }: { item: DetItem; attempt:
               fb={fb}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

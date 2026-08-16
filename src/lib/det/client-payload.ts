@@ -42,15 +42,14 @@
 //                          AI rater's target, the same class of leak as imageAlt.
 //                          The options DO cross (the taker must choose among
 //                          them) but PERMUTED, and the browser is never told
-//                          which position is correct.
+//                          which position is correct. This type also withholds
+//                          by TIME, not only by field: the projection returns
+//                          the current stage only, so later turns and the
+//                          summary prompt are not on the wire at all until they
+//                          are reached. See src/lib/det/il-stages.ts.
 
 import type { DetTaskType } from "@prisma/client";
-import {
-  segLabelToNumber,
-  turnOrder,
-  blankId,
-  interactiveListeningPayloadSchema,
-} from "@/lib/det/tasks/interactive-listening";
+import { projectILView } from "@/lib/det/il-stages";
 
 export type ClientPayload = Record<string, unknown>;
 
@@ -62,8 +61,19 @@ export type ClientPayload = Record<string, unknown>;
  * stimulus IS audio can only be assembled here, at the render seam, from a row
  * the generator wrote. An absent entry projects null, and the composer shows
  * "audio not ready" rather than an item that looks answerable and is not.
+ *
+ * `stored` is DetAttempt.response — how far through a multi-stage task the taker
+ * has got. Only Interactive Listening reads it, and only to decide which stage
+ * to release; it is the taker's own recorded answers, never a key.
  */
-export type ProjectionContext = { audio?: Record<number, string> };
+export type ProjectionContext = { audio?: Record<number, string>; stored?: unknown };
+
+/** Task types whose projection needs DetItemAudio rows. The render seam checks
+ *  this before spending a query, so the six types with no projected audio do not
+ *  pay for one. */
+export function needsAudioContext(taskType: DetTaskType): boolean {
+  return taskType === "INTERACTIVE_LISTENING";
+}
 
 type Projector = (
   payload: Record<string, unknown>,
@@ -88,61 +98,19 @@ const projectCloze: Projector = (p) => ({
 });
 
 /**
- * INTERACTIVE_LISTENING.
+ * INTERACTIVE_LISTENING — PROGRESSIVE, unlike every other type here.
  *
- * Built as a WHITELIST literal — every field named below is one someone decided
- * the browser may have. Nothing is spread, nothing is deleted from a copy: a
- * delete-based projection ships whatever field an author adds next.
+ * The others project their whole stimulus, because the taker is meant to have
+ * all of it. A conversation has an order, and the order is the task: the reply
+ * options for later turns name words that were blanked in Part A, each clip is
+ * meant to play once, and the summary prompt tells the taker what to listen for.
  *
- * Part A projects the literal chunks and a bare `{kind:"blank", id}` marker.
- * Note what is NOT there: no visiblePrefix and no blankLength, both of which the
- * reading cloze DOES project. Here the audio supplies the word, so a prefix or a
- * letter count would let the gap be solved by spelling instead of by listening —
- * it would be a reading item wearing a listening item's name.
- *
- * Part B projects each turn's options through turnOrder(), and emits the
- * `index` the client must post back. It does not emit which position is right;
- * the server re-derives the permutation at grading time.
+ * So this returns only the stage the taker has actually reached. The turns and
+ * the summary prompt are released by /api/det/il/advance as each stage is
+ * submitted; they are NOT in this payload. See src/lib/det/il-stages.ts.
  */
-const projectInteractiveListening: Projector = (raw, ctx) => {
-  const parsed = interactiveListeningPayloadSchema.safeParse(raw);
-  if (!parsed.success) {
-    // Fail CLOSED. Returning the raw payload here would undo the whole file.
-    throw new Error(
-      `INTERACTIVE_LISTENING payload does not parse — refusing to project it. ` +
-        `${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
-    );
-  }
-  const p = parsed.data;
-  const audio = ctx.audio ?? {};
-
-  let blanks = 0;
-  const text = p.complete.text.map((c) =>
-    typeof c === "string"
-      ? { kind: "text" as const, text: c }
-      : { kind: "blank" as const, id: blankId(blanks++) },
-  );
-
-  return {
-    scenario: {
-      register: p.scenario.register,
-      setting: p.scenario.setting,
-      speakerName: p.scenario.speakerName,
-      youAre: p.scenario.youAre,
-    },
-    complete: {
-      audioUrl: audio[segLabelToNumber(p.complete.seg)] ?? null,
-      text,
-    },
-    turns: p.turns.map((t, i) => ({
-      index: i,
-      opener: Boolean(t.opener),
-      audioUrl: t.seg === null ? null : (audio[segLabelToNumber(t.seg)] ?? null),
-      options: turnOrder(p, i).map((authored) => t.options[authored]),
-    })),
-    summarize: { prompt: p.summarize.prompt },
-  };
-};
+const projectInteractiveListening: Projector = (raw, ctx) =>
+  projectILView(raw, { audio: ctx.audio, stored: ctx.stored }) as unknown as ClientPayload;
 
 const PROJECTORS: Record<DetTaskType, Projector> = {
   READ_AND_SELECT: (p) => ({

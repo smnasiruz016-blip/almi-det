@@ -46,6 +46,7 @@ import {
   scoreInteractiveListeningObjective,
 } from "@/lib/det/tasks/interactive-listening";
 import { evaluateConversationSummary } from "@/lib/det/tasks/interactive-listening-ai";
+import { readILAnswers, readILProgress } from "@/lib/det/il-stages";
 
 export type ScoringMode = "DETERMINISTIC" | "AI";
 
@@ -193,6 +194,21 @@ export type TaskHandler = {
     response: unknown;
     userId: string;
   }) => Promise<TaskRunResult>;
+  /**
+   * Optional: reconcile what the client just posted with what the server
+   * already recorded for this attempt, BEFORE scoring and before persisting.
+   *
+   * Exists for multi-stage tasks. Interactive Listening records Part A's typed
+   * blanks and each turn's choice through /api/det/il/advance as they happen;
+   * the final post carries only the summary. Without this hook the submit route
+   * would overwrite those stored answers with whatever the last request
+   * contained — so a client could replay the whole task with perfect answers in
+   * one request, and the stage locks would protect nothing.
+   *
+   * A hook rather than a task-type branch in the route: the route still does a
+   * single map lookup and never asks what kind of task it is holding.
+   */
+  prepareResponse?: (input: { stored: unknown; incoming: unknown }) => unknown;
 };
 
 export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
@@ -243,6 +259,19 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
   // the task score; the submit route's 500 is the honest outcome.
   INTERACTIVE_LISTENING: {
     mode: "AI",
+    // Parts A and B come from the database, not from this request. Only the
+    // summary is taken from what the client posted, because Stage C is the one
+    // stage that has not been through /api/det/il/advance yet.
+    prepareResponse: ({ stored, incoming }) => {
+      const prior = readILAnswers(stored);
+      const summary = (incoming as { summary?: unknown } | null)?.summary;
+      return {
+        filled: prior.filled,
+        chosen: prior.chosen,
+        summary: typeof summary === "string" ? summary : prior.summary,
+        progress: readILProgress(stored),
+      };
+    },
     run: async ({ payload, response, userId }) => {
       const p = interactiveListeningPayloadSchema.parse(payload);
       const r = interactiveListeningResponseSchema.parse(response);
