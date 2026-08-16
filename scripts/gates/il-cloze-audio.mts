@@ -43,6 +43,35 @@ const ENDS_AT_BOUNDARY = /(^|[\s("'‘“])$/;
 /** ...and may resume only on whitespace or trailing punctuation. */
 const STARTS_AT_BOUNDARY = /^([\s.,!?;:)"'’”]|$)/;
 
+/**
+ * Is this a real English word, allowing for the hyphen and apostrophe A3 permits?
+ *
+ * THE WORD LIST CARRIES NEITHER. Measured: `an-array-of-english-words` holds
+ * 274,937 entries and exactly ZERO containing "-" or "'". So a bare
+ * `DICT.has(word)` can never pass a hyphenated key — while A3, three lines away,
+ * explicitly allows one. The gate contradicted itself, and real content is what
+ * exposed it: "check-up" was reported as "not an English word" when the only
+ * thing wrong was that no plain word list spells compounds that way.
+ *
+ * Accepted if the word is listed as written, or with its punctuation removed
+ * ("check-up" -> "checkup"), or if every hyphen-separated part is itself a word
+ * ("mother-in-law"). Not a loosening: each branch still requires real English.
+ */
+function isEnglishWord(dict: Set<string>, word: string): boolean {
+  const w = word.toLowerCase();
+  if (dict.has(w)) return true;
+  const stripped = w.replace(/[-'’]/g, "");
+  if (stripped !== w && dict.has(stripped)) return true;
+  const parts = w.split(/[-'’]/).filter(Boolean);
+  return parts.length > 1 && parts.every((p) => dict.has(p));
+}
+
+/** Escape a key before it goes into a RegExp. A3 keeps keys to letters, hyphen
+ *  and apostrophe today, so nothing here is currently dangerous — but a check
+ *  that silently mis-tests the moment an author writes an unexpected character
+ *  is not a check. */
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&");
+
 export default defineGate("gate:il-cloze-audio", async (bank: Bank) => {
   const findings: Finding[] = [];
   const report: string[] = [];
@@ -97,7 +126,7 @@ export default defineGate("gate:il-cloze-audio", async (bank: Bank) => {
           );
         }
         // ---- A2 real word ----
-        if (!DICT.has(w.toLowerCase())) {
+        if (!isEnglishWord(DICT, w)) {
           notWord.push(`${where}${label}: "${w}" is not in the English word list`);
         }
       }
@@ -129,7 +158,7 @@ export default defineGate("gate:il-cloze-audio", async (bank: Bank) => {
       }
 
       // ---- A5 verbatim in the audio ----
-      const re = new RegExp(`(^|[^a-z])${b.missing.toLowerCase()}([^a-z]|$)`);
+      const re = new RegExp(`(^|[^a-z])${escapeRe(b.missing.toLowerCase())}([^a-z]|$)`);
       if (!re.test(spoken)) {
         notSpoken.push(
           `${where}: "${b.missing}" does not appear in what the voice says` +

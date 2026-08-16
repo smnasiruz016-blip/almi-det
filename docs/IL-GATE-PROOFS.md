@@ -107,6 +107,7 @@ check is measuring real behaviour, not a formula.
 | Check | Proof | Output on the broken bank |
 |---|---|---|
 | A1 blank count | fixture `il-red-cloze-count.json` | `[FAIL] IL-CLOZE-BLANK-COUNT` · `2 blank(s), rule is 3-4` |
+| A2 real word (after the hyphen fix) | fixture `il-red-cloze-notword.json`, re-run on the full 12-item bank | `[FAIL] IL-CLOZE-NOT-A-WORD` — still fires on `zqxvlorn`, so accepting hyphenated compounds did not neuter it |
 | A2 real word | fixture `il-red-cloze-notword.json` | `[FAIL] IL-CLOZE-NOT-A-WORD` · `b2: "zqxvlorn" is not in the English word list` |
 | A4 prefix reveal | fixture `il-red-cloze-prefix.json` — `"…room in the li" + [brary]` | `[FAIL] IL-CLOZE-PREFIX-REVEAL` · `b1: the text before the gap ends mid-word ("…room in the li"), so part of "brary" is already on screen` |
 | A5 word in the audio | fixture `il-red-cloze-audio.json` — an `audioScript` saying *visuals* where the key is *slides* | `[FAIL] IL-CLOZE-NOT-IN-AUDIO` · `b3: "slides" does not appear in what the voice says (complete.audioScript overrides the transcript)` |
@@ -123,6 +124,38 @@ away and the item is unanswerable as spoken, with nothing else in the pipeline t
 The prefix-reveal fixture trips **three** checks at once (`brary` is not a word, is not a
 standalone word in the audio, and leaves a prefix on screen). One change, three findings — the
 fixture still changes exactly one thing.
+
+---
+
+## What the full bank found that one item could not
+
+The 11 authored conversations arrived after the gates were written, and running the gates over
+them changed two things. Both are the pattern this repo keeps re-learning: **fixtures prove a
+gate CAN fire; real content shows whether it is aimed at the right thing.**
+
+**1. A2 contradicted A3.** `check-up` was reported as "not an English word". It is one —
+`an-array-of-english-words` holds 274,937 entries and **exactly zero** containing a hyphen or an
+apostrophe, while A3 three lines away explicitly permits both. A bare `DICT.has()` could never
+pass a hyphenated key. A2 now accepts a word listed as written, with its punctuation removed
+(`check-up` → `checkup`), or with every hyphen-separated part listed (`mother-in-law`).
+
+Underneath the false positive sat a real defect: `check-up` and `checkup` are indistinguishable
+by ear, and the Part A grader compared exactly, so a listener who heard perfectly was marked
+wrong for an arbitrary spelling choice — in whichever direction the author happened to key. Fixed
+in the GRADER, not the content: `normalizeWord` now strips hyphens and apostrophes, so both
+spellings score in both directions and no data file needs editing. The known cost is that a pair
+like `re-cover`/`recover` both score; accepted deliberately, and narrower than Listen and Type,
+which forgives a whole edit per word.
+
+**2. A fixture stopped firing when the bank grew.** `il-red-options-longest.json` sabotaged only
+the reference conversation. Against one item that was 5 turns out of 5; against twelve it is 5
+out of 60 — **8%, under the 45% line — so the fixture reported GREEN**. The length tell is a
+BANK-WIDE RATE, so the fixture has to move a bank-wide number: it now mutates every IL item via
+`ilEvery()` and reports `60/60 (100%)`. Per-item findings are still fine with `ilOnly`.
+
+That failure mode is already recorded for the cloze fixtures. It reappeared the moment the
+denominator changed, which is worth knowing: **every rate-based check needs its fixture re-proven
+whenever the bank grows**, not only when the check changes.
 
 ---
 

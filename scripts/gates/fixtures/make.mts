@@ -415,6 +415,24 @@ async function main(): Promise<void> {
   const turnsOf = (it: ILItem) => it.payload.turns as Record<string, unknown>[];
   const chunksOf = (it: ILItem) => (it.payload.complete as Record<string, unknown>).text as unknown[];
 
+  /**
+   * Mutate EVERY Interactive Listening item, not just the first.
+   *
+   * Needed for the checks that measure a BANK-WIDE RATE. Sabotaging one
+   * conversation out of twelve moves the length-tell rate to 5/60 — under the
+   * 45% line — so the fixture went green and looked like a passing gate. That is
+   * the same trap already recorded for the cloze fixtures: a fixture that
+   * AVERAGES ITSELF WITH REAL CONTENT proves nothing about the check it names.
+   * Per-item findings are fine with `ilOnly`; rates are not.
+   */
+  const ilEvery = (mutate: (it: ILItem) => void): BankItem[] => {
+    const items = clone(all);
+    const targets = items.filter((i) => i.taskType === "INTERACTIVE_LISTENING") as ILItem[];
+    if (targets.length === 0) throw new Error("no INTERACTIVE_LISTENING items to derive a fixture from");
+    for (const it of targets) mutate(it);
+    return items;
+  };
+
   write(
     "il-red-leak-line.json",
     ilOnly((it) => {
@@ -428,14 +446,16 @@ async function main(): Promise<void> {
 
   write(
     "il-red-options-longest.json",
-    ilOnly((it) => {
+    // EVERY item: the length tell is a bank-wide rate, so one sabotaged
+    // conversation in twelve would be averaged away and report green.
+    ilEvery((it) => {
       for (const t of turnsOf(it)) {
         const opts = t.options as string[];
         const c = t.correct as number;
         opts[c] = `${opts[c]} — and that is what I would suggest we go ahead and do about it.`;
       }
     }),
-    "the correct reply is the longest option in every turn",
+    "the correct reply is the longest option in every turn of every conversation",
   );
 
   write(

@@ -124,7 +124,7 @@ which is a legitimate state, so nothing errors.
 | Speak About the Photo | `npm run seed:speak` | 18 | ✅ in prod |
 | Fill in the Blanks | `npm run seed:fill-blanks` | 18 | ❌ pending (built + live) |
 | Interactive Reading | `npm run seed:interactive-reading` | 18 | ❌ pending (built + live) |
-| Interactive Listening | `npm run seed:interactive-listening` | see `seed:il-check` | ❌ pending — **`live: false`** (also needs an audio render pass, §D) |
+| Interactive Listening | `npm run seed:interactive-listening` | 12 | ❌ pending — **`live: false`** (also needs an audio render pass, §D) |
 | Interactive Writing | `npm run seed:interactive-writing` | — | ⬜ not built |
 | Writing Sample | `npm run seed:writing-sample` | — | ⬜ not built (ungraded) |
 | Speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
@@ -145,8 +145,16 @@ which is a legitimate state, so nothing errors.
 Done so far: 18/18 Listen and Type clips rendered, `$0.0152` total.
 
 **Interactive Listening changes the shape of this step.** It is the first type with several
-clips per item — the reference conversation alone is **5 units** (scenario + 4 heard turns; the
-opener is silent by design). Two things follow:
+clips per item: **5 units each** (scenario + 4 heard turns; the opener is silent by design).
+
+Measured over the full authored bank, 2026-08-16, from the same manifest the generator loops
+over — no network, no database:
+
+    12 conversations x 5 clips = 60 clips, 7,936 characters
+    projected cost $0.1190  (tts-1 @ $15/1M chars)
+    every item renders segs 0, 2, 3, 4, 5
+
+Two things follow:
 
 - The ledger now carries **one feature per task type** — `listen-and-type.tts` and
   `interactive-listening.tts` — so a per-feature reconciliation reads a number that is actually
@@ -158,7 +166,8 @@ opener is silent by design). Two things follow:
   is the honest state, not a broken one.
 
 - [ ] After rendering, confirm `DetItemAudio` holds **5 rows per Interactive Listening item**
-      with segs `0, 2, 3, 4, 5` (seg 1 is the opener and is deliberately absent).
+      with segs `0, 2, 3, 4, 5` (seg 1 is the opener and is deliberately absent) — **60 rows
+      across the 12 items**, on top of the 18 Listen and Type rows already there.
 
 **The clips are released one stage at a time.** `toClientPayload()` returns Stage A only; each
 turn's URL arrives from `POST /api/det/il/advance` when that turn is reached. So an item whose

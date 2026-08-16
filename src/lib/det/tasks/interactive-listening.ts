@@ -221,9 +221,32 @@ export function displayedCorrectPosition(
 
 // ------------------------------------------------------------- grading ----
 
-/** Case- and whitespace-insensitive, same promise the reading cloze makes. */
+/**
+ * Case-, whitespace- AND hyphen/apostrophe-insensitive.
+ *
+ * The reading cloze can afford an exact match: the taker is looking at a printed
+ * prefix and completing a spelling. Here the taker is looking at nothing and
+ * typing a sound, and English gives several of those two spellings — "check-up"
+ * and "checkup", "e-mail" and "email". Both are correct, both are what the voice
+ * said, and neither is signalled by the audio. Comparing exactly marks a listener
+ * who heard perfectly wrong, in whichever direction the author happened to key.
+ *
+ * Found by running gate:il-cloze-audio over real authored content: one blank in
+ * twelve conversations was keyed "check-up", which no word list carries and which
+ * a taker is as likely to type unhyphenated.
+ *
+ * The known cost: a pair like "re-cover"/"recover" now both score. That pair is
+ * genuinely distinguishable by ear, so this is a real if narrow over-acceptance —
+ * accepted deliberately, because the failure it replaces (a correct listener
+ * marked wrong for an arbitrary spelling choice) is both commoner and worse, and
+ * because this grader is still stricter than Listen and Type, which forgives a
+ * whole edit per word.
+ */
 function normalizeWord(s: string): string {
-  return s.trim().toLowerCase();
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[-‐-―'‘’]/g, "");
 }
 
 export type InteractiveListeningDeterministicDetail = {

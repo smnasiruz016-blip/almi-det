@@ -123,9 +123,13 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
   // DETERMINISTIC would route a paid AI call around the one chokepoint that
   // gates it, so every free attempt would spend on the rater.
   //
-  // `live: false` — the plumbing, the gates and one reference conversation are
-  // in; the remaining scenarios and the composer are not. A live task type with
-  // one item and no way to answer it is worse than one that says "not yet".
+  // `live: false` — and no longer for want of content. All 12 conversations are
+  // authored and green on every gate, and the composer is built. It stays dark
+  // because the type is not IN THE DATABASE: migrations 4-7 are unapplied, the
+  // items are unseeded, and none of the 60 clips are rendered. Flipping this
+  // before that chain runs offers a task whose pool is empty.
+  // Order, and it is not optional: migrate deploy -> seed -> audio:render ->
+  // live: true. See docs/DEPLOY-RUNBOOK.md.
   INTERACTIVE_LISTENING: {
     taskType: "INTERACTIVE_LISTENING",
     slug: "interactive-listening",
