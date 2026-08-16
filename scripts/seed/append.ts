@@ -27,6 +27,7 @@ import { ITEMS as READ_ALOUD } from "./read-aloud";
 import { ITEMS as READ_THEN_SPEAK } from "./read-then-speak";
 import { ITEMS as LISTEN_THEN_SPEAK } from "./listen-then-speak";
 import { ITEMS as SPEAKING_SAMPLE } from "./speaking-sample";
+import { ITEMS as INTERACTIVE_SPEAKING } from "./interactive-speaking";
 
 const prisma = new PrismaClient();
 const DRY = process.argv.includes("--dry");
@@ -46,6 +47,7 @@ const ALL = [
   ...READ_THEN_SPEAK,
   ...LISTEN_THEN_SPEAK,
   ...SPEAKING_SAMPLE,
+  ...INTERACTIVE_SPEAKING,
 ];
 
 const key = (taskType: string, title: string) => `${taskType}::${title}`;

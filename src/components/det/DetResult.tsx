@@ -56,6 +56,11 @@ import {
   type WritingFeedback,
 } from "@/lib/det/tasks/writing-rater";
 import {
+  interactiveSpeakingPayloadSchema,
+  isTranscripts,
+} from "@/lib/det/tasks/interactive-speaking";
+import { readStoredAnswers } from "@/lib/det/staged";
+import {
   readThenSpeakPayloadSchema,
   listenThenSpeakPayloadSchema,
   speakingSamplePayloadSchema,
@@ -646,6 +651,37 @@ const REVIEWERS: Record<
         attempt={attempt}
         extraNote={SPEAKING_SAMPLE_NOTE}
       />
+    );
+  },
+  // The questions are shown HERE for the first time — during the interview they
+  // were audio only, and after scoring there is nothing left to protect.
+  INTERACTIVE_SPEAKING: ({ item, attempt }) => {
+    const p = interactiveSpeakingPayloadSchema.safeParse(item.payload);
+    if (!p.success) return null;
+    const turns = isTranscripts(p.data, readStoredAnswers(attempt.response).text);
+    const fb = attempt.feedback as SpeakingFeedback | null;
+    return (
+      <div className="space-y-4">
+        {turns.map((t, i) => (
+          <div key={i}>
+            <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">
+              Question {i + 1} (heard)
+            </p>
+            <p className="mt-1 text-sm text-almi-text-muted">{t.question}</p>
+            <p className="mt-1 text-sm text-almi-text">
+              {t.transcript.trim() || "(nothing transcribed)"}
+            </p>
+          </div>
+        ))}
+        {fb && (
+          <TraitFeedback
+            traits={SPEAKING_TRAIT_KEYS.map((k) => [k, fb[k]] as [string, string])}
+            labels={SPEAKING_TRAIT_LABEL}
+            fb={fb}
+          />
+        )}
+        <p className="text-xs text-almi-text-muted">{SPEAKING_TRANSCRIPT_NOTE}</p>
+      </div>
     );
   },
   SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,

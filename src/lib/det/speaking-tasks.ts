@@ -22,6 +22,11 @@ import {
   SS_SPEAK_SECONDS,
 } from "@/lib/det/tasks/spoken-rubric";
 import { evaluateSpokenResponse } from "@/lib/det/tasks/speaking-rater";
+import {
+  interactiveSpeakingPayloadSchema,
+  isTranscripts,
+} from "@/lib/det/tasks/interactive-speaking";
+import { readStoredAnswers } from "@/lib/det/staged";
 
 export const SPEAKING_TASKS: Partial<Record<DetTaskType, SpeakingTask>> = {
   READ_ALOUD: {
@@ -95,6 +100,44 @@ export const SPEAKING_TASKS: Partial<Record<DetTaskType, SpeakingTask>> = {
         task: p.prompt,
         context: `TYPE: Speaking Sample (${p.category}) — up to 3 minutes. In the official DET this sample is sent to institutions UNSCORED; this rating is practice feedback only.`,
         transcript,
+        userId,
+      });
+      return { pointsEarned: s.pointsEarned, pointsMax: s.pointsMax, fraction: s.fraction, feedback: s.feedback, telemetry: s.telemetry };
+    },
+  },
+
+  // ONE rating call for the whole interview. Rating each turn separately would
+  // quadruple the rater spend for a worse read: what this type measures is how
+  // someone SUSTAINS an exchange, which no single turn shows.
+  //
+  // `grade` receives the stored response rather than a transcript, because by
+  // the time it runs every turn has already been transcribed and recorded — the
+  // per-turn transcriptions are billed as they happen, this is the one call left.
+  INTERACTIVE_SPEAKING: {
+    taskType: "INTERACTIVE_SPEAKING",
+    transcribeFeature: "interactive-speaking.transcribe",
+    // Per TURN, not per interview — the composer stops each answer here.
+    recordSeconds: 35,
+    grade: async ({ transcript, payload, userId }) => {
+      const p = interactiveSpeakingPayloadSchema.parse(payload);
+      // `transcript` carries the stored answers as JSON; see the speaking route.
+      const stored = JSON.parse(transcript || "{}") as Record<string, unknown>;
+      const turns = isTranscripts(p, readStoredAnswers(stored).text);
+      const joined = turns
+        .map(
+          (t, i) =>
+            `Q${i + 1}: ${t.question}\nA${i + 1}: ${t.transcript.trim() || "(silence)"}`,
+        )
+        .join("\n\n");
+      const s = await evaluateSpokenResponse({
+        feature: "interactive-speaking.evaluate",
+        reference: p.rubric.reference,
+        task: `A ${p.turns.length}-question spoken interview on "${p.topic}" (${p.register} register). Judge the whole exchange, not one answer.`,
+        context:
+          "TYPE: Interactive Speaking — the candidate HEARD each question and never saw it written, " +
+          "and answered them one at a time without knowing what came next. Judge how the exchange is " +
+          "sustained across turns; a mishearing is a listening outcome, not a language error.",
+        transcript: joined,
         userId,
       });
       return { pointsEarned: s.pointsEarned, pointsMax: s.pointsMax, fraction: s.fraction, feedback: s.feedback, telemetry: s.telemetry };

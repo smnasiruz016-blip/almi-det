@@ -113,16 +113,23 @@ export function speakingCapMessage(cap: number): string {
  * Pure apart from the injected dependencies, so the whole ordering — including
  * "nothing is spent on a refusal" — is testable without touching OpenAI.
  */
-export async function runSpeakingAttempt(args: {
+/**
+ * The two refusals and the audio check, in the order that makes them cost
+ * control rather than merely policy. Extracted so a STAGED speaking task can
+ * apply exactly the same guards to every turn it transcribes — a per-turn upload
+ * that skipped them would be an unguarded billed call wearing an interview's
+ * clothes.
+ *
+ * Returns the refusal, or null when the attempt may proceed.
+ */
+export async function checkSpeakingAllowed(args: {
   userId: string;
   isPaid: boolean;
-  task: SpeakingTask;
-  payload: unknown;
   audio: { file: Blob; filename: string; durationSeconds: number } | null;
-  deps: SpeakingDeps;
+  deps: Pick<SpeakingDeps, "countAttemptsToday">;
   cap?: number;
-}): Promise<SpeakingOutcome> {
-  const { userId, isPaid, task, payload, audio, deps } = args;
+}): Promise<SpeakingRefusal | null> {
+  const { userId, isPaid, audio, deps } = args;
   const cap = args.cap ?? SPEAKING_DAILY_CAP;
 
   // ---- 1. PAID ACCESS, before anything is spent ----
@@ -154,11 +161,55 @@ export async function runSpeakingAttempt(args: {
     };
   }
 
+  return null;
+}
+
+/**
+ * ONE TURN of a staged speaking task: the same guards, then transcription, and
+ * no grading. The interview is rated once at the end from every transcript
+ * together, so a mid-interview turn must be billed for its transcription and
+ * nothing else.
+ */
+export async function transcribeSpeakingTurn(args: {
+  userId: string;
+  isPaid: boolean;
+  task: SpeakingTask;
+  audio: { file: Blob; filename: string; durationSeconds: number } | null;
+  deps: SpeakingDeps;
+  cap?: number;
+}): Promise<SpeakingRefusal | { ok: true; transcript: string }> {
+  const refusal = await checkSpeakingAllowed(args);
+  if (refusal) return refusal;
+
+  const transcript = await args.deps.transcribe({
+    file: args.audio!.file,
+    filename: args.audio!.filename,
+    durationSeconds: args.audio!.durationSeconds,
+    userId: args.userId,
+    feature: args.task.transcribeFeature,
+  });
+  return { ok: true, transcript };
+}
+
+export async function runSpeakingAttempt(args: {
+  userId: string;
+  isPaid: boolean;
+  task: SpeakingTask;
+  payload: unknown;
+  audio: { file: Blob; filename: string; durationSeconds: number } | null;
+  deps: SpeakingDeps;
+  cap?: number;
+}): Promise<SpeakingOutcome> {
+  const { userId, task, payload, audio, deps } = args;
+
+  const refusal = await checkSpeakingAllowed(args);
+  if (refusal) return refusal;
+
   // ---- 3. TRANSCRIBE — the billed step ----
   const transcript = await deps.transcribe({
-    file: audio.file,
-    filename: audio.filename,
-    durationSeconds: audio.durationSeconds,
+    file: audio!.file,
+    filename: audio!.filename,
+    durationSeconds: audio!.durationSeconds,
     userId,
     feature: task.transcribeFeature,
   });

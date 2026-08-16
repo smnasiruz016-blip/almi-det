@@ -165,6 +165,7 @@ enum DetTaskType {
   READ_THEN_SPEAK // Speaking,  AI (prompt shown, 90s)
   LISTEN_THEN_SPEAK // Speaking,  AI (question is AUDIO ONLY, 90s)
   SPEAKING_SAMPLE // Speaking,  AI (unscored in the real DET; graded here for practice)
+  INTERACTIVE_SPEAKING // Speaking,  AI (staged spoken interview, holistic rating)
 }
 
 enum DetAttemptStatus {

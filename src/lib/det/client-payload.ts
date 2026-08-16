@@ -67,6 +67,7 @@ import {
   projectSSView,
 } from "@/lib/det/tasks/spoken-rubric";
 import { SPEAKING_TRANSCRIPT_NOTE } from "@/lib/det/tasks/speaking-rater";
+import { projectISView } from "@/lib/det/tasks/interactive-speaking";
 
 export type ClientPayload = Record<string, unknown>;
 
@@ -215,6 +216,16 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
     projectLTSView(p, SPEAKING_TRANSCRIPT_NOTE, ctx.audio) as unknown as ClientPayload,
 
   SPEAKING_SAMPLE: (p) => projectSSView(p, SPEAKING_TRANSCRIPT_NOTE) as unknown as ClientPayload,
+
+  // BOTH withholdings at once: by FIELD (no question text, no rubric) and by
+  // TIME (one turn at a time). Releasing all four clips up front would let
+  // someone listen ahead, plan four answers and record them in order — a
+  // different task, and nothing in the recordings would show it had happened.
+  INTERACTIVE_SPEAKING: (p, ctx) =>
+    projectISView(p, SPEAKING_TRANSCRIPT_NOTE, {
+      stored: ctx.stored,
+      audio: ctx.audio,
+    }) as unknown as ClientPayload,
 
   WRITE_ABOUT_THE_PHOTO: (p) => ({
     imageUrl: p.imageUrl,

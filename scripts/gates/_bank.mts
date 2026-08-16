@@ -129,6 +129,7 @@ export async function loadBank(): Promise<Bank> {
       import("../seed/read-then-speak"),
       import("../seed/listen-then-speak"),
       import("../seed/speaking-sample"),
+      import("../seed/interactive-speaking"),
     ]);
     raw = mods.flatMap((m) => m.ITEMS as unknown as Record<string, unknown>[]);
   }

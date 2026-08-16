@@ -201,6 +201,55 @@ export default defineGate("gate:audio-coverage", async (bank: Bank) => {
     });
   }
 
+  // ---- INTERACTIVE_SPEAKING: one clip per turn, seg = turn index ----
+  const { interactiveSpeakingPayloadSchema, isTurnSeg } = await import(
+    "../../src/lib/det/tasks/interactive-speaking"
+  );
+  const isItems = bank.items.filter((i) => i.taskType === "INTERACTIVE_SPEAKING");
+  const isProblems: string[] = [];
+  let isTurnsExpected = 0;
+  for (const it of isItems) {
+    const parsed = interactiveSpeakingPayloadSchema.safeParse(it.payload);
+    if (!parsed.success) {
+      isProblems.push(
+        `INTERACTIVE_SPEAKING / ${it.title}: payload does not parse, so no clips can be derived`,
+      );
+      continue;
+    }
+    const want = parsed.data.turns.map((_, i) => isTurnSeg(i));
+    isTurnsExpected += want.length;
+    const got = new Set(audioUnitsForItem("INTERACTIVE_SPEAKING", it.payload).map((u) => u.seg));
+    for (const seg of want) {
+      if (!got.has(seg)) {
+        isProblems.push(
+          `INTERACTIVE_SPEAKING / ${it.title}: turn ${seg + 1} has no clip the manifest would render — ` +
+            `its question text is never projected, so that turn would have no stimulus at all`,
+        );
+      }
+    }
+    for (const seg of got) {
+      if (!want.includes(seg)) {
+        isProblems.push(
+          `INTERACTIVE_SPEAKING / ${it.title}: the manifest would render seg ${seg}, which no turn plays`,
+        );
+      }
+    }
+  }
+  report.push(
+    `  INTERACTIVE_SPEAKING: ${isItems.length} interview(s), ${isTurnsExpected} turn clip(s) expected, ${isProblems.length} problem(s)`,
+  );
+  if (isProblems.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "IS-AUDIO-COVERAGE",
+      message:
+        `An Interactive Speaking turn has no question clip, or the manifest would render one no turn ` +
+        `plays. As with Listen Then Speak this is fatal rather than untidy: the question text is never ` +
+        `projected, so a turn with no clip has no stimulus whatsoever.`,
+      items: isProblems,
+    });
+  }
+
   report.push(
     `  INTERACTIVE_LISTENING: ${il.parsed.length} conversation(s), ${referenced} segment(s) referenced, ${produced} unit(s) the manifest would render`,
   );

@@ -33,6 +33,28 @@ const MAX_PRINTED_CHARS = 400;
 /** Heard once, with nothing to go back to. Deliberately tighter. */
 const MAX_SPOKEN_CHARS = 220;
 
+const IS = "INTERACTIVE_SPEAKING";
+/** Fewer than this is not an exchange; more costs a transcription per turn for
+ *  diminishing information about the same speaker. */
+const IS_MIN_TURNS = 3;
+const IS_MAX_TURNS = 5;
+
+/**
+ * An interview TURN gets a lower floor than a standalone prompt, and a word
+ * count instead of a character count.
+ *
+ * MIN_CHARS = 40 was chosen for Read Then Speak and Speaking Sample, where one
+ * string has to set an entire task on its own. Applied unchanged to a
+ * conversational turn it was wrong, and real content said so: it flagged
+ * "What kind of food do you enjoy eating?" (38) and "What do you do to stay
+ * healthy?" (31). Those are good OPENERS — a spoken interview warms up before it
+ * escalates, and every one of these sets does exactly that across four turns.
+ *
+ * What actually matters is that a turn is a real question rather than a
+ * fragment, so it is measured in words.
+ */
+const IS_MIN_TURN_WORDS = 4;
+
 /** Which payload field carries the task, and how it reaches the taker. */
 const SPEC: Record<string, { field: string; max: number; how: string }> = {
   [RTS]: { field: "prompt", max: MAX_PRINTED_CHARS, how: "printed" },
@@ -124,6 +146,66 @@ export default defineGate("gate:speaking-prompts", async (bank: Bank) => {
     }
   }
 
+  // -------------------------------------------------- INTERACTIVE_SPEAKING --
+  //
+  // Checked PER TURN. Every question is heard once with nothing to re-read, so
+  // each carries the tighter spoken cap — and they must differ from one another,
+  // or the interview asks the same thing twice and the taker has nothing new to
+  // say on a turn they are being billed for.
+  const isItems = bank.items.filter((i) => i.taskType === IS);
+  const isTurnProblems: string[] = [];
+  for (const it of isItems) {
+    const where = `${IS} / ${it.title}`;
+    const turns =
+      (it.payload.turns as { question?: unknown; maxSeconds?: unknown }[] | undefined) ?? [];
+    if (turns.length < IS_MIN_TURNS || turns.length > IS_MAX_TURNS) {
+      isTurnProblems.push(`${where}: ${turns.length} turn(s), rule is ${IS_MIN_TURNS}-${IS_MAX_TURNS}`);
+    }
+    const seenQ = new Map<string, number>();
+    turns.forEach((t, i) => {
+      const q = typeof t.question === "string" ? t.question.trim() : "";
+      if (!q) {
+        isTurnProblems.push(`${where} / turn ${i + 1}: question is empty`);
+        return;
+      }
+      const words = q.split(/\s+/).filter(Boolean).length;
+      if (words < IS_MIN_TURN_WORDS) {
+        isTurnProblems.push(
+          `${where} / turn ${i + 1}: ${words} word(s), floor is ${IS_MIN_TURN_WORDS} — a fragment, not a question`,
+        );
+      }
+      if (q.length > MAX_SPOKEN_CHARS) {
+        isTurnProblems.push(
+          `${where} / turn ${i + 1}: ${q.length} chars, cap is ${MAX_SPOKEN_CHARS} for a heard-once question`,
+        );
+      }
+      const prev = seenQ.get(norm(q));
+      if (prev !== undefined) {
+        isTurnProblems.push(
+          `${where}: turn ${i + 1} repeats turn ${prev + 1} — the interview asks the same thing twice`,
+        );
+      } else seenQ.set(norm(q), i);
+      if (typeof t.maxSeconds !== "number" || !Number.isInteger(t.maxSeconds) || t.maxSeconds <= 0) {
+        isTurnProblems.push(
+          `${where} / turn ${i + 1}: maxSeconds is not set, so nothing bounds what this answer can be billed at`,
+        );
+      }
+    });
+
+    // SP4 applies here too — an interview with no rubric reference is rated on
+    // a general impression, and it is the type with the most transcript behind
+    // that impression.
+    const rubric = (it.payload.rubric ?? {}) as { traits?: unknown; reference?: unknown };
+    if (!Array.isArray(rubric.traits) || rubric.traits.length === 0) {
+      badRubric.push(`${where}: rubric.traits is empty — nothing named for the rater to report`);
+    }
+    if (typeof rubric.reference !== "string" || !rubric.reference.trim()) {
+      badRubric.push(
+        `${where}: rubric.reference is empty — the rater has no target and falls back to a general impression`,
+      );
+    }
+  }
+
   const n = (t: string) => items.filter((i) => i.taskType === t).length;
   report.push(`  ${RTS}: ${n(RTS)} · ${LTS}: ${n(LTS)} · ${SS}: ${n(SS)} item(s)`);
   report.push(`    SP1 task text present         : ${missing.length === 0 ? "clean" : `${missing.length} problem(s)`}`);
@@ -133,6 +215,9 @@ export default defineGate("gate:speaking-prompts", async (bank: Bank) => {
   report.push(`    SP3 no duplicate per type     : ${duplicate.length === 0 ? "clean" : `${duplicate.length} duplicate(s)`}`);
   report.push(`    SP4 rubric usable             : ${badRubric.length === 0 ? "clean" : `${badRubric.length} problem(s)`}`);
   report.push(`    SP5 spoken text never printed : ${crossMode.length === 0 ? "clean" : `${crossMode.length} collision(s)`}`);
+  report.push(
+    `    SP6 interview turns           : ${isTurnProblems.length === 0 ? `clean (${isItems.length} interview(s))` : `${isTurnProblems.length} problem(s)`}`,
+  );
 
   if (missing.length) {
     findings.push({
@@ -168,6 +253,18 @@ export default defineGate("gate:speaking-prompts", async (bank: Bank) => {
         `A rubric cannot do its job. Without a reference the rater has no target and marks on a general ` +
         `impression — which reads like a score and is not one.`,
       items: badRubric,
+    });
+  }
+  if (isTurnProblems.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "SPEAKING-INTERVIEW-TURNS",
+      message:
+        `An Interactive Speaking interview is not shaped like one. Each question is heard once with ` +
+        `nothing to re-read, so each carries the spoken cap; a repeated question leaves the taker ` +
+        `nothing new to say on a turn they are billed for; and a missing maxSeconds means nothing ` +
+        `bounds what one answer can cost.`,
+      items: isTurnProblems,
     });
   }
   if (crossMode.length) {

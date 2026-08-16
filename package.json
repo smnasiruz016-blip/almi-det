@@ -44,6 +44,7 @@
     "seed:read-then-speak": "tsx scripts/seed/read-then-speak.ts",
     "seed:listen-then-speak": "tsx scripts/seed/listen-then-speak.ts",
     "seed:speaking-sample": "tsx scripts/seed/speaking-sample.ts",
+    "seed:interactive-speaking": "tsx scripts/seed/interactive-speaking.ts",
     "seed:speaking-check": "tsx scripts/seed/speaking-data-check.mts",
     "seed:speak": "tsx scripts/seed/speak-about-photo.ts",
     "seed:interactive-writing": "tsx scripts/seed/interactive-writing.ts",

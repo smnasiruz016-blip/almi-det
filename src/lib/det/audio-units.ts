@@ -23,6 +23,10 @@ import {
   interactiveListeningPayloadSchema,
 } from "@/lib/det/tasks/interactive-listening";
 import { LTS_QUESTION_SEG, LTS_QUESTION_LABEL } from "@/lib/det/tasks/spoken-rubric";
+import {
+  interactiveSpeakingPayloadSchema,
+  isTurnSeg,
+} from "@/lib/det/tasks/interactive-speaking";
 
 export type AudioUnit = {
   /** DetItemAudio.seg — the integer the table keys on. */
@@ -76,6 +80,17 @@ export function audioUnitsForItem(taskType: string, payload: unknown): AudioUnit
     return units;
   }
 
+  if (taskType === "INTERACTIVE_SPEAKING") {
+    // One clip per turn, seg = turn index. Same rule as Listen Then Speak: the
+    // question text is never projected, so a turn with no clip has no stimulus
+    // at all rather than merely being quiet.
+    const parsed = interactiveSpeakingPayloadSchema.safeParse(payload);
+    if (!parsed.success) return [];
+    return parsed.data.turns
+      .map((t, i) => ({ seg: isTurnSeg(i), label: `turn-${i + 1}`, text: t.question.trim() }))
+      .filter((u) => u.text.length > 0);
+  }
+
   if (taskType === "LISTEN_THEN_SPEAK") {
     // One clip per item: the question, spoken. Pre-rendered at deploy time in
     // OUR voice, exactly like the Interactive Listening segments — and for the
@@ -95,4 +110,5 @@ export const AUDIO_TASK_TYPES = [
   "LISTEN_AND_TYPE",
   "INTERACTIVE_LISTENING",
   "LISTEN_THEN_SPEAK",
+  "INTERACTIVE_SPEAKING",
 ] as const;

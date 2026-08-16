@@ -748,6 +748,51 @@ async function main(): Promise<void> {
     "a Listen Then Speak item whose question clip the manifest would not render",
   );
 
+  // ================= INTERACTIVE_SPEAKING =================
+  type IsItem = BankItem & { payload: Record<string, unknown> };
+  const interviewOnly = (mutate: (it: IsItem) => void): BankItem[] => {
+    const items = clone(all);
+    const it = items.find((i) => i.taskType === "INTERACTIVE_SPEAKING") as IsItem | undefined;
+    if (!it) throw new Error("no INTERACTIVE_SPEAKING item in the bank to derive a fixture from");
+    mutate(it);
+    return items;
+  };
+  const turnsOfInterview = (it: IsItem) => it.payload.turns as Record<string, unknown>[];
+
+  write(
+    "is-red-turn-empty.json",
+    interviewOnly((it) => {
+      turnsOfInterview(it)[1].question = "   ";
+    }),
+    "an empty interview question",
+  );
+
+  write(
+    "is-red-turn-duplicate.json",
+    interviewOnly((it) => {
+      const t = turnsOfInterview(it);
+      t[2].question = t[0].question;
+    }),
+    "an interview that asks the same question twice",
+  );
+
+  write(
+    "is-red-turn-noseconds.json",
+    interviewOnly((it) => {
+      delete turnsOfInterview(it)[0].maxSeconds;
+    }),
+    "a turn with no maxSeconds — nothing bounds what that answer costs",
+  );
+
+  write(
+    "is-red-audio-missing.json",
+    interviewOnly((it) => {
+      // A blank question yields no clip AND no printable stimulus.
+      turnsOfInterview(it)[3].question = "   ";
+    }),
+    "an interview turn whose question clip the manifest would not render",
+  );
+
   console.log("");
 }
 

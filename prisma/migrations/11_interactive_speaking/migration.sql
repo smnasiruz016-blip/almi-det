@@ -1,0 +1,16 @@
+-- Interactive Speaking — the last speaking type, and the one that uses both
+-- kernels at once: STAGED (a turn is released only when the previous one is
+-- answered) and SPEAKING (mic capture, metered transcription, paid + capped).
+--
+-- ENUM ONLY. Progress lives on DetAttempt.response like every other staged task;
+-- the per-turn question clips reuse DetItemAudio at seg = turn index, exactly as
+-- Interactive Listening and Listen Then Speak already do.
+--
+-- COST-BOUNDED BY DESIGN: the turns are pre-authored, so an interview never
+-- generates a question at runtime. One interview is ONE attempt against
+-- SPEAKING_DAILY_CAP and costs four transcriptions plus a single holistic rating
+-- call, each metered separately.
+--
+-- Hand-written rather than `prisma migrate dev` (Neon shadow-database flake);
+-- applied with `prisma migrate deploy`.
+ALTER TYPE "DetTaskType" ADD VALUE IF NOT EXISTS 'INTERACTIVE_SPEAKING';

@@ -53,6 +53,7 @@ Pending as of this writing:
 | `8_writing_types` | adds `INTERACTIVE_WRITING` and `WRITING_SAMPLE` to the `DetTaskType` enum | ❌ pending |
 | `9_read_aloud` | adds `READ_ALOUD` to the `DetTaskType` enum | ❌ pending |
 | `10_speaking_types` | adds `READ_THEN_SPEAK`, `LISTEN_THEN_SPEAK`, `SPEAKING_SAMPLE` | ❌ pending |
+| `11_interactive_speaking` | adds `INTERACTIVE_SPEAKING` to the `DetTaskType` enum | ❌ pending |
 | _(one enum migration per future task type — append as they land)_ | | |
 
 **Verified against the live database 2026-08-16** (read-only probe, `.env.local` credentials):
@@ -142,7 +143,7 @@ same shared loader (`scripts/seed/_data-loader.ts`). The reference item of each 
 | Read Then Speak | `npm run seed:read-then-speak` | 12 | ❌ pending — **`live: false`** |
 | Listen Then Speak | `npm run seed:listen-then-speak` | 12 | ❌ pending — **`live: false`**; needs its question clips, §D |
 | Speaking Sample | `npm run seed:speaking-sample` | 12 | ❌ pending — **`live: false`**. Unscored in the real DET; graded here, and the composer says so |
-| Other speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
+| Interactive Speaking | `npm run seed:interactive-speaking` | 10 | ❌ pending — **`live: false`**; needs its 40 turn clips, §D |
 | _(append one row per new type as it lands)_ | | | |
 
 ---
@@ -167,8 +168,9 @@ over — no network, no database:
 
     Interactive Listening   12 conversations x 5 clips = 60 clips, 7,936 chars   $0.1190
     Listen Then Speak       12 question clips                    967 chars   $0.0145
+    Interactive Speaking    10 interviews x 4 turns = 40 clips, 2,586 chars   $0.0388
     ------------------------------------------------------------------------------
-    TOTAL                                        72 clips,     8,903 chars   $0.1335
+    TOTAL                                       112 clips,    11,489 chars   $0.1723
 
     Interactive Listening renders segs 0, 2, 3, 4, 5 per item; Listen Then Speak
     renders seg 0 only (one question per item).
@@ -187,6 +189,8 @@ Two things follow:
 - [ ] After rendering, confirm `DetItemAudio` holds **5 rows per Interactive Listening item**
       with segs `0, 2, 3, 4, 5` (seg 1 is the opener and is deliberately absent) — **60 rows
       across the 12 items**, on top of the 18 Listen and Type rows already there.
+- [ ] And **4 rows per Interactive Speaking item** at segs 0-3 — **40 rows**. Same rule as below:
+      a turn with no clip has no stimulus, because the question text is never projected.
 - [ ] And **1 row per Listen Then Speak item** at seg 0 — **12 rows**. ⚠️ This type is the one
       where a missing clip is fatal rather than untidy: its question text is NEVER projected, so
       an item with no clip has no stimulus at all. `gate:audio-coverage` blocks the build on it,

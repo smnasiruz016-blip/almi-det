@@ -247,6 +247,20 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "Speak for up to three minutes on one topic. The real test sends this to universities unscored; here you get feedback on it.",
     live: false,
   },
+  // The last speaking type: staged AND spoken. One interview is ONE attempt
+  // against the daily cap and costs four transcriptions plus a single holistic
+  // rating, because what it measures is how someone sustains an exchange.
+  INTERACTIVE_SPEAKING: {
+    taskType: "INTERACTIVE_SPEAKING",
+    slug: "interactive-speaking",
+    label: "Interactive Speaking",
+    skill: "SPEAKING",
+    scoringMode: "AI",
+    feedsSubscores: SKILL_FEEDS.SPEAKING,
+    blurb:
+      "A short spoken interview: you hear each question, answer it aloud, and the next one follows. Rated across the whole exchange from a transcript — not on your accent.",
+    live: false,
+  },
   SPEAK_ABOUT_THE_PHOTO: {
     taskType: "SPEAK_ABOUT_THE_PHOTO",
     slug: "speak-about-the-photo",
@@ -274,6 +288,7 @@ export const TASK_ORDER: DetTaskType[] = [
   "READ_THEN_SPEAK",
   "LISTEN_THEN_SPEAK",
   "SPEAKING_SAMPLE",
+  "INTERACTIVE_SPEAKING",
   "SPEAK_ABOUT_THE_PHOTO",
 ];
 

@@ -32,6 +32,10 @@ import {
 import { WritingSampleComposer, type WSView } from "@/components/det/WritingSampleComposer";
 import { ReadAloudComposer, type ReadAloudView } from "@/components/det/ReadAloudComposer";
 import {
+  InteractiveSpeakingComposer,
+  type ISView,
+} from "@/components/det/InteractiveSpeakingComposer";
+import {
   SpokenResponseComposer,
   type SpokenView,
 } from "@/components/det/SpokenResponseComposer";
@@ -147,6 +151,11 @@ const RENDERERS: Partial<Record<DetTaskType, (a: Args) => ReactNode>> = {
       view={payload as SpokenView}
       listenFirst={false}
     />
+  ),
+  // Staged AND spoken: the "payload" carries one turn, and the next arrives
+  // from the upload response.
+  INTERACTIVE_SPEAKING: ({ attemptId, prompt, payload }) => (
+    <InteractiveSpeakingComposer attemptId={attemptId} prompt={prompt} view={payload as ISView} />
   ),
   SPEAK_ABOUT_THE_PHOTO: ({ attemptId, prompt, title, payload }) => {
     const p = payload as {

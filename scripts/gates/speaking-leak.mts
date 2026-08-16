@@ -38,12 +38,14 @@ const RTS = "READ_THEN_SPEAK";
 const LTS = "LISTEN_THEN_SPEAK";
 const SS = "SPEAKING_SAMPLE";
 const RA = "READ_ALOUD";
+const IS = "INTERACTIVE_SPEAKING";
 
 const ALLOWED: Record<string, readonly string[]> = {
   [RTS]: ["prompt", "speakSeconds", "transcriptNote"],
   [LTS]: ["audioUrl", "speakSeconds", "transcriptNote"],
   [SS]: ["category", "prompt", "speakSeconds", "transcriptNote", "practiceNote"],
   [RA]: ["text"],
+  [IS]: ["stage", "topic", "register", "answered", "current", "transcriptNote"],
 };
 
 const FORBIDDEN_KEYS = ["rubric", "reference", "traits", "question"];
@@ -62,7 +64,7 @@ export default defineGate("gate:speaking-leak", async (bank: Bank) => {
   const findings: Finding[] = [];
   const report: string[] = [];
 
-  const types = [RTS, LTS, SS, RA];
+  const types = [RTS, LTS, SS, RA, IS];
   const items = bank.items.filter((i) => types.includes(i.taskType));
   if (items.length === 0) {
     report.push("  no speaking items authored yet — nothing to check");
@@ -78,6 +80,7 @@ export default defineGate("gate:speaking-leak", async (bank: Bank) => {
   const values: string[] = [];
   const questionLeak: string[] = [];
   const missingNote: string[] = [];
+  const staged: string[] = [];
   let projected = 0;
 
   for (const it of items) {
@@ -139,6 +142,77 @@ export default defineGate("gate:speaking-leak", async (bank: Bank) => {
       }
     }
 
+    // ---- SL6 INTERACTIVE_SPEAKING: every turn, every stage ----
+    //
+    // One projection is not enough here. The view shows ONE turn, so checking
+    // only the first would leave turns 2..N unexamined — and a leak on turn 3
+    // is exactly as fatal as a leak on turn 1. Every stage is projected and
+    // checked, and the released turn is asserted to be the one the progress
+    // says, which is what proves the staged lock holds.
+    if (it.taskType === IS) {
+      const turns = (it.payload.turns as { question?: unknown }[] | undefined) ?? [];
+      // A DISTINGUISHABLE URL PER SEGMENT. The first version of this check
+      // asserted `current.index === i` and reported CLEAN when the projector was
+      // sabotaged to always release turn 1 — because `index` is copied from
+      // progress, so it agreed with itself. What has to be checked is WHICH CLIP
+      // comes back, so the gate feeds a marker per seg and asserts the released
+      // audio is the one for this turn.
+      const audio = Object.fromEntries(turns.map((_, i) => [i, `seg-${i}`]));
+      for (let i = 0; i < turns.length; i++) {
+        let stageView: Record<string, unknown>;
+        try {
+          stageView = toClientPayload(IS as never, it.payload, {
+            stored: { progress: { stage: "turn", turn: i } },
+            audio,
+          });
+        } catch (e) {
+          shape.push(`${where} / turn ${i + 1}: projection threw — ${e instanceof Error ? e.message : String(e)}`);
+          continue;
+        }
+        const stageStrings = collectStrings(stageView);
+        const stageWire = JSON.stringify(stageView);
+        for (const k of FORBIDDEN_KEYS) {
+          if (new RegExp(`"${k}"\\s*:`).test(stageWire)) {
+            forbidden.push(`${where} / turn ${i + 1}: "${k}" appears as a key`);
+          }
+        }
+        // EVERY turn's question, checked against EVERY stage — a projection that
+        // leaked turn 4's text while showing turn 1 would still be a leak.
+        turns.forEach((t, j) => {
+          const q = typeof t.question === "string" ? t.question : "";
+          if (q.length >= MIN_SCANNABLE && stageStrings.some((c) => c.includes(q))) {
+            questionLeak.push(
+              `${where}: at turn ${i + 1} the wire carries the TEXT of turn ${j + 1}'s question`,
+            );
+          }
+        });
+        // THE STAGED LOCK, measured on the CLIP rather than on the index.
+        const cur = stageView.current as { index?: number; audioUrl?: string | null } | null;
+        if (!cur) {
+          staged.push(`${where}: at progress turn ${i + 1} the view released nothing`);
+        } else {
+          if (cur.index !== i) {
+            staged.push(
+              `${where}: at progress turn ${i + 1} the view reports turn ${(cur.index ?? -1) + 1}`,
+            );
+          }
+          if (cur.audioUrl !== `seg-${i}`) {
+            staged.push(
+              `${where}: at progress turn ${i + 1} the released CLIP is "${cur.audioUrl}", expected "seg-${i}" — ` +
+                `a taker would hear the wrong question, or one they have not reached`,
+            );
+          }
+        }
+      }
+      // And once the interview is done, nothing further is released.
+      const doneView = toClientPayload(IS as never, it.payload, {
+        stored: { progress: { stage: "done", turn: turns.length } },
+      });
+      if (doneView.current !== null) {
+        staged.push(`${where}: a turn is still released after the interview is finished`);
+      }
+    }
+
     // ---- SL5 the notes that must be present ----
     if (it.taskType !== RA) {
       if (view.transcriptNote !== SPEAKING_TRANSCRIPT_NOTE) {
@@ -168,6 +242,7 @@ export default defineGate("gate:speaking-leak", async (bank: Bank) => {
   report.push(`    SL3 rubric text not on the wire            : ${values.length === 0 ? "clean" : `${values.length} leak(s)`}`);
   report.push(`    SL4 LISTEN_THEN_SPEAK is audio only        : ${questionLeak.length === 0 ? "clean" : `${questionLeak.length} leak(s)`}`);
   report.push(`    SL5 transcript / practice notes present    : ${missingNote.length === 0 ? "clean" : `${missingNote.length} missing`}`);
+  report.push(`    SL6 INTERACTIVE_SPEAKING staged lock       : ${staged.length === 0 ? "clean" : `${staged.length} problem(s)`}`);
 
   if (forbidden.length) {
     findings.push({
@@ -204,6 +279,17 @@ export default defineGate("gate:speaking-leak", async (bank: Bank) => {
         `printing the text turns a listening-and-speaking item into a reading-and-speaking one, and ` +
         `nothing about the recording would show that it had happened.`,
       items: questionLeak,
+    });
+  }
+  if (staged.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "SPEAKING-STAGE-RELEASED-EARLY",
+      message:
+        `Interactive Speaking released the wrong turn. Turn n+1's clip must not exist on the wire ` +
+        `until turn n is answered — otherwise someone can listen ahead, plan four answers and record ` +
+        `them in order, and nothing in the recordings would show it happened.`,
+      items: staged,
     });
   }
   if (missingNote.length) {
