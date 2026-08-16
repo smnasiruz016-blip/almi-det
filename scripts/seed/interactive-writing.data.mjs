@@ -34,7 +34,7 @@ export const ITEMS = [
 
   iw("Devices in class", "CORE", "Technology in education", "academic",
     "Some schools give every student a tablet or laptop to use in class. Do you think this is a good idea? Give reasons and examples.",
-    "Consider a possible drawback of using devices in class. Explain the drawback clearly and suggest one way a teacher could reduce it.",
+    "Think about the position you argued in Part 1. Describe the strongest objection someone could raise against it, and suggest one way a teacher could address that objection.",
     "Takes a clear position with two developed reasons or examples; Part 2 names a real drawback and a plausible teacher-led mitigation."),
 
   iw("City or countryside", "CORE", "Where to live", "academic",
@@ -54,7 +54,7 @@ export const ITEMS = [
 
   iw("Online university study", "STRETCH", "Online learning", "academic",
     "Universities increasingly offer courses fully online. Do the benefits of online study outweigh the drawbacks for most students? Argue your position.",
-    "Identify the single group of students most likely to be disadvantaged by online study, and propose one concrete measure to support them.",
+    "Suppose the conclusion you reached in Part 1 became the policy for all university courses. Which single group of students would be most disadvantaged, and what one measure would you add to protect them?",
     "Weighs benefits against drawbacks and takes a defended position; Part 2 identifies a specific disadvantaged group and a concrete, targeted support measure."),
 
   iw("Who reduces pollution", "STRETCH", "Environment", "academic",

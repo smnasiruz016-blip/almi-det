@@ -78,8 +78,11 @@ is wrong 70% of the time is a check someone switches off.
 The signal that actually separates them is simpler than any phrase list. A Part 2 that builds on
 Part 1 either **addresses the candidate** (`you` / `your`) or **points at something already
 established** (`this` / `that` / `the other` / `the opposite`). One that does neither reads as a
-fresh standalone question. Measured on the 12 items: 10 carry at least one, and the 2 that carry
-none — *Devices in class* and *Online university study* — are the two that genuinely stand alone.
+fresh standalone question. Measured on the 12 items as first authored: 10 carried at least one,
+and the 2 that carried none — *Devices in class* and *Online university study* — were the two that
+genuinely stood alone. Both were then re-authored to reference Part 1 explicitly, and WP6 now
+reports **0 standalone across all 12**. The warning did its job and went quiet, which is the
+outcome an advisory check is for.
 
 Same lesson as the Interactive Listening hyphen fix, one type over: **fixtures prove a gate CAN
 fire; real content shows whether it is aimed at the right thing.**
