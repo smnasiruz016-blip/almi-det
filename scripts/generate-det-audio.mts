@@ -23,6 +23,7 @@
 
 import { PrismaClient, type DetTaskType } from "@prisma/client";
 import { putAudio, isBlobConfigured } from "../src/lib/storage/blob";
+import { audioUnitsForItem, AUDIO_TASK_TYPES } from "../src/lib/det/audio-units";
 
 const prisma = new PrismaClient();
 
@@ -41,7 +42,22 @@ export function ttsCostCents(chars: number): number {
 }
 
 const BUDGET_USD = 5;
-const FEATURE = "listen-and-type.tts";
+
+// One ledger feature PER TASK TYPE, one shared cap across all of them.
+//
+// Interactive Listening renders several clips per item, so folding its spend
+// into "listen-and-type.tts" would make the ledger say Listen and Type cost
+// what a conversation cost — and the per-feature reconciliation the cost ledger
+// exists for would be reading a number that is not about the thing it names.
+// The CAP still sums every feature, so adding a task type cannot quietly unlock
+// a second $5.
+const FEATURE_BY_TYPE: Record<string, string> = {
+  LISTEN_AND_TYPE: "listen-and-type.tts",
+  INTERACTIVE_LISTENING: "interactive-listening.tts",
+};
+const ALL_FEATURES = [...new Set(Object.values(FEATURE_BY_TYPE))];
+const featureOf = (taskType: string): string =>
+  FEATURE_BY_TYPE[taskType] ?? `det-tts.${taskType.toLowerCase()}`;
 
 // Matches the voice the on-demand path uses, so pre-rendered clips are
 // indistinguishable from the fallback.
@@ -70,31 +86,45 @@ type Unit = {
 };
 
 /**
- * Every audio unit in the bank, derived the way the route derives it.
+ * Every audio unit in the bank.
  *
- * Listen and Type speaks `audioScript ?? sentence` — the same fallback the route
- * applies, so a pre-rendered clip and an on-demand one are the same audio.
- * Interactive Listening will append here with seg 0..N when it lands.
+ * The DERIVATION lives in src/lib/det/audio-units.ts, not here, and that is
+ * deliberate. This script needs a database; a content gate must not. With the
+ * manifest inside this file, no gate could check that the segments an item's
+ * payload REFERENCES are segments this script would actually render — a
+ * conversation could ship naming a turn clip that never gets made, and the hole
+ * would only appear in production. gate:il-audio-coverage now calls the same
+ * function this loop does.
+ *
+ * Listen and Type speaks `audioScript ?? sentence` — the same fallback the audio
+ * route applies, so a pre-rendered clip and an on-demand one are the same audio.
+ * Interactive Listening contributes the scenario clip at seg 0 and one clip per
+ * non-opener turn at seg N.
+ *
+ * VOICE. Both speakers in a conversation currently get DEFAULT_VOICE. Only the
+ * other speaker is ever heard — the taker's own replies are read, not played —
+ * so one voice per item is correct today. It stops being correct the moment a
+ * scenario has two audible speakers.
  */
 async function collectUnits(): Promise<Unit[]> {
   const units: Unit[] = [];
 
-  const listen = await prisma.detItem.findMany({
-    where: { taskType: "LISTEN_AND_TYPE", active: true },
+  const items = await prisma.detItem.findMany({
+    where: { taskType: { in: [...AUDIO_TASK_TYPES] }, active: true },
     orderBy: { id: "asc" },
   });
-  for (const it of listen) {
-    const p = it.payload as { sentence?: string; audioScript?: string };
-    const text = (p.audioScript ?? p.sentence ?? "").trim();
-    if (!text) continue; // nothing to speak — gate:leak/key-typable cover why
-    units.push({
-      itemId: it.id,
-      taskType: it.taskType,
-      title: it.title,
-      seg: 0,
-      text,
-      voice: DEFAULT_VOICE,
-    });
+
+  for (const it of items) {
+    for (const u of audioUnitsForItem(it.taskType, it.payload)) {
+      units.push({
+        itemId: it.id,
+        taskType: it.taskType,
+        title: it.title,
+        seg: u.seg,
+        text: u.text,
+        voice: DEFAULT_VOICE,
+      });
+    }
   }
 
   return units;
@@ -196,7 +226,7 @@ async function main() {
 
   const chars = todo.reduce((n, u) => n + u.text.length, 0);
   const projectedCents = todo.reduce((n, u) => n + ttsCostCents(u.text.length), 0);
-  const already = await spentUsd([FEATURE]);
+  const already = await spentUsd(ALL_FEATURES);
 
   console.log(`Pre-render TTS → Vercel Blob   (${DB ? "LIVE" : "DRY RUN — no network, no Blob, no DB writes"})\n`);
   console.log(`  model                 ${TTS_MODEL} @ $${TTS_USD_PER_MCHAR}/1M chars`);
@@ -208,7 +238,7 @@ async function main() {
   );
   console.log(`  characters            ${chars.toLocaleString("en-US")}`);
   console.log(`  projected cost        $${(projectedCents / 10_000).toFixed(4)}`);
-  console.log(`  already spent (${FEATURE})  $${already.toFixed(4)}`);
+  console.log(`  already spent (${ALL_FEATURES.join(" + ")})  $${already.toFixed(4)}`);
   console.log(`  budget cap            $${BUDGET_USD.toFixed(2)}\n`);
 
   const byType = new Map<string, { n: number; chars: number }>();
@@ -248,8 +278,10 @@ async function main() {
   }
 
   let spentCents = 0;
-  let calls = 0;
   let done = 0;
+  // Per-feature tally, so the ledger row for each task type carries that task
+  // type's spend rather than the run's total.
+  const perFeature = new Map<string, { cents: number; calls: number }>();
 
   for (const [n, u] of todo.entries()) {
     if (n > 0) await sleep(CALL_DELAY_MS);
@@ -260,8 +292,13 @@ async function main() {
     process.stdout.write(`  ${u.taskType}/${u.itemId} (${u.title.slice(0, 28)}) ${u.text.length}c… `);
 
     const mp3 = await synthesizeMp3(u.text, u.voice);
-    spentCents += ttsCostCents(u.text.length);
-    calls += 1;
+    const unitCents = ttsCostCents(u.text.length);
+    spentCents += unitCents;
+    const f = featureOf(u.taskType);
+    const tally = perFeature.get(f) ?? { cents: 0, calls: 0 };
+    tally.cents += unitCents;
+    tally.calls += 1;
+    perFeature.set(f, tally);
 
     const stored = await putAudio(blobKey(u), mp3);
     const durationSec = mp3DurationSec(mp3);
@@ -282,23 +319,26 @@ async function main() {
     console.log(`✓ ${(mp3.length / 1024).toFixed(0)}KB ${durationSec}s`);
   }
 
-  // One ledger row per run, so a run is reconcilable against the cap.
-  if (spentCents > 0) {
+  // One ledger row per FEATURE per run, so a run is reconcilable against the cap
+  // and each task type's line in the ledger is about that task type.
+  for (const [feature, tally] of perFeature) {
+    if (tally.cents <= 0) continue;
     await prisma.aICostLedger.create({
       data: {
         userId: null,
-        feature: FEATURE,
+        feature,
         model: TTS_MODEL,
-        inputTokens: calls,
+        inputTokens: tally.calls,
         outputTokens: 0,
-        costCents: spentCents,
+        costCents: tally.cents,
         success: true,
       },
     });
   }
 
   console.log(
-    `\nDONE — ${done} unit(s). Cost this run: $${(spentCents / 10_000).toFixed(4)}. Total ${FEATURE}: $${(await spentUsd([FEATURE])).toFixed(4)}`,
+    `\nDONE — ${done} unit(s). Cost this run: $${(spentCents / 10_000).toFixed(4)}. ` +
+      `Total across ${ALL_FEATURES.join(" + ")}: $${(await spentUsd(ALL_FEATURES)).toFixed(4)}`,
   );
   await prisma.$disconnect();
 }

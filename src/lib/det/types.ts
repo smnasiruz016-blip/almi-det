@@ -149,3 +149,92 @@ export type SpeakAboutPhotoPayload = {
   speakSeconds: number;
 };
 export type SpeakAboutPhotoResponse = { transcript: string };
+
+// ---- INTERACTIVE LISTENING ----
+// One conversation, three sub-parts, all keyed off the SAME scenario:
+//
+//   A  Listen and Complete   short audio; a transcript with 3-4 WHOLE-WORD gaps
+//                            the taker types. The audio supplies the word, so —
+//                            unlike the reading cloze types — NO prefix is
+//                            revealed and no blank length is projected. Showing
+//                            either would turn a listening item into a spelling
+//                            puzzle solvable without the audio.
+//   B  Listen and Respond    5-6 turns. Each turn plays the other speaker once
+//                            and the taker picks the best reply. Turn 1 is an
+//                            OPENER: no audio, no line — "pick the best way to
+//                            start", which is why `seg` and `line` are nullable.
+//   C  Summarize             free text, AI-graded against a server-only
+//                            reference and key points.
+//
+// SERVER-ONLY, and every one of them is an answer key or the test itself:
+//   turn.line          the audio's own words — printing it removes the listening
+//   turn.correct       the key
+//   summarize.reference / keyPoints    what the AI rater marks against
+//   complete.text[].missing            the key
+//   complete.audioScript               what the voice actually says
+//
+// AUDIO SEGMENTS. `seg` is authored as a LABEL ("scenario", "turn-2") because a
+// label survives reordering and reads honestly in a seed file. DetItemAudio keys
+// on an INTEGER (itemId, seg), so segLabelToNumber() maps the two — "scenario"
+// to 0 and "turn-N" to N. The mapping is total and injective, which is what lets
+// this task type reuse the existing audio table with no migration.
+
+export type ILScenario = {
+  register: string;
+  setting: string;
+  speakerName: string;
+  youAre: string;
+};
+
+/** A literal chunk of transcript, or THE gap. Spacing lives in the literal
+ *  chunks, so the transcript is the pieces concatenated with nothing between —
+ *  which is also what keeps a gap a whole word rather than a word fragment. */
+export type ILCompleteChunk = string | { missing: string; alsoAccept?: string[] };
+
+export type ILComplete = {
+  /** Audio segment label for the scenario clip. */
+  seg: string;
+  text: ILCompleteChunk[];
+  /** SERVER-ONLY — overrides what the voice speaks. Absent means "speak the
+   *  transcript as written". When present it must still contain every blanked
+   *  word verbatim, or the item is unanswerable as spoken; gate:il-cloze-audio
+   *  is what proves that. */
+  audioScript?: string;
+};
+
+export type ILTurn = {
+  /** Audio segment label, or null for the opener (which has no audio). */
+  seg: string | null;
+  /** True on the one turn that opens the conversation. */
+  opener?: boolean;
+  /** SERVER-ONLY — what the other speaker says. This IS the listening test. */
+  line: string | null;
+  options: string[];
+  /** SERVER-ONLY — index into `options` as AUTHORED, before shuffling. */
+  correct: number;
+};
+
+export type ILSummarize = {
+  prompt: string;
+  /** SERVER-ONLY — the rater's target, an answer key in prose form. */
+  reference: string;
+  /** SERVER-ONLY — the points the rater checks for. */
+  keyPoints: string[];
+};
+
+export type InteractiveListeningPayload = {
+  scenario: ILScenario;
+  complete: ILComplete;
+  turns: ILTurn[];
+  summarize: ILSummarize;
+};
+
+/** `chosen` is keyed by turn index and holds the DISPLAYED option position, not
+ *  the authored one and never the key itself — the browser is never told which
+ *  option is correct, so it cannot post it back. The server re-derives the same
+ *  permutation from the payload and maps the position home. */
+export type InteractiveListeningResponse = {
+  filled: Record<string, string>;
+  chosen: Record<string, number>;
+  summary: string;
+};

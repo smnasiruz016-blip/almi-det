@@ -16,6 +16,10 @@
     "gate:reading-set": "tsx scripts/gates/all.mts --only=reading-set",
     "gate:key-typable": "tsx scripts/gates/all.mts --only=key-typable",
     "gate:uniformity": "tsx scripts/gates/all.mts --only=uniformity",
+    "gate:il-leak": "tsx scripts/gates/all.mts --only=il-leak",
+    "gate:il-options": "tsx scripts/gates/all.mts --only=il-options",
+    "gate:il-cloze-audio": "tsx scripts/gates/all.mts --only=il-cloze-audio",
+    "gate:il-audio-coverage": "tsx scripts/gates/all.mts --only=il-audio-coverage",
     "gate:runtime": "tsx scripts/gates/runtime-probe.mts",
     "gate:fixtures": "tsx scripts/gates/fixtures/make.mts",
     "audio:render": "tsx --env-file=.env.local scripts/generate-det-audio.mts",
@@ -26,6 +30,7 @@
     "seed:read-complete": "tsx scripts/seed/read-and-complete.ts",
     "seed:interactive-reading": "tsx scripts/seed/interactive-reading.ts",
     "seed:fill-blanks": "tsx scripts/seed/fill-in-the-blanks.ts",
+    "seed:interactive-listening": "tsx scripts/seed/interactive-listening.ts",
     "seed:speak": "tsx scripts/seed/speak-about-photo.ts",
     "seed:all": "npm run seed:read-select && npm run seed:listen && npm run seed:write-photo && npm run seed:speak",
     "seed:append": "tsx scripts/seed/append.ts"

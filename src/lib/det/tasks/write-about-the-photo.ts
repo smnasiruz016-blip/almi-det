@@ -39,6 +39,10 @@ export const writeAboutPhotoResponseSchema = z.object({
   text: z.string(),
 });
 
+// The trait vocabulary, its numeric read, and the JSON extractor are EXPORTED
+// because Interactive Listening's Part C rates a summary on the same three
+// traits and the same honesty rules. Sharing them here means a change to the
+// trait set cannot apply to one rater and silently miss the other.
 const feedbackSchema = z.object({
   taskRelevance: TRAIT, // does the writing actually describe the photo / address the task
   rangeAndAccuracy: TRAIT, // grammar + vocabulary range and control
@@ -49,6 +53,10 @@ const feedbackSchema = z.object({
 });
 
 export type WriteAboutPhotoFeedback = z.infer<typeof feedbackSchema>;
+
+/** Shared with Interactive Listening's Part C — same traits, same scale. */
+export const traitFeedbackSchema = feedbackSchema;
+export type TraitFeedback = WriteAboutPhotoFeedback;
 
 export type AiScore = {
   pointsEarned: number;
@@ -79,13 +87,13 @@ Return ONLY a JSON object, no prose around it, with exactly these keys:
   "overallComment": string      // one or two honest sentences
 }`;
 
-const LEVEL_VALUE: Record<z.infer<typeof TRAIT>, number> = {
+export const LEVEL_VALUE: Record<z.infer<typeof TRAIT>, number> = {
   strong: 1.0,
   adequate: 0.6,
   limited: 0.3,
 };
 
-function extractJson(text: string): unknown {
+export function extractJson(text: string): unknown {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) {

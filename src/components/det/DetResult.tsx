@@ -35,7 +35,15 @@ import {
   listenAndTypeResponseSchema,
   scoreListenAndType,
 } from "@/lib/det/tasks/listen-and-type";
-import type { WriteAboutPhotoFeedback } from "@/lib/det/tasks/write-about-the-photo";
+import {
+  interactiveListeningPayloadSchema,
+  interactiveListeningResponseSchema,
+  scoreInteractiveListeningObjective,
+} from "@/lib/det/tasks/interactive-listening";
+import type {
+  WriteAboutPhotoFeedback,
+  TraitFeedback as TraitFeedbackShape,
+} from "@/lib/det/tasks/write-about-the-photo";
 import type { SpeakAboutPhotoFeedback } from "@/lib/det/tasks/speak-about-the-photo";
 
 const EMPTY_ESTIMATE: SubscoreEstimate = {
@@ -167,6 +175,97 @@ function ListenAndTypeReview({ item, attempt }: { item: DetItem; attempt: DetAtt
   );
 }
 
+const IL_TRAIT_LABEL: Record<string, string> = {
+  taskRelevance: "Covers the conversation",
+  rangeAndAccuracy: "Range & accuracy",
+  clarity: "Clarity",
+};
+
+// Interactive Listening is the one HYBRID review: Parts A and B are re-scored
+// here from payload + response (deterministic, so re-deriving them costs
+// nothing and cannot disagree with what was stored), while Part C's trait read
+// comes from attempt.feedback because it was produced by the rater at submit
+// time and is not reproducible client-side.
+function InteractiveListeningReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = interactiveListeningPayloadSchema.safeParse(item.payload);
+  const response = interactiveListeningResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreInteractiveListeningObjective(payload.data, response.data);
+  const fb = attempt.feedback as TraitFeedbackShape | null;
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">
+          What you heard — the gaps
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {detail.blanks.map((b) => (
+            <div
+              key={b.id}
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                b.correct
+                  ? "border-almi-teal/40 bg-almi-teal/5"
+                  : "border-almi-coral/40 bg-almi-coral/5"
+              }`}
+            >
+              <p className="font-medium text-almi-ink">{b.missing}</p>
+              {!b.correct && (
+                <p className="text-xs text-almi-text-muted">
+                  you typed {b.typed.trim() ? `"${b.typed}"` : "nothing"}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Your replies</p>
+        <div className="mt-2 space-y-2">
+          {detail.turns.map((t) => (
+            <div
+              key={t.index}
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                t.correct
+                  ? "border-almi-teal/40 bg-almi-teal/5"
+                  : "border-almi-coral/40 bg-almi-coral/5"
+              }`}
+            >
+              <p className="text-xs text-almi-text-muted">
+                {t.opener ? "Opening the conversation" : t.line}
+              </p>
+              <p className="mt-1 text-almi-ink">{t.chosenText || "(no reply chosen)"}</p>
+              {!t.correct && (
+                <p className="mt-1 text-xs text-almi-text-muted">
+                  Best reply: <span className="text-almi-ink">{t.correctText}</span>
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {fb && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Your summary</p>
+          <div className="mt-2">
+            <TraitFeedback
+              traits={[
+                ["taskRelevance", fb.taskRelevance],
+                ["rangeAndAccuracy", fb.rangeAndAccuracy],
+                ["clarity", fb.clarity],
+              ]}
+              labels={IL_TRAIT_LABEL}
+              fb={fb}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const WRITE_TRAIT_LABEL: Record<string, string> = {
   taskRelevance: "Describes the photo",
   rangeAndAccuracy: "Range & accuracy",
@@ -280,6 +379,9 @@ const REVIEWERS: Record<
   FILL_IN_THE_BLANKS: ({ item, attempt }) => <ReadAndCompleteReview item={item} attempt={attempt} />,
   INTERACTIVE_READING: ({ item, attempt }) => <InteractiveReadingReview item={item} attempt={attempt} />,
   LISTEN_AND_TYPE: ({ item, attempt }) => <ListenAndTypeReview item={item} attempt={attempt} />,
+  INTERACTIVE_LISTENING: ({ item, attempt }) => (
+    <InteractiveListeningReview item={item} attempt={attempt} />
+  ),
   WRITE_ABOUT_THE_PHOTO: ({ attempt }) => <WritePhotoReview attempt={attempt} />,
   SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,
 };

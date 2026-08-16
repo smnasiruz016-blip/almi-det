@@ -40,6 +40,12 @@ import {
   speakAboutPhotoResponseSchema,
   evaluateSpeakAboutPhoto,
 } from "@/lib/det/tasks/speak-about-the-photo";
+import {
+  interactiveListeningPayloadSchema,
+  interactiveListeningResponseSchema,
+  scoreInteractiveListeningObjective,
+} from "@/lib/det/tasks/interactive-listening";
+import { evaluateConversationSummary } from "@/lib/det/tasks/interactive-listening-ai";
 
 export type ScoringMode = "DETERMINISTIC" | "AI";
 
@@ -110,6 +116,26 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "Listen to a short sentence and type exactly what you hear. Replays are limited, so listen closely.",
     live: true,
   },
+  // HYBRID, declared AI on purpose. Parts A and B are marked deterministically,
+  // but Part C calls Anthropic — and `scoringMode` is what the submit route
+  // reads to decide whether hasPaidAccess() must hold. Declaring this
+  // DETERMINISTIC would route a paid AI call around the one chokepoint that
+  // gates it, so every free attempt would spend on the rater.
+  //
+  // `live: false` — the plumbing, the gates and one reference conversation are
+  // in; the remaining scenarios and the composer are not. A live task type with
+  // one item and no way to answer it is worse than one that says "not yet".
+  INTERACTIVE_LISTENING: {
+    taskType: "INTERACTIVE_LISTENING",
+    slug: "interactive-listening",
+    label: "Interactive Listening",
+    skill: "LISTENING",
+    scoringMode: "AI",
+    feedsSubscores: SKILL_FEEDS.LISTENING,
+    blurb:
+      "One conversation, three parts: fill the gaps in what you hear, choose the best reply at each turn, then summarize the whole exchange in your own words.",
+    live: false,
+  },
   WRITE_ABOUT_THE_PHOTO: {
     taskType: "WRITE_ABOUT_THE_PHOTO",
     slug: "write-about-the-photo",
@@ -140,6 +166,7 @@ export const TASK_ORDER: DetTaskType[] = [
   "INTERACTIVE_READING",
   "FILL_IN_THE_BLANKS",
   "LISTEN_AND_TYPE",
+  "INTERACTIVE_LISTENING",
   "WRITE_ABOUT_THE_PHOTO",
   "SPEAK_ABOUT_THE_PHOTO",
 ];
@@ -207,6 +234,34 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
       const p = listenAndTypePayloadSchema.parse(payload);
       const r = listenAndTypeResponseSchema.parse(response);
       return scoreListenAndType(p, r);
+    },
+  },
+  // The one HYBRID handler. Parts A and B are scored first and locally, so if
+  // the rater throws the taker has still lost nothing that was already marked —
+  // but the throw is NOT swallowed. A silent fallback to "objective only" would
+  // quietly hand back a fraction computed over 9 of 15 points and present it as
+  // the task score; the submit route's 500 is the honest outcome.
+  INTERACTIVE_LISTENING: {
+    mode: "AI",
+    run: async ({ payload, response, userId }) => {
+      const p = interactiveListeningPayloadSchema.parse(payload);
+      const r = interactiveListeningResponseSchema.parse(response);
+      const objective = scoreInteractiveListeningObjective(p, r);
+      const summary = await evaluateConversationSummary({
+        payload: p,
+        summary: r.summary,
+        userId,
+      });
+      const pointsEarned = objective.pointsEarned + summary.pointsEarned;
+      const pointsMax = objective.pointsMax + summary.pointsMax;
+      return {
+        pointsEarned,
+        pointsMax,
+        fraction: pointsMax === 0 ? 0 : pointsEarned / pointsMax,
+        detail: objective.detail,
+        feedback: summary.feedback,
+        telemetry: summary.telemetry,
+      };
     },
   },
   WRITE_ABOUT_THE_PHOTO: {

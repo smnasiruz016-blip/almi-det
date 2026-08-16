@@ -384,6 +384,147 @@ async function main(): Promise<void> {
     write("fib-red-rarity.json", withFIB(flat), "FIB ladder flat while the passage-cloze ladder stays good");
   }
 
+  // ================= INTERACTIVE_LISTENING =================
+  //
+  // These fixtures mutate the REAL reference conversation rather than building
+  // a synthetic one, because the four IL gates read structure the real item
+  // already has — segment labels, an opener, a permutation. Each fixture changes
+  // exactly one thing.
+  //
+  // NOT EVERY IL CHECK CAN BE PROVEN FROM DATA, and pretending otherwise would
+  // be the worst outcome here. Three of them are structural properties of CODE:
+  //
+  //   the projection's field whitelist   only a change to the projector can emit
+  //                                      a forbidden field
+  //   the displayed-position balance     the permutation is a rotation, so
+  //                                      balance holds for ANY authored data
+  //   the orphan-clip check              the manifest is derived from the same
+  //                                      payload the references come from
+  //
+  // Those three are proven red by temporarily sabotaging the code and running
+  // the gate — recorded with their exact output in docs/IL-GATE-PROOFS.md, not
+  // fakeable from a JSON file. What follows covers everything a bad ITEM can do.
+  type ILItem = BankItem & { payload: Record<string, unknown> };
+  const ilOnly = (mutate: (it: ILItem) => void): BankItem[] => {
+    const items = clone(all);
+    const it = items.find((i) => i.taskType === "INTERACTIVE_LISTENING") as ILItem | undefined;
+    if (!it) throw new Error("no INTERACTIVE_LISTENING item in the bank to derive a fixture from");
+    mutate(it);
+    return items;
+  };
+  const turnsOf = (it: ILItem) => it.payload.turns as Record<string, unknown>[];
+  const chunksOf = (it: ILItem) => (it.payload.complete as Record<string, unknown>).text as unknown[];
+
+  write(
+    "il-red-leak-line.json",
+    ilOnly((it) => {
+      // The line the voice speaks, pasted into an option the projection legitimately
+      // ships. The taker reads the audio instead of hearing it.
+      const t = turnsOf(it)[2];
+      (t.options as string[])[1] = String(t.line);
+    }),
+    "a turn's spoken line pasted into one of its options",
+  );
+
+  write(
+    "il-red-options-longest.json",
+    ilOnly((it) => {
+      for (const t of turnsOf(it)) {
+        const opts = t.options as string[];
+        const c = t.correct as number;
+        opts[c] = `${opts[c]} — and that is what I would suggest we go ahead and do about it.`;
+      }
+    }),
+    "the correct reply is the longest option in every turn",
+  );
+
+  write(
+    "il-red-options-dupe.json",
+    ilOnly((it) => {
+      const opts = turnsOf(it)[1].options as string[];
+      opts[2] = opts[0];
+    }),
+    "two identical options in one turn",
+  );
+
+  write(
+    "il-red-turns-opener.json",
+    ilOnly((it) => {
+      turnsOf(it)[2].opener = true;
+    }),
+    "two turns marked opener",
+  );
+
+  write(
+    "il-red-cloze-notword.json",
+    ilOnly((it) => {
+      (chunksOf(it)[3] as { missing: string }).missing = "zqxvlorn";
+    }),
+    "a blanked word that is not English",
+  );
+
+  write(
+    "il-red-cloze-prefix.json",
+    ilOnly((it) => {
+      // "…room in the library" becomes "…room in the li" + [brary]: the taker can
+      // spell the rest with the audio off.
+      const chunks = chunksOf(it);
+      chunks[0] = `${String(chunks[0])}li`;
+      (chunks[1] as { missing: string }).missing = "brary";
+    }),
+    "part of the blanked word left visible before the gap",
+  );
+
+  write(
+    "il-red-cloze-count.json",
+    ilOnly((it) => {
+      // Collapse two gaps back into plain text, leaving 2 blanks instead of 4.
+      const chunks = chunksOf(it);
+      chunks[5] = `slides${String(chunks[6])}summary${String(chunks[8])}`;
+      chunks.splice(6, 3);
+    }),
+    "only 2 blanks in Part A",
+  );
+
+  write(
+    "il-red-cloze-audio.json",
+    ilOnly((it) => {
+      // An audioScript written for natural delivery that paraphrases a keyed
+      // word away. The transcript still shows the gap; the voice never says it.
+      (it.payload.complete as Record<string, unknown>).audioScript =
+        "Hey, it's Maya. I'm calling about the group project for our history class. I reserved a study " +
+        "room in the library for tomorrow at four, but it's only free until five-thirty. Could you bring " +
+        "your laptop and last week's notes? I'll handle the visuals if you can write the summary. Thanks!";
+    }),
+    "audioScript paraphrases a blanked word away (\"slides\" -> \"visuals\")",
+  );
+
+  write(
+    "il-red-audio-silentturn.json",
+    ilOnly((it) => {
+      // A turn that still names a clip but has nothing to say: the generator
+      // renders no audio for it and the turn plays silence.
+      turnsOf(it)[3].line = "   ";
+    }),
+    "a turn names a segment but has no line to speak",
+  );
+
+  write(
+    "il-red-audio-segcollision.json",
+    ilOnly((it) => {
+      turnsOf(it)[4].seg = "turn-2";
+    }),
+    "two turns claiming the same DetItemAudio seg",
+  );
+
+  write(
+    "il-red-audio-badlabel.json",
+    ilOnly((it) => {
+      turnsOf(it)[2].seg = "middle-bit";
+    }),
+    "a segment label that maps to no DetItemAudio seg",
+  );
+
   console.log("");
 }
 

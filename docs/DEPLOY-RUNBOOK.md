@@ -49,7 +49,12 @@ Pending as of this writing:
 | `4_read_and_complete` | adds `READ_AND_COMPLETE` to the `DetTaskType` enum | ❌ pending |
 | `5_interactive_reading` | adds `INTERACTIVE_READING` to the `DetTaskType` enum | ❌ pending |
 | `6_fill_in_the_blanks` | adds `FILL_IN_THE_BLANKS` to the `DetTaskType` enum | ❌ pending |
+| `7_interactive_listening` | adds `INTERACTIVE_LISTENING` to the `DetTaskType` enum | ❌ pending |
 | _(one enum migration per future task type — append as they land)_ | | |
+
+`7_interactive_listening` adds **no audio table and no audio column**. `DetItemAudio`
+(migration 3) already keys on `(itemId, seg)` with an integer `seg`, which is exactly what a
+multi-clip conversation needs: the scenario clip takes seg 0 and turn *N* takes seg *N*.
 
 ⚠️ Postgres will not let a new enum value be **used** in the same transaction that adds it.
 Migration and seeding are therefore separate steps — never combine them.
@@ -89,7 +94,7 @@ Run one per built type. Each seeder skips when rows already exist for that task 
 | Speak About the Photo | `npm run seed:speak` | 18 | ✅ in prod |
 | Fill in the Blanks | `npm run seed:fill-blanks` | 18 | ❌ pending (built + live) |
 | Interactive Reading | `npm run seed:interactive-reading` | 18 | ❌ pending (built + live) |
-| Interactive Listening | `npm run seed:interactive-listening` | — | ⬜ not built (also needs an audio render pass, §D) |
+| Interactive Listening | `npm run seed:interactive-listening` | 1 | ❌ pending — **`live: false`**, one reference conversation only (also needs an audio render pass, §D) |
 | Interactive Writing | `npm run seed:interactive-writing` | — | ⬜ not built |
 | Writing Sample | `npm run seed:writing-sample` | — | ⬜ not built (ungraded) |
 | Speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
@@ -108,6 +113,22 @@ Run one per built type. Each seeder skips when rows already exist for that task 
 - [ ] Re-run once more: it must report **0 units, $0.0000** (idempotency).
 
 Done so far: 18/18 Listen and Type clips rendered, `$0.0152` total.
+
+**Interactive Listening changes the shape of this step.** It is the first type with several
+clips per item — the reference conversation alone is **5 units** (scenario + 4 heard turns; the
+opener is silent by design). Two things follow:
+
+- The ledger now carries **one feature per task type** — `listen-and-type.tts` and
+  `interactive-listening.tts` — so a per-feature reconciliation reads a number that is actually
+  about the thing it names. The **$5 cap sums every feature**, so adding a task type cannot
+  quietly unlock a second $5.
+- `audioUrl` is **DB-only**. It is never authored in a seed and never stored in a payload; it is
+  merged into the client payload at the render seam from the `DetItemAudio` row. Until the
+  render runs, an Interactive Listening item projects `audioUrl: null` on every segment — which
+  is the honest state, not a broken one.
+
+- [ ] After rendering, confirm `DetItemAudio` holds **5 rows per Interactive Listening item**
+      with segs `0, 2, 3, 4, 5` (seg 1 is the opener and is deliberately absent).
 
 ---
 

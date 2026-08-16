@@ -34,12 +34,41 @@
 //                          it as the <img alt> handed the test-taker the exact
 //                          sentence they were being scored on; copying it scored
 //                          full relevance with no original language produced.
+//   INTERACTIVE_LISTENING  FIVE fields, and each one alone would end the task:
+//                          `turn.line` is what the audio says — printing it
+//                          removes the listening entirely; `turn.correct` and
+//                          `complete.text[].missing` are keys; and
+//                          `summarize.reference` / `summarize.keyPoints` are the
+//                          AI rater's target, the same class of leak as imageAlt.
+//                          The options DO cross (the taker must choose among
+//                          them) but PERMUTED, and the browser is never told
+//                          which position is correct.
 
 import type { DetTaskType } from "@prisma/client";
+import {
+  segLabelToNumber,
+  turnOrder,
+  blankId,
+  interactiveListeningPayloadSchema,
+} from "@/lib/det/tasks/interactive-listening";
 
 export type ClientPayload = Record<string, unknown>;
 
-type Projector = (payload: Record<string, unknown>) => ClientPayload;
+/**
+ * Per-request context a projection may need but the payload does not carry.
+ *
+ * `audio` maps DetItemAudio.seg -> public Blob URL. audioUrl is DB-ONLY: it is
+ * never authored in a seed and never stored in a payload, so a task whose
+ * stimulus IS audio can only be assembled here, at the render seam, from a row
+ * the generator wrote. An absent entry projects null, and the composer shows
+ * "audio not ready" rather than an item that looks answerable and is not.
+ */
+export type ProjectionContext = { audio?: Record<number, string> };
+
+type Projector = (
+  payload: Record<string, unknown>,
+  ctx: ProjectionContext,
+) => ClientPayload;
 
 /** Cloze projection: drop missingLetters and alsoAccept, keep only the COUNT.
  *  Shared by READ_AND_COMPLETE (passage scope) and FILL_IN_THE_BLANKS (sentence
@@ -57,6 +86,63 @@ const projectCloze: Projector = (p) => ({
       : { kind: "text", text: t.text },
   ),
 });
+
+/**
+ * INTERACTIVE_LISTENING.
+ *
+ * Built as a WHITELIST literal — every field named below is one someone decided
+ * the browser may have. Nothing is spread, nothing is deleted from a copy: a
+ * delete-based projection ships whatever field an author adds next.
+ *
+ * Part A projects the literal chunks and a bare `{kind:"blank", id}` marker.
+ * Note what is NOT there: no visiblePrefix and no blankLength, both of which the
+ * reading cloze DOES project. Here the audio supplies the word, so a prefix or a
+ * letter count would let the gap be solved by spelling instead of by listening —
+ * it would be a reading item wearing a listening item's name.
+ *
+ * Part B projects each turn's options through turnOrder(), and emits the
+ * `index` the client must post back. It does not emit which position is right;
+ * the server re-derives the permutation at grading time.
+ */
+const projectInteractiveListening: Projector = (raw, ctx) => {
+  const parsed = interactiveListeningPayloadSchema.safeParse(raw);
+  if (!parsed.success) {
+    // Fail CLOSED. Returning the raw payload here would undo the whole file.
+    throw new Error(
+      `INTERACTIVE_LISTENING payload does not parse — refusing to project it. ` +
+        `${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
+    );
+  }
+  const p = parsed.data;
+  const audio = ctx.audio ?? {};
+
+  let blanks = 0;
+  const text = p.complete.text.map((c) =>
+    typeof c === "string"
+      ? { kind: "text" as const, text: c }
+      : { kind: "blank" as const, id: blankId(blanks++) },
+  );
+
+  return {
+    scenario: {
+      register: p.scenario.register,
+      setting: p.scenario.setting,
+      speakerName: p.scenario.speakerName,
+      youAre: p.scenario.youAre,
+    },
+    complete: {
+      audioUrl: audio[segLabelToNumber(p.complete.seg)] ?? null,
+      text,
+    },
+    turns: p.turns.map((t, i) => ({
+      index: i,
+      opener: Boolean(t.opener),
+      audioUrl: t.seg === null ? null : (audio[segLabelToNumber(t.seg)] ?? null),
+      options: turnOrder(p, i).map((authored) => t.options[authored]),
+    })),
+    summarize: { prompt: p.summarize.prompt },
+  };
+};
 
 const PROJECTORS: Record<DetTaskType, Projector> = {
   READ_AND_SELECT: (p) => ({
@@ -99,6 +185,8 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
 
   LISTEN_AND_TYPE: () => ({}),
 
+  INTERACTIVE_LISTENING: projectInteractiveListening,
+
   WRITE_ABOUT_THE_PHOTO: (p) => ({
     imageUrl: p.imageUrl,
     minWords: p.minWords,
@@ -116,7 +204,11 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
  * Throws for any task type without an explicit projection — never returns the
  * raw payload as a fallback.
  */
-export function toClientPayload(taskType: DetTaskType, payload: unknown): ClientPayload {
+export function toClientPayload(
+  taskType: DetTaskType,
+  payload: unknown,
+  ctx: ProjectionContext = {},
+): ClientPayload {
   const project = (PROJECTORS as Partial<Record<DetTaskType, Projector>>)[taskType];
   if (!project) {
     throw new Error(
@@ -124,7 +216,7 @@ export function toClientPayload(taskType: DetTaskType, payload: unknown): Client
         `payload — add an explicit projection in src/lib/det/client-payload.ts.`,
     );
   }
-  return project((payload ?? {}) as Record<string, unknown>);
+  return project((payload ?? {}) as Record<string, unknown>, ctx);
 }
 
 /** Task types with an explicit projection. Read by gate:leak. */

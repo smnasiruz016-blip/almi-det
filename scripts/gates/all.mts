@@ -21,8 +21,24 @@ import cloze from "./cloze.mjs";
 import readingSet from "./reading-set.mjs";
 import keyTypable from "./key-typable.mjs";
 import uniformity from "./uniformity.mjs";
+import ilLeak from "./il-leak.mjs";
+import ilOptions from "./il-options.mjs";
+import ilClozeAudio from "./il-cloze-audio.mjs";
+import ilAudioCoverage from "./il-audio-coverage.mjs";
 
-const GATES: GateDef[] = [minItems, leak, degame, cloze, readingSet, keyTypable, uniformity];
+const GATES: GateDef[] = [
+  minItems,
+  leak,
+  degame,
+  cloze,
+  readingSet,
+  keyTypable,
+  uniformity,
+  ilLeak,
+  ilOptions,
+  ilClozeAudio,
+  ilAudioCoverage,
+];
 
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice("--only=".length);
 
