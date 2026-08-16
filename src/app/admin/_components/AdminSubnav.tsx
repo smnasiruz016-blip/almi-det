@@ -1,7 +1,7 @@
 "use client";
 
-// Admin tab strip. Comp Accounts + Accounts for now; Reviews & Email List is a
-// later pass.
+// Admin tab strip. Accounts is the action surface; Comp Accounts is the grants
+// audit trail; Costs reads AICostLedger.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { label: "Comp Accounts", href: "/admin/comp-accounts" },
   { label: "Accounts", href: "/admin/accounts" },
+  { label: "Costs", href: "/admin/costs" },
   { label: "Reviews", href: "/admin/reviews" },
 ];
 

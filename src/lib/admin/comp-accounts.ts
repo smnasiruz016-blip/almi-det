@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/founder";
+import { getCompProDaysRemaining, isComped } from "@/lib/billing/plans";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_DAYS = 1825; // 5 years
@@ -135,10 +136,10 @@ export async function listCompAccounts(): Promise<{
     },
   });
 
-  const now = Date.now();
   const mapped: CompRow[] = rows.map((r) => {
-    const untilMs = r.compProUntil!.getTime();
-    const isActive = untilMs > now;
+    // isComped(), not a local `untilMs > now` — the same predicate the paywall
+    // tests, so this ledger can never disagree with what the user experiences.
+    const isActive = isComped({ compProUntil: r.compProUntil });
     return {
       userId: r.id,
       email: r.email,
@@ -148,7 +149,9 @@ export async function listCompAccounts(): Promise<{
       reason: r.compReason,
       grantedBy: r.compGrantedBy,
       isActive,
-      daysRemaining: isActive ? Math.ceil((untilMs - now) / DAY_MS) : null,
+      // Days come from the shared predicate, not a second Math.ceil here — one
+      // rule, one place (gold standard C3).
+      daysRemaining: getCompProDaysRemaining({ compProUntil: r.compProUntil }),
     };
   });
 

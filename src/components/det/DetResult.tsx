@@ -8,7 +8,8 @@
 // the session aggregate.
 
 import Link from "next/link";
-import type { DetAttempt, DetItem } from "@prisma/client";
+import type { ReactNode } from "react";
+import type { DetAttempt, DetItem, DetTaskType } from "@prisma/client";
 import type { DetSkill, SubscoreEstimate } from "@/lib/det/types";
 import { overallReadiness } from "@/lib/det/subscores";
 import type { TaskDef } from "@/lib/det/registry";
@@ -20,11 +21,66 @@ import {
   scoreReadAndSelect,
 } from "@/lib/det/tasks/read-and-select";
 import {
+  readAndCompletePayloadSchema,
+  readAndCompleteResponseSchema,
+  scoreReadAndComplete,
+} from "@/lib/det/tasks/read-and-complete";
+import {
+  interactiveReadingPayloadSchema,
+  interactiveReadingResponseSchema,
+  scoreInteractiveReading,
+} from "@/lib/det/tasks/interactive-reading";
+import {
   listenAndTypePayloadSchema,
   listenAndTypeResponseSchema,
   scoreListenAndType,
 } from "@/lib/det/tasks/listen-and-type";
-import type { WriteAboutPhotoFeedback } from "@/lib/det/tasks/write-about-the-photo";
+import {
+  interactiveListeningPayloadSchema,
+  interactiveListeningResponseSchema,
+  scoreInteractiveListeningObjective,
+} from "@/lib/det/tasks/interactive-listening";
+import {
+  interactiveWritingPayloadSchema,
+  interactiveWritingResponseSchema,
+  iwSections,
+} from "@/lib/det/tasks/interactive-writing";
+import {
+  writingSamplePayloadSchema,
+  writingSampleResponseSchema,
+  WRITING_SAMPLE_NOTE,
+} from "@/lib/det/tasks/writing-sample";
+import {
+  WRITING_TRAIT_KEYS,
+  WRITING_TRAIT_LABEL,
+  type WritingFeedback,
+} from "@/lib/det/tasks/writing-rater";
+import {
+  interactiveSpeakingPayloadSchema,
+  isTranscripts,
+} from "@/lib/det/tasks/interactive-speaking";
+import { readStoredAnswers } from "@/lib/det/staged";
+import {
+  readThenSpeakPayloadSchema,
+  listenThenSpeakPayloadSchema,
+  speakingSamplePayloadSchema,
+  SPEAKING_SAMPLE_NOTE,
+} from "@/lib/det/tasks/spoken-rubric";
+import {
+  SPEAKING_TRAIT_KEYS,
+  SPEAKING_TRAIT_LABEL,
+  SPEAKING_TRANSCRIPT_NOTE,
+  type SpeakingFeedback,
+} from "@/lib/det/tasks/speaking-rater";
+import {
+  readAloudPayloadSchema,
+  readAloudResponseSchema,
+  scoreReadAloud,
+} from "@/lib/det/tasks/read-aloud";
+import type {
+  WriteAboutPhotoFeedback,
+  TraitFeedback as TraitFeedbackShape,
+} from "@/lib/det/tasks/write-about-the-photo";
 import type { SpeakAboutPhotoFeedback } from "@/lib/det/tasks/speak-about-the-photo";
 
 const EMPTY_ESTIMATE: SubscoreEstimate = {
@@ -62,6 +118,78 @@ function ReadAndSelectReview({ item, attempt }: { item: DetItem; attempt: DetAtt
   );
 }
 
+function ReadAndCompleteReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = readAndCompletePayloadSchema.safeParse(item.payload);
+  const response = readAndCompleteResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreReadAndComplete(payload.data, response.data);
+  return (
+    <div className="space-y-2">
+      {detail.blanks.map((b) => (
+        <div
+          key={b.id}
+          className={`rounded-lg border px-3 py-2 text-sm ${
+            b.correct ? "border-almi-teal/40 bg-almi-teal/5" : "border-almi-coral/40 bg-almi-coral/5"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-medium text-almi-ink">
+              {b.visiblePrefix}
+              <span className="text-almi-teal">{b.missingLetters}</span>
+            </span>
+            <span aria-hidden>{b.correct ? "✓" : "✗"}</span>
+          </div>
+          {!b.correct && (
+            <p className="text-xs text-almi-text-muted">
+              You typed{" "}
+              {b.typed.trim() ? (
+                <span className="font-medium">
+                  {b.visiblePrefix}
+                  {b.typed}
+                </span>
+              ) : (
+                "nothing"
+              )}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InteractiveReadingReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = interactiveReadingPayloadSchema.safeParse(item.payload);
+  const response = interactiveReadingResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreInteractiveReading(payload.data, response.data);
+  return (
+    <div className="space-y-3">
+      {detail.questions.map((q, i) => (
+        <div
+          key={q.id}
+          className={`rounded-lg border px-3 py-2 text-sm ${
+            q.correct ? "border-almi-teal/40 bg-almi-teal/5" : "border-almi-coral/40 bg-almi-coral/5"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-medium text-almi-ink">
+              {i + 1}. {q.stem}
+            </p>
+            <span aria-hidden>{q.correct ? "✓" : "✗"}</span>
+          </div>
+          {!q.correct && (
+            <p className="mt-1 text-xs text-almi-text-muted">
+              You chose {q.chosenText ? `"${q.chosenText}"` : "nothing"} · answer:{" "}
+              <span className="font-medium text-almi-ink">{q.expectedText}</span>
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ListenAndTypeReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
   const payload = listenAndTypePayloadSchema.safeParse(item.payload);
   const response = listenAndTypeResponseSchema.safeParse(attempt.response);
@@ -80,6 +208,292 @@ function ListenAndTypeReview({ item, attempt }: { item: DetItem; attempt: DetAtt
       <p className="text-xs text-almi-text-muted">
         {detail.matched} of {detail.total} words matched (case, punctuation and small typos forgiven).
       </p>
+    </div>
+  );
+}
+
+// Read Aloud shows WHAT WAS HEARD against what was on screen. It deliberately
+// does not phrase this as a pronunciation verdict: the score is a word match on
+// a machine transcript, and presenting that as an accent judgement would claim a
+// measurement we do not make.
+function ReadAloudReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = readAloudPayloadSchema.safeParse(item.payload);
+  const response = readAloudResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreReadAloud(payload.data, response.data);
+  return (
+    <div className="space-y-3 text-sm">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">The sentence</p>
+        <p className="mt-1 text-almi-ink">{detail.target}</p>
+      </div>
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          What we heard
+        </p>
+        <p className="mt-1 text-almi-text">{detail.transcript.trim() || "(nothing)"}</p>
+      </div>
+      {detail.missed.length > 0 && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-almi-accent-deep">
+            Words not picked up
+          </p>
+          <p className="mt-1 text-almi-text">{detail.missed.join(", ")}</p>
+        </div>
+      )}
+      <p className="text-xs text-almi-text-muted">
+        {detail.matched} of {detail.total} words matched, in order. This checks which words came
+        through the transcript — it is not a rating of your accent.
+      </p>
+    </div>
+  );
+}
+
+// The three rubric-based speaking types review identically: the task as the
+// taker received it, the transcript, and the four-trait read.
+//
+// THE TRANSCRIPT NOTE IS SHOWN HERE TOO, not just during the attempt. This is
+// the screen where a number appears next to the word "Speaking", and it is the
+// moment a learner is most likely to read it as a verdict on their accent. The
+// rater never heard the audio; the review says so.
+function SpokenRubricReview({
+  taskLabel,
+  task,
+  attempt,
+  extraNote,
+}: {
+  taskLabel: string;
+  task: string | null;
+  attempt: DetAttempt;
+  extraNote?: string;
+}) {
+  const fb = attempt.feedback as SpeakingFeedback | null;
+  const transcript = (attempt.response as { transcript?: string } | null)?.transcript ?? "";
+  return (
+    <div className="space-y-4">
+      {extraNote && (
+        <p className="rounded-lg border border-almi-bg-peach bg-almi-bg-peach/40 px-3 py-2 text-xs text-almi-text">
+          {extraNote}
+        </p>
+      )}
+      {task && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">{taskLabel}</p>
+          <p className="mt-1 text-sm text-almi-text">{task}</p>
+        </div>
+      )}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          Transcript of what you said
+        </p>
+        <p className="mt-1 text-sm text-almi-text">{transcript.trim() || "(nothing transcribed)"}</p>
+      </div>
+      {fb && (
+        <TraitFeedback
+          traits={SPEAKING_TRAIT_KEYS.map((k) => [k, fb[k]] as [string, string])}
+          labels={SPEAKING_TRAIT_LABEL}
+          fb={fb}
+        />
+      )}
+      <p className="text-xs text-almi-text-muted">{SPEAKING_TRANSCRIPT_NOTE}</p>
+    </div>
+  );
+}
+
+const IL_TRAIT_LABEL: Record<string, string> = {
+  taskRelevance: "Covers the conversation",
+  rangeAndAccuracy: "Range & accuracy",
+  clarity: "Clarity",
+};
+
+// Interactive Listening is the one HYBRID review: Parts A and B are re-scored
+// here from payload + response (deterministic, so re-deriving them costs
+// nothing and cannot disagree with what was stored), while Part C's trait read
+// comes from attempt.feedback because it was produced by the rater at submit
+// time and is not reproducible client-side.
+function InteractiveListeningReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = interactiveListeningPayloadSchema.safeParse(item.payload);
+  const response = interactiveListeningResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  const { detail } = scoreInteractiveListeningObjective(payload.data, response.data);
+  const fb = attempt.feedback as TraitFeedbackShape | null;
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">
+          Part 1 · the gaps you typed
+        </p>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {detail.blanks.map((b) => (
+            <div
+              key={b.id}
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                b.correct
+                  ? "border-almi-teal/40 bg-almi-teal/5"
+                  : "border-almi-coral/40 bg-almi-coral/5"
+              }`}
+            >
+              <p className="font-medium text-almi-ink">{b.missing}</p>
+              {!b.correct && (
+                <p className="text-xs text-almi-text-muted">
+                  you typed {b.typed.trim() ? `"${b.typed}"` : "nothing"}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Part 2 · your replies, turn by turn</p>
+        <div className="mt-2 space-y-2">
+          {detail.turns.map((t) => (
+            <div
+              key={t.index}
+              className={`rounded-lg border px-3 py-2 text-sm ${
+                t.correct
+                  ? "border-almi-teal/40 bg-almi-teal/5"
+                  : "border-almi-coral/40 bg-almi-coral/5"
+              }`}
+            >
+              <p className="text-xs text-almi-text-muted">
+                {t.opener ? "Opening the conversation" : t.line}
+              </p>
+              <p className="mt-1 text-almi-ink">{t.chosenText || "(no reply chosen)"}</p>
+              {!t.correct && (
+                <p className="mt-1 text-xs text-almi-text-muted">
+                  Best reply: <span className="text-almi-ink">{t.correctText}</span>
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">Part 3 · your summary</p>
+        <p className="mt-2 rounded-lg border border-almi-bg-peach bg-almi-paper px-3 py-2 text-sm text-almi-text">
+          {response.data.summary.trim() || "(nothing written)"}
+        </p>
+
+        {/* The key points are the rater's checklist. Shown only HERE, after
+            scoring — during the attempt they are withheld, because knowing what
+            the summary must cover is knowing what to listen for. */}
+        <p className="mt-3 text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          What a full summary covers
+        </p>
+        <ul className="mt-1 space-y-1 text-sm text-almi-text">
+          {payload.data.summarize.keyPoints.map((k, i) => (
+            <li key={i} className="flex gap-2">
+              <span aria-hidden className="text-almi-teal">
+                ·
+              </span>
+              {k}
+            </li>
+          ))}
+        </ul>
+
+        {fb && (
+          <div className="mt-4">
+            <TraitFeedback
+              traits={[
+                ["taskRelevance", fb.taskRelevance],
+                ["rangeAndAccuracy", fb.rangeAndAccuracy],
+                ["clarity", fb.clarity],
+              ]}
+              labels={IL_TRAIT_LABEL}
+              fb={fb}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Both rubric-based Writing types review the same way: the prompts the taker
+// answered, what they wrote against each, and the four-trait read. The rubric
+// REFERENCE is deliberately not shown even here — it is the rater's target, and
+// printing it teaches the answer to the next attempt rather than the skill.
+function WritingRubricReview({
+  sections,
+  traits,
+  attempt,
+}: {
+  sections: { label: string; prompt: string; text: string; minWords?: number }[];
+  traits: string[];
+  attempt: DetAttempt;
+}) {
+  const fb = attempt.feedback as WritingFeedback | null;
+  const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
+  return (
+    <div className="space-y-5">
+      {sections.map((s) => (
+        <div key={s.label}>
+          <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">{s.label}</p>
+          <p className="mt-1 text-sm text-almi-text-muted">{s.prompt}</p>
+          <p className="mt-2 whitespace-pre-wrap rounded-lg border border-almi-bg-peach bg-almi-paper px-3 py-2 text-sm text-almi-text">
+            {s.text.trim() || "(nothing written)"}
+          </p>
+          <p className="mt-1 text-xs text-almi-text-muted">
+            {words(s.text)} word{words(s.text) === 1 ? "" : "s"}
+            {s.minWords ? ` · target at least ${s.minWords}` : ""}
+          </p>
+        </div>
+      ))}
+
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          Marked on
+        </p>
+        <p className="mt-1 text-sm text-almi-text">{traits.join(" · ")}</p>
+      </div>
+
+      {fb && (
+        <TraitFeedback
+          traits={WRITING_TRAIT_KEYS.map((k) => [k, fb[k]] as [string, string])}
+          labels={WRITING_TRAIT_LABEL}
+          fb={fb}
+        />
+      )}
+    </div>
+  );
+}
+
+function InteractiveWritingReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = interactiveWritingPayloadSchema.safeParse(item.payload);
+  const response = interactiveWritingResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  return (
+    <WritingRubricReview
+      sections={iwSections(payload.data, response.data.text)}
+      traits={payload.data.rubric.traits}
+      attempt={attempt}
+    />
+  );
+}
+
+function WritingSampleReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = writingSamplePayloadSchema.safeParse(item.payload);
+  const response = writingSampleResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  return (
+    <div className="space-y-4">
+      <p className="rounded-lg border border-almi-bg-peach bg-almi-bg-peach/40 px-3 py-2 text-xs text-almi-text">
+        {WRITING_SAMPLE_NOTE}
+      </p>
+      <WritingRubricReview
+        sections={[
+          {
+            label: "YOUR SAMPLE",
+            prompt: payload.data.prompt,
+            text: response.data.text,
+          },
+        ]}
+        traits={payload.data.rubric.traits}
+        attempt={attempt}
+      />
     </div>
   );
 }
@@ -183,19 +597,99 @@ function TraitFeedback({
   );
 }
 
+// EXHAUSTIVE by type, not by switch-with-default. The old `default: return null`
+// meant a newly added task type rendered a BLANK review pane after scoring —
+// silent, and only visible to someone who happened to finish that task. A total
+// Record makes the compiler demand a reviewer for every DetTaskType, the same
+// way client-payload.ts demands a projector.
+const REVIEWERS: Record<
+  DetTaskType,
+  (a: { item: DetItem; attempt: DetAttempt }) => ReactNode
+> = {
+  READ_AND_SELECT: ({ item, attempt }) => <ReadAndSelectReview item={item} attempt={attempt} />,
+  READ_AND_COMPLETE: ({ item, attempt }) => <ReadAndCompleteReview item={item} attempt={attempt} />,
+  FILL_IN_THE_BLANKS: ({ item, attempt }) => <ReadAndCompleteReview item={item} attempt={attempt} />,
+  INTERACTIVE_READING: ({ item, attempt }) => <InteractiveReadingReview item={item} attempt={attempt} />,
+  LISTEN_AND_TYPE: ({ item, attempt }) => <ListenAndTypeReview item={item} attempt={attempt} />,
+  INTERACTIVE_LISTENING: ({ item, attempt }) => (
+    <InteractiveListeningReview item={item} attempt={attempt} />
+  ),
+  WRITE_ABOUT_THE_PHOTO: ({ attempt }) => <WritePhotoReview attempt={attempt} />,
+  INTERACTIVE_WRITING: ({ item, attempt }) => (
+    <InteractiveWritingReview item={item} attempt={attempt} />
+  ),
+  WRITING_SAMPLE: ({ item, attempt }) => <WritingSampleReview item={item} attempt={attempt} />,
+  READ_ALOUD: ({ item, attempt }) => <ReadAloudReview item={item} attempt={attempt} />,
+  READ_THEN_SPEAK: ({ item, attempt }) => {
+    const p = readThenSpeakPayloadSchema.safeParse(item.payload);
+    return (
+      <SpokenRubricReview
+        taskLabel="The prompt"
+        task={p.success ? p.data.prompt : null}
+        attempt={attempt}
+      />
+    );
+  },
+  // The question is shown HERE for the first time — during the attempt it was
+  // audio only, and after scoring there is nothing left to protect.
+  LISTEN_THEN_SPEAK: ({ item, attempt }) => {
+    const p = listenThenSpeakPayloadSchema.safeParse(item.payload);
+    return (
+      <SpokenRubricReview
+        taskLabel="The question you heard"
+        task={p.success ? p.data.question : null}
+        attempt={attempt}
+      />
+    );
+  },
+  SPEAKING_SAMPLE: ({ item, attempt }) => {
+    const p = speakingSamplePayloadSchema.safeParse(item.payload);
+    return (
+      <SpokenRubricReview
+        taskLabel="The prompt"
+        task={p.success ? p.data.prompt : null}
+        attempt={attempt}
+        extraNote={SPEAKING_SAMPLE_NOTE}
+      />
+    );
+  },
+  // The questions are shown HERE for the first time — during the interview they
+  // were audio only, and after scoring there is nothing left to protect.
+  INTERACTIVE_SPEAKING: ({ item, attempt }) => {
+    const p = interactiveSpeakingPayloadSchema.safeParse(item.payload);
+    if (!p.success) return null;
+    const turns = isTranscripts(p.data, readStoredAnswers(attempt.response).text);
+    const fb = attempt.feedback as SpeakingFeedback | null;
+    return (
+      <div className="space-y-4">
+        {turns.map((t, i) => (
+          <div key={i}>
+            <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">
+              Question {i + 1} (heard)
+            </p>
+            <p className="mt-1 text-sm text-almi-text-muted">{t.question}</p>
+            <p className="mt-1 text-sm text-almi-text">
+              {t.transcript.trim() || "(nothing transcribed)"}
+            </p>
+          </div>
+        ))}
+        {fb && (
+          <TraitFeedback
+            traits={SPEAKING_TRAIT_KEYS.map((k) => [k, fb[k]] as [string, string])}
+            labels={SPEAKING_TRAIT_LABEL}
+            fb={fb}
+          />
+        )}
+        <p className="text-xs text-almi-text-muted">{SPEAKING_TRANSCRIPT_NOTE}</p>
+      </div>
+    );
+  },
+  SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,
+};
+
 export function TaskReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
-  switch (attempt.taskType) {
-    case "READ_AND_SELECT":
-      return <ReadAndSelectReview item={item} attempt={attempt} />;
-    case "LISTEN_AND_TYPE":
-      return <ListenAndTypeReview item={item} attempt={attempt} />;
-    case "WRITE_ABOUT_THE_PHOTO":
-      return <WritePhotoReview attempt={attempt} />;
-    case "SPEAK_ABOUT_THE_PHOTO":
-      return <SpeakPhotoReview attempt={attempt} />;
-    default:
-      return null;
-  }
+  const render = REVIEWERS[attempt.taskType];
+  return <>{render({ item, attempt })}</>;
 }
 
 export function DetResult({

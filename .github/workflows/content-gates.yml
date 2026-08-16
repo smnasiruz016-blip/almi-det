@@ -1,0 +1,40 @@
+name: content gates
+
+# Runs the content-integrity gates on every push and PR.
+#
+# The gates are also wired into `npm run build`, so a Vercel deploy blocks on
+# them too. CI exists on top of that for one reason: AlmiDET's preview deploys
+# currently fail before the build starts, so Vercel is not a reliable place to
+# see a gate result. CI runs with no database and no secrets beyond the package
+# token, which is exactly what the gates were designed to need.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      # @smnasiruz016-blip/almi-data is a private GitHub Packages dependency;
+      # .npmrc reads NODE_AUTH_TOKEN.
+      - name: Install
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      # The gates read the Prisma enum, so the client must exist. No database is
+      # contacted — scripts/gates/_bank.mts supplies a dummy DATABASE_URL.
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Content gates
+        run: npm run gate:all

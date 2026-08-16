@@ -1,0 +1,5 @@
+# Fixtures are DERIVED from the real bank by make.mts — regenerate with
+# `npm run gate:fixtures`. They are deliberately not committed: a stale fixture
+# checked into the repo is exactly how a gate ends up grading last month's
+# content while reporting green.
+*.json

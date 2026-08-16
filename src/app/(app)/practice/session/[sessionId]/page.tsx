@@ -10,19 +10,8 @@ import { DET_TASKS } from "@/lib/det/registry";
 import { DetComposer } from "@/components/det/composer-map";
 import { DetResult } from "@/components/det/DetResult";
 import { DetSessionResult } from "@/components/det/DetSessionResult";
-import type { DetTaskType } from "@prisma/client";
-
-// Strip any server-only answer key before sending the payload to the client.
-function sanitizePayload(taskType: DetTaskType, payload: unknown): unknown {
-  if (taskType === "READ_AND_SELECT") {
-    const p = payload as { words: { id: string; text: string; real: boolean }[] };
-    return { words: p.words.map((w) => ({ id: w.id, text: w.text })) };
-  }
-  if (taskType === "LISTEN_AND_TYPE") {
-    return {}; // audio is fetched server-side; the sentence never goes to the client
-  }
-  return payload;
-}
+import { toClientPayload, needsAudioContext } from "@/lib/det/client-payload";
+import { prisma } from "@/lib/prisma";
 
 export default async function SessionPage({
   params,
@@ -44,6 +33,22 @@ export default async function SessionPage({
   const def = DET_TASKS[current.taskType];
   const stepLabel = `Question ${session.currentStep + 1} of ${session.targetCount}`;
   const isLast = session.currentStep + 1 >= session.targetCount;
+
+  // Pre-rendered clip URLs, for the one task type whose projection carries audio
+  // (Listen and Type fetches its clip through /api/det/audio instead). Guarded so
+  // the other six types do not pay for a query they cannot use.
+  //
+  // A task that projects audio is also a task that projects it PER STAGE:
+  // toClientPayload is handed the stored response so the projection can release
+  // the current stage only. See src/lib/det/il-stages.ts.
+  const audio: Record<number, string> = {};
+  if (needsAudioContext(current.taskType)) {
+    const rows = await prisma.detItemAudio.findMany({
+      where: { itemId: current.itemId },
+      select: { seg: true, audioUrl: true },
+    });
+    for (const r of rows) if (r.audioUrl) audio[r.seg] = r.audioUrl;
+  }
 
   if (current.status === "SCORED") {
     async function advance() {
@@ -85,7 +90,14 @@ export default async function SessionPage({
         attemptId={current.id}
         taskType={current.taskType}
         prompt={current.item.prompt}
-        payload={sanitizePayload(current.taskType, current.item.payload)}
+        // `title` is already rendered as the <h1> above, so reusing it as the
+        // image's alt text adds no information the taker cannot already see —
+        // unlike the rater target, which is now withheld entirely.
+        title={current.item.title}
+        payload={toClientPayload(current.taskType, current.item.payload, {
+          audio,
+          stored: current.response,
+        })}
       />
     </div>
   );

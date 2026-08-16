@@ -1,6 +1,14 @@
-// On-demand TTS for Listen and Type. Generates the prompt audio server-side so
-// the sentence text never reaches the client (it's the answer). Ownership-scoped
-// to the requesting user's attempt.
+// GET /api/det/audio/[attemptId] — the Listen and Type prompt audio.
+//
+// Preferred path: the item was pre-rendered by scripts/generate-det-audio.mts,
+// so we redirect to its Vercel Blob URL and the CDN serves the bytes. No OpenAI
+// call happens on this path at all.
+//
+// Fallback path: if no DetItemAudio row exists for this item, synthesize on
+// demand exactly as before — byte for byte the original behaviour, so an
+// un-rendered item plays rather than 404s.
+//
+// Either way the sentence text never reaches the client: it is the answer.
 
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
@@ -9,6 +17,7 @@ import { synthesizeSpeech } from "@/lib/ai/openai";
 import { listenAndTypePayloadSchema } from "@/lib/det/tasks/listen-and-type";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function GET(
   _req: Request,
@@ -26,6 +35,32 @@ export async function GET(
   });
   if (!attempt || attempt.taskType !== "LISTEN_AND_TYPE") {
     return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
+  }
+
+  // Pre-rendered? Redirect to Blob and skip OpenAI entirely. The ownership and
+  // task-type checks above still run first, so someone else's attempt 404s
+  // exactly as it did before rather than being redirected.
+  //
+  // Gated on the ROW ALONE — deliberately NOT on isBlobConfigured(). That helper
+  // tests BLOB_READ_WRITE_TOKEN, which is a WRITE credential; reading a public
+  // Blob URL needs no token at all. The deployed app does not carry that token,
+  // so gating on it here would make this branch permanently false in production
+  // and quietly leave every request on the on-demand path — the exact cost bug
+  // this change exists to kill. isBlobConfigured() belongs only in the write
+  // path (scripts/generate-det-audio.mts).
+  //
+  // The REDIRECT is per-user and auth-gated, so it stays private/no-store. The
+  // Blob URL it points at carries its own public CDN cache headers, which is
+  // where the caching actually happens.
+  const pre = await prisma.detItemAudio.findUnique({
+    where: { itemId_seg: { itemId: attempt.itemId, seg: 0 } },
+    select: { audioUrl: true },
+  });
+  if (pre?.audioUrl) {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: pre.audioUrl, "Cache-Control": "private, no-store" },
+    });
   }
 
   const parsed = listenAndTypePayloadSchema.safeParse(attempt.item.payload);

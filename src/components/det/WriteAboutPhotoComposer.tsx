@@ -2,9 +2,13 @@
 
 // Write About the Photo composer. The user writes a description; submit becomes
 // available at the minimum word count. Scoring is an AI trait read (server-side) turned
-// into an honest practice range. When imageUrl is empty we show a captioned
-// scene placeholder — the AI judges against the same scene description, so the
-// human and the rater stay consistent.
+// into an honest practice range.
+//
+// `alt` is the item TITLE, which the page already shows as its <h1>. It is
+// deliberately NOT the scene description the AI rater judges against — that
+// text is server-only and never projected to the client (see
+// src/lib/det/client-payload.ts). Showing it here would hand the test-taker the
+// exact sentence they are scored on.
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,13 +22,13 @@ export function WriteAboutPhotoComposer({
   attemptId,
   prompt,
   imageUrl,
-  imageAlt,
+  alt,
   minWords,
 }: {
   attemptId: string;
   prompt: string;
   imageUrl: string;
-  imageAlt: string;
+  alt: string;
   minWords: number;
 }) {
   const router = useRouter();
@@ -76,10 +80,10 @@ export function WriteAboutPhotoComposer({
         {imageUrl ? (
           // Plain <img> (no next/image domain config needed for the checkpoint).
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={imageAlt} className="h-56 w-full object-cover" />
+          <img src={imageUrl} alt={alt} className="h-56 w-full object-cover" />
         ) : (
           <div className="flex h-56 items-center justify-center bg-almi-accent/10 px-6 text-center">
-            <span className="text-sm font-medium text-almi-ink">{imageAlt}</span>
+            <span className="text-sm font-medium text-almi-ink">{alt}</span>
           </div>
         )}
         <figcaption className="border-t border-almi-bg-peach px-4 py-2 text-xs text-almi-text-muted">

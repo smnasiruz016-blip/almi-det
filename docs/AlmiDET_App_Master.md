@@ -19,6 +19,60 @@ Confirmed unchanged: 10–160 scale in increments of 5; ~60 min, 3 sections; ada
 
 ---
 
+## 0b. Question-type verification record (verified 2026-08-15, against Duolingo's own materials)
+
+Phase-0 above established structure and scoring but recorded **no per-question-type inventory**.
+This section is that inventory. It is the list content is built against.
+
+**Fill in the Blanks is DISTINCT from Read and Complete.** Both are cloze, but the scope differs:
+Read and Complete is passage-scope damaged text (many gaps across a paragraph); Fill in the Blanks
+is sentence-scope (one word in one sentence). It earns its own task type.
+
+**Interactive Reading is ONE type containing five sub-question kinds**, ~6 questions per set, all
+selection-based:
+
+| Sub-kind | The taker selects |
+|---|---|
+| Complete the Sentences | a word for a gap in a sentence |
+| Complete the Passage | a sentence for a gap in the passage |
+| Highlight the Answer | a span of the passage that answers a question |
+| Identify the Idea | the summary that matches the passage |
+| Title the Passage | the best title |
+
+### ⚠️ UNRESOLVED: the Speaking inventory contradicts §0
+
+The 2026-08-15 pass against official materials shows **Read Aloud** and **Listen Then Speak** in
+the current test. The 2026-06-24 Phase-0 pass recorded the exact opposite on both counts:
+
+| Claim | Phase-0 (2026-06-24) | Verification (2026-08-15) |
+|---|---|---|
+| Read Aloud | **removed** from the test | **present** |
+| Listen Then Speak | **replaced** by Interactive Speaking | **present** |
+| Interactive Speaking | added July 2025 | not seen in official materials |
+
+Both passes cite official sources, so one is wrong and the difference is not cosmetic — it decides
+which speaking types get built. Recorded as a conflict rather than resolved by recency.
+
+**ALSO FOR THAT SAME VERIFICATION PASS — Complete the Sentences scope.** Does DET gap a sentence
+drawn FROM the passage (rendered WITH the gap, so nothing is visible to copy), or a fresh sentence
+testing the word in new context? AlmiDET renders the full passage beside a separate stem, so a key
+appearing in the passage is copyable either way — gate:reading-set IR8 now forbids it, and that fix
+is correct for the current rendering regardless of the answer. If DET gaps the passage itself, we
+may restructure this sub-kind's RENDERING later; the content does not become wrong.
+
+**ALSO FOR THAT SAME VERIFICATION PASS — Highlight the Answer granularity.** AlmiDET builds
+sentence-level selection (each sentence is a span; the taker picks a sentence). If DET's actual
+interaction is finer — dragging over an arbitrary word range — the payload needs character offsets
+instead of span ids and only the Highlight renderer changes. Sentence-level is the safer, credible
+build and is NOT blocking; refine afterwards if the pass shows finer selection.
+
+**BLOCKING: no speaking task type may be built until a dedicated speaking-format verification
+settles this.** Do not build from a blog list or from either record above. Note that the two
+already-shipped speaking types are unaffected — Speak About the Photo is a deliberate AlmiDET
+substitute, not a claim about DET's current inventory.
+
+---
+
 ## 1. Product identity
 
 - **Name:** AlmiDET — Duolingo English Test practice

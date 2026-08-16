@@ -1,0 +1,16 @@
+-- Interactive Listening — one conversation in three sub-parts: a gapped
+-- transcript the taker types into, a run of reply turns, and a free-text
+-- summary rated by AI.
+--
+-- ENUM ONLY. No audio table and no audio column, deliberately: DetItemAudio
+-- (migration 3) already keys on (itemId, seg) with an INTEGER seg for exactly
+-- this task type. The scenario clip takes seg 0 and turn N takes seg N, so a
+-- multi-clip conversation slots into the existing table untouched.
+--
+-- Hand-written rather than `prisma migrate dev` (Neon shadow-database flake);
+-- applied with `prisma migrate deploy`.
+--
+-- Postgres 12+ permits ALTER TYPE ... ADD VALUE inside a transaction provided
+-- the new label is not USED in the same transaction. This migration only adds
+-- the label; seeding runs separately.
+ALTER TYPE "DetTaskType" ADD VALUE IF NOT EXISTS 'INTERACTIVE_LISTENING';

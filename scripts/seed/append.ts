@@ -14,18 +14,40 @@
 
 import { PrismaClient } from "@prisma/client";
 import { ITEMS as READ_AND_SELECT } from "./read-and-select";
+import { ITEMS as READ_AND_COMPLETE } from "./read-and-complete";
+import { ITEMS as INTERACTIVE_READING } from "./interactive-reading";
+import { ITEMS as FILL_IN_THE_BLANKS } from "./fill-in-the-blanks";
 import { ITEMS as LISTEN_AND_TYPE } from "./listen-and-type";
+import { ITEMS as INTERACTIVE_LISTENING } from "./interactive-listening";
 import { ITEMS as WRITE_ABOUT_THE_PHOTO } from "./write-about-photo";
+import { ITEMS as INTERACTIVE_WRITING } from "./interactive-writing";
+import { ITEMS as WRITING_SAMPLE } from "./writing-sample";
 import { ITEMS as SPEAK_ABOUT_THE_PHOTO } from "./speak-about-photo";
+import { ITEMS as READ_ALOUD } from "./read-aloud";
+import { ITEMS as READ_THEN_SPEAK } from "./read-then-speak";
+import { ITEMS as LISTEN_THEN_SPEAK } from "./listen-then-speak";
+import { ITEMS as SPEAKING_SAMPLE } from "./speaking-sample";
+import { ITEMS as INTERACTIVE_SPEAKING } from "./interactive-speaking";
 
 const prisma = new PrismaClient();
 const DRY = process.argv.includes("--dry");
 
 const ALL = [
   ...READ_AND_SELECT,
+  ...READ_AND_COMPLETE,
+  ...INTERACTIVE_READING,
+  ...FILL_IN_THE_BLANKS,
   ...LISTEN_AND_TYPE,
+  ...INTERACTIVE_LISTENING,
   ...WRITE_ABOUT_THE_PHOTO,
+  ...INTERACTIVE_WRITING,
+  ...WRITING_SAMPLE,
   ...SPEAK_ABOUT_THE_PHOTO,
+  ...READ_ALOUD,
+  ...READ_THEN_SPEAK,
+  ...LISTEN_THEN_SPEAK,
+  ...SPEAKING_SAMPLE,
+  ...INTERACTIVE_SPEAKING,
 ];
 
 const key = (taskType: string, title: string) => `${taskType}::${title}`;
