@@ -101,7 +101,67 @@ one item.
 
 ---
 
-## gate:speaking-leak — a STUB, and it says so
+## gate:speaking-leak — ACTIVATED
+
+The stub is gone. Three rubric-based types landed and there are now two distinct things to
+withhold, not one.
+
+| Check | Proof | Output on the broken build |
+|---|---|---|
+| SL1 forbidden key + SL4 question text | **code sabotage** — `projectLTSView` emits `question` | `SL1 … 12 leak(s)` · `SL4 LISTEN_THEN_SPEAK is audio only : 24 leak(s)` · `[FAIL] "question" appears as a key in the projection` |
+| SL1 + SL2 + SL3 rubric | **code sabotage** — `projectRTSView` emits `rubric` | `SL1 … 36 leak(s)` · `SL3 rubric text not on the wire : 60 leak(s)` |
+| SL5 transcript note present | **code sabotage** — `transcriptNote` emitted empty | `SL5 … 12 missing` · `[FAIL] SPEAKING-NOTE-MISSING` |
+
+**SL4 is what this type exists for.** `question` is not an answer key — it is the *listening half
+of the task*. Printing it beside the clip turns a listening-and-speaking item into a
+reading-and-speaking one, and nothing about the resulting recording would show that it had
+happened: a taker who never heard the audio would score exactly the same as one who did.
+
+**SL5 requires something to be PRESENT**, like `gate:writing-leak`'s WL5. These types rate a
+TRANSCRIPT and cannot hear the recording. If the sentence saying so is dropped, nothing breaks and
+nothing fails — the product just quietly lets a learner read an accent verdict into a score that
+contains none.
+
+**READ_ALOUD stays exempt, and the gate asserts the exemption** rather than skipping the type: its
+`text` must be projected, because it IS the stimulus. An exemption on record is not a gap.
+
+---
+
+## gate:speaking-prompts
+
+| Check | Fixture | Output |
+|---|---|---|
+| SP1 task text present | `sp-red-prompt-empty.json` | `[FAIL] SPEAKING-PROMPT-MISSING` |
+| SP2 length fits delivery | `sp-red-question-toolong.json` | `[FAIL] SPEAKING-PROMPT-TOO-LONG` |
+| SP3 no duplicate | `sp-red-prompt-duplicate.json` (clones an item) | `[FAIL] SPEAKING-PROMPT-DUPLICATE` |
+| SP4 rubric usable | `sp-red-rubric-empty.json` | `[FAIL] SPEAKING-RUBRIC-UNUSABLE` |
+| SP5 spoken text never printed | `sp-red-text-both-modes.json` | `[FAIL] SPEAKING-TEXT-BOTH-MODES` |
+
+**SP2 caps a spoken question tighter than a printed prompt** (220 vs 400 chars). A printed prompt
+can be re-read for as long as the taker likes; a Listen Then Speak question is heard once and
+cannot be. A question long enough to need re-reading is one nobody can answer, and no other check
+in the suite has any opinion about how long it is.
+
+---
+
+## gate:audio-coverage (was gate:il-audio-coverage)
+
+Renamed and extended, because Listen Then Speak needs clips too.
+
+| Check | Fixture | Output |
+|---|---|---|
+| LTS question clip producible | `sp-red-audio-missing.json` | `[FAIL] LTS-AUDIO-MISSING-CLIP … the question text is never projected, so the item would have no stimulus at all` |
+
+**A missing clip is worse here than in Interactive Listening.** There, a missing segment leaves a
+silent gap in a conversation the taker can still partly follow. Here the question text is *never*
+projected, so an item whose clip was not rendered is not quiet — it is unanswerable.
+
+The early return for "no Interactive Listening items" was removed when the gate was extended:
+bailing on one type would have silently skipped the other.
+
+---
+
+## The old stub note, kept for the record
 
 Read Aloud is the only speaking type today and it has **nothing to hide**: the sentence is the
 stimulus, on screen, because reading it aloud is the task. A leak check over it would report green

@@ -678,6 +678,76 @@ async function main(): Promise<void> {
     write("ra-red-duplicate.json", items, "two Read Aloud items sharing one sentence");
   }
 
+  // ================= the three rubric-based SPEAKING types =================
+  //
+  // The projection rules (no rubric, no question text, notes present) are
+  // properties of CODE and are proven by sabotage — recorded in
+  // docs/SPEAKING-GATE-PROOFS.md. These cover what bad CONTENT can do.
+  type SpItem = BankItem & { payload: Record<string, unknown> };
+  const spokenOnly = (type: string, mutate: (it: SpItem) => void): BankItem[] => {
+    const items = clone(all);
+    const it = items.find((i) => i.taskType === type) as SpItem | undefined;
+    if (!it) throw new Error(`no ${type} item in the bank to derive a fixture from`);
+    mutate(it);
+    return items;
+  };
+
+  write(
+    "sp-red-prompt-empty.json",
+    spokenOnly("READ_THEN_SPEAK", (it) => {
+      it.payload.prompt = "   ";
+    }),
+    "an empty Read Then Speak prompt",
+  );
+
+  write(
+    "sp-red-question-toolong.json",
+    spokenOnly("LISTEN_THEN_SPEAK", (it) => {
+      it.payload.question = `${String(it.payload.question)} ${"Think carefully about every side of this before you answer it. ".repeat(5)}`;
+    }),
+    "a spoken question far too long to hold in the head on one listen",
+  );
+
+  write(
+    "sp-red-rubric-empty.json",
+    spokenOnly("SPEAKING_SAMPLE", (it) => {
+      (it.payload.rubric as Record<string, unknown>).reference = "";
+    }),
+    "an empty rubric.reference — the rater would have no target",
+  );
+
+  {
+    // Duplicates need TWO items of a type, so clone one under a new title.
+    const items = clone(all);
+    const rts = items.find((i) => i.taskType === "READ_THEN_SPEAK") as SpItem;
+    const twin = JSON.parse(JSON.stringify(rts)) as SpItem;
+    twin.title = `${rts.title} (second)`;
+    items.push(twin);
+    write("sp-red-prompt-duplicate.json", items, "two Read Then Speak items sharing one prompt");
+  }
+
+  {
+    // The same text heard by one item and printed by another.
+    const items = clone(all);
+    const lts = items.find((i) => i.taskType === "LISTEN_THEN_SPEAK") as SpItem;
+    const rts = items.find((i) => i.taskType === "READ_THEN_SPEAK") as SpItem;
+    rts.payload.prompt = lts.payload.question;
+    write(
+      "sp-red-text-both-modes.json",
+      items,
+      "a Listen Then Speak question also printed as a Read Then Speak prompt",
+    );
+  }
+
+  write(
+    "sp-red-audio-missing.json",
+    spokenOnly("LISTEN_THEN_SPEAK", (it) => {
+      // A blank question yields no clip AND no printable stimulus.
+      it.payload.question = "   ";
+    }),
+    "a Listen Then Speak item whose question clip the manifest would not render",
+  );
+
   console.log("");
 }
 

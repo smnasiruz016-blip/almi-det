@@ -56,6 +56,18 @@ import {
   type WritingFeedback,
 } from "@/lib/det/tasks/writing-rater";
 import {
+  readThenSpeakPayloadSchema,
+  listenThenSpeakPayloadSchema,
+  speakingSamplePayloadSchema,
+  SPEAKING_SAMPLE_NOTE,
+} from "@/lib/det/tasks/spoken-rubric";
+import {
+  SPEAKING_TRAIT_KEYS,
+  SPEAKING_TRAIT_LABEL,
+  SPEAKING_TRANSCRIPT_NOTE,
+  type SpeakingFeedback,
+} from "@/lib/det/tasks/speaking-rater";
+import {
   readAloudPayloadSchema,
   readAloudResponseSchema,
   scoreReadAloud,
@@ -228,6 +240,57 @@ function ReadAloudReview({ item, attempt }: { item: DetItem; attempt: DetAttempt
         {detail.matched} of {detail.total} words matched, in order. This checks which words came
         through the transcript — it is not a rating of your accent.
       </p>
+    </div>
+  );
+}
+
+// The three rubric-based speaking types review identically: the task as the
+// taker received it, the transcript, and the four-trait read.
+//
+// THE TRANSCRIPT NOTE IS SHOWN HERE TOO, not just during the attempt. This is
+// the screen where a number appears next to the word "Speaking", and it is the
+// moment a learner is most likely to read it as a verdict on their accent. The
+// rater never heard the audio; the review says so.
+function SpokenRubricReview({
+  taskLabel,
+  task,
+  attempt,
+  extraNote,
+}: {
+  taskLabel: string;
+  task: string | null;
+  attempt: DetAttempt;
+  extraNote?: string;
+}) {
+  const fb = attempt.feedback as SpeakingFeedback | null;
+  const transcript = (attempt.response as { transcript?: string } | null)?.transcript ?? "";
+  return (
+    <div className="space-y-4">
+      {extraNote && (
+        <p className="rounded-lg border border-almi-bg-peach bg-almi-bg-peach/40 px-3 py-2 text-xs text-almi-text">
+          {extraNote}
+        </p>
+      )}
+      {task && (
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">{taskLabel}</p>
+          <p className="mt-1 text-sm text-almi-text">{task}</p>
+        </div>
+      )}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          Transcript of what you said
+        </p>
+        <p className="mt-1 text-sm text-almi-text">{transcript.trim() || "(nothing transcribed)"}</p>
+      </div>
+      {fb && (
+        <TraitFeedback
+          traits={SPEAKING_TRAIT_KEYS.map((k) => [k, fb[k]] as [string, string])}
+          labels={SPEAKING_TRAIT_LABEL}
+          fb={fb}
+        />
+      )}
+      <p className="text-xs text-almi-text-muted">{SPEAKING_TRANSCRIPT_NOTE}</p>
     </div>
   );
 }
@@ -552,6 +615,39 @@ const REVIEWERS: Record<
   ),
   WRITING_SAMPLE: ({ item, attempt }) => <WritingSampleReview item={item} attempt={attempt} />,
   READ_ALOUD: ({ item, attempt }) => <ReadAloudReview item={item} attempt={attempt} />,
+  READ_THEN_SPEAK: ({ item, attempt }) => {
+    const p = readThenSpeakPayloadSchema.safeParse(item.payload);
+    return (
+      <SpokenRubricReview
+        taskLabel="The prompt"
+        task={p.success ? p.data.prompt : null}
+        attempt={attempt}
+      />
+    );
+  },
+  // The question is shown HERE for the first time — during the attempt it was
+  // audio only, and after scoring there is nothing left to protect.
+  LISTEN_THEN_SPEAK: ({ item, attempt }) => {
+    const p = listenThenSpeakPayloadSchema.safeParse(item.payload);
+    return (
+      <SpokenRubricReview
+        taskLabel="The question you heard"
+        task={p.success ? p.data.question : null}
+        attempt={attempt}
+      />
+    );
+  },
+  SPEAKING_SAMPLE: ({ item, attempt }) => {
+    const p = speakingSamplePayloadSchema.safeParse(item.payload);
+    return (
+      <SpokenRubricReview
+        taskLabel="The prompt"
+        task={p.success ? p.data.prompt : null}
+        attempt={attempt}
+        extraNote={SPEAKING_SAMPLE_NOTE}
+      />
+    );
+  },
   SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,
 };
 

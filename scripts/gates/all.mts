@@ -24,12 +24,13 @@ import uniformity from "./uniformity.mjs";
 import ilLeak from "./il-leak.mjs";
 import ilOptions from "./il-options.mjs";
 import ilClozeAudio from "./il-cloze-audio.mjs";
-import ilAudioCoverage from "./il-audio-coverage.mjs";
+import audioCoverage from "./audio-coverage.mjs";
 import writingLeak from "./writing-leak.mjs";
 import writingPrompts from "./writing-prompts.mjs";
 import speakingAccess from "./speaking-access.mjs";
 import speakingMetered from "./speaking-metered.mjs";
 import speakingLeak from "./speaking-leak.mjs";
+import speakingPrompts from "./speaking-prompts.mjs";
 import readAloudContent from "./read-aloud-content.mjs";
 
 const GATES: GateDef[] = [
@@ -43,12 +44,13 @@ const GATES: GateDef[] = [
   ilLeak,
   ilOptions,
   ilClozeAudio,
-  ilAudioCoverage,
+  audioCoverage,
   writingLeak,
   writingPrompts,
   speakingAccess,
   speakingMetered,
   speakingLeak,
+  speakingPrompts,
   readAloudContent,
 ];
 

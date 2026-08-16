@@ -22,6 +22,7 @@ import {
   spokenScenario,
   interactiveListeningPayloadSchema,
 } from "@/lib/det/tasks/interactive-listening";
+import { LTS_QUESTION_SEG, LTS_QUESTION_LABEL } from "@/lib/det/tasks/spoken-rubric";
 
 export type AudioUnit = {
   /** DetItemAudio.seg — the integer the table keys on. */
@@ -75,8 +76,23 @@ export function audioUnitsForItem(taskType: string, payload: unknown): AudioUnit
     return units;
   }
 
+  if (taskType === "LISTEN_THEN_SPEAK") {
+    // One clip per item: the question, spoken. Pre-rendered at deploy time in
+    // OUR voice, exactly like the Interactive Listening segments — and for the
+    // same reason it must exist before the type goes live, because the question
+    // text is never projected, so an item with no clip is unanswerable rather
+    // than merely quiet.
+    const p = (payload ?? {}) as { question?: unknown };
+    const text = typeof p.question === "string" ? p.question.trim() : "";
+    return text ? [{ seg: LTS_QUESTION_SEG, label: LTS_QUESTION_LABEL, text }] : [];
+  }
+
   return [];
 }
 
 /** Task types this manifest knows how to speak. */
-export const AUDIO_TASK_TYPES = ["LISTEN_AND_TYPE", "INTERACTIVE_LISTENING"] as const;
+export const AUDIO_TASK_TYPES = [
+  "LISTEN_AND_TYPE",
+  "INTERACTIVE_LISTENING",
+  "LISTEN_THEN_SPEAK",
+] as const;

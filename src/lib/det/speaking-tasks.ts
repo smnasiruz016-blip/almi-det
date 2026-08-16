@@ -13,6 +13,15 @@
 import type { DetTaskType } from "@prisma/client";
 import type { SpeakingTask } from "@/lib/det/speaking";
 import { readAloudPayloadSchema, scoreReadAloud } from "@/lib/det/tasks/read-aloud";
+import {
+  readThenSpeakPayloadSchema,
+  listenThenSpeakPayloadSchema,
+  speakingSamplePayloadSchema,
+  RTS_SPEAK_SECONDS,
+  LTS_SPEAK_SECONDS,
+  SS_SPEAK_SECONDS,
+} from "@/lib/det/tasks/spoken-rubric";
+import { evaluateSpokenResponse } from "@/lib/det/tasks/speaking-rater";
 
 export const SPEAKING_TASKS: Partial<Record<DetTaskType, SpeakingTask>> = {
   READ_ALOUD: {
@@ -30,6 +39,65 @@ export const SPEAKING_TASKS: Partial<Record<DetTaskType, SpeakingTask>> = {
         fraction: s.fraction,
         detail: s.detail,
       };
+    },
+  },
+
+  // The three rubric-based types. Each transcribes (billed once, metered under
+  // its own label) and then rates the TRANSCRIPT — never the audio, which the
+  // rater has never seen. The `task` handed to the rater is what the taker
+  // actually received: the printed prompt, or for Listen Then Speak the question
+  // they HEARD, which is server-only everywhere else.
+  READ_THEN_SPEAK: {
+    taskType: "READ_THEN_SPEAK",
+    transcribeFeature: "read-then-speak.transcribe",
+    recordSeconds: RTS_SPEAK_SECONDS,
+    grade: async ({ transcript, payload, userId }) => {
+      const p = readThenSpeakPayloadSchema.parse(payload);
+      const s = await evaluateSpokenResponse({
+        feature: "read-then-speak.evaluate",
+        reference: p.rubric.reference,
+        task: p.prompt,
+        context: "TYPE: Read Then Speak — the candidate read this prompt on screen and spoke for up to 90 seconds.",
+        transcript,
+        userId,
+      });
+      return { pointsEarned: s.pointsEarned, pointsMax: s.pointsMax, fraction: s.fraction, feedback: s.feedback, telemetry: s.telemetry };
+    },
+  },
+  LISTEN_THEN_SPEAK: {
+    taskType: "LISTEN_THEN_SPEAK",
+    transcribeFeature: "listen-then-speak.transcribe",
+    recordSeconds: LTS_SPEAK_SECONDS,
+    grade: async ({ transcript, payload, userId }) => {
+      const p = listenThenSpeakPayloadSchema.parse(payload);
+      const s = await evaluateSpokenResponse({
+        feature: "listen-then-speak.evaluate",
+        reference: p.rubric.reference,
+        task: p.question,
+        context:
+          "TYPE: Listen Then Speak — the candidate HEARD this question and never saw it written. " +
+          "Judge the answer on its own terms; a mishearing is a listening outcome, not a language error.",
+        transcript,
+        userId,
+      });
+      return { pointsEarned: s.pointsEarned, pointsMax: s.pointsMax, fraction: s.fraction, feedback: s.feedback, telemetry: s.telemetry };
+    },
+  },
+  SPEAKING_SAMPLE: {
+    taskType: "SPEAKING_SAMPLE",
+    transcribeFeature: "speaking-sample.transcribe",
+    recordSeconds: SS_SPEAK_SECONDS,
+    grade: async ({ transcript, payload, userId }) => {
+      const p = speakingSamplePayloadSchema.parse(payload);
+      const s = await evaluateSpokenResponse({
+        feature: "speaking-sample.evaluate",
+        reference: p.rubric.reference,
+        task: p.prompt,
+        context: `TYPE: Speaking Sample (${p.category}) — up to 3 minutes. In the official DET this sample is sent to institutions UNSCORED; this rating is practice feedback only.`,
+        transcript,
+        userId,
+      });
+      return { pointsEarned: s.pointsEarned, pointsMax: s.pointsMax, fraction: s.fraction, feedback: s.feedback, telemetry: s.telemetry };
     },
   },
 

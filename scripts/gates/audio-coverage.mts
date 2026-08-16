@@ -28,17 +28,16 @@
 import { defineGate, type Bank, type Finding } from "./_bank.mjs";
 import { loadIL, IL_TASK_TYPE } from "./_il.mjs";
 
-export default defineGate("gate:il-audio-coverage", async (bank: Bank) => {
+export default defineGate("gate:audio-coverage", async (bank: Bank) => {
   const findings: Finding[] = [];
   const report: string[] = [];
 
   const il = await loadIL(bank);
   findings.push(...il.findings);
 
-  if (il.total === 0) {
-    report.push("  no INTERACTIVE_LISTENING items authored yet — nothing to check");
-    return { findings, report };
-  }
+  // NOTE: no early return when Interactive Listening is empty — this gate now
+  // covers Listen Then Speak too, and bailing on one type would silently skip
+  // the other.
 
   const { audioUnitsForItem } = await import("../../src/lib/det/audio-units");
   const { isValidSegLabel, segLabelToNumber } = await import(
@@ -145,6 +144,61 @@ export default defineGate("gate:il-audio-coverage", async (bank: Bank) => {
         );
       }
     }
+  }
+
+  // ---- LISTEN_THEN_SPEAK: one question clip per item ----
+  //
+  // Stricter than it looks. For Interactive Listening a missing clip leaves a
+  // silent gap in a conversation the taker can still partly follow. Here the
+  // question text is NEVER projected, so an item whose clip was not rendered has
+  // no stimulus at all — it is not quiet, it is unanswerable.
+  const { LTS_QUESTION_SEG, LTS_QUESTION_LABEL, listenThenSpeakPayloadSchema } = await import(
+    "../../src/lib/det/tasks/spoken-rubric"
+  );
+  const ltsItems = bank.items.filter((i) => i.taskType === "LISTEN_THEN_SPEAK");
+  const ltsMissing: string[] = [];
+  const ltsBad: string[] = [];
+  for (const it of ltsItems) {
+    const parsed = listenThenSpeakPayloadSchema.safeParse(it.payload);
+    if (!parsed.success) {
+      ltsBad.push(`LISTEN_THEN_SPEAK / ${it.title}: payload does not parse, so no clip can be derived`);
+      continue;
+    }
+    const units = audioUnitsForItem("LISTEN_THEN_SPEAK", it.payload);
+    const has = units.some((u) => u.seg === LTS_QUESTION_SEG);
+    if (!has) {
+      ltsMissing.push(
+        `LISTEN_THEN_SPEAK / ${it.title}: the manifest would render no "${LTS_QUESTION_LABEL}" clip — ` +
+          `and the question text is never projected, so the item would have no stimulus at all`,
+      );
+    }
+    if (units.length !== 1) {
+      ltsBad.push(
+        `LISTEN_THEN_SPEAK / ${it.title}: manifest produces ${units.length} clip(s), expected exactly 1`,
+      );
+    }
+  }
+  report.push(
+    `  LISTEN_THEN_SPEAK: ${ltsItems.length} item(s), ${ltsItems.length - ltsMissing.length} with a producible question clip`,
+  );
+  if (ltsMissing.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "LTS-AUDIO-MISSING-CLIP",
+      message:
+        `A Listen Then Speak item has no question clip the generator would render. Unlike a missing ` +
+        `conversation segment this is not a silent gap — the question text is never projected, so the ` +
+        `item ships with no stimulus whatsoever.`,
+      items: ltsMissing,
+    });
+  }
+  if (ltsBad.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "LTS-AUDIO-SHAPE",
+      message: `A Listen Then Speak item does not resolve to exactly one question clip.`,
+      items: ltsBad,
+    });
   }
 
   report.push(

@@ -61,6 +61,12 @@ import { stagedNeedsAudio } from "@/lib/det/staged-drivers";
 import { projectILView } from "@/lib/det/il-stages";
 import { projectIWView } from "@/lib/det/tasks/interactive-writing";
 import { projectWSView } from "@/lib/det/tasks/writing-sample";
+import {
+  projectRTSView,
+  projectLTSView,
+  projectSSView,
+} from "@/lib/det/tasks/spoken-rubric";
+import { SPEAKING_TRANSCRIPT_NOTE } from "@/lib/det/tasks/speaking-rater";
 
 export type ClientPayload = Record<string, unknown>;
 
@@ -192,6 +198,23 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
   // rubric will have a server-only reference like the writing types do; this one
   // genuinely has no key.
   READ_ALOUD: (p) => ({ text: p.text }),
+
+  // All three rubric-based speaking types withhold `rubric` entirely:
+  // `rubric.reference` is the rater's target in prose, an answer key under
+  // another name. Each also carries the transcript note — what was actually
+  // measured — because rating speech from a transcript and not saying so would
+  // let a learner read an accent judgement into a score that contains none.
+  READ_THEN_SPEAK: (p) =>
+    projectRTSView(p, SPEAKING_TRANSCRIPT_NOTE) as unknown as ClientPayload,
+
+  // AUDIO ONLY, and the strictest projection in the file. `question` is the
+  // listening half of the task — printing it alongside the clip would turn a
+  // listening-and-speaking item into a reading-and-speaking one, and nothing in
+  // the recording would show that it had happened.
+  LISTEN_THEN_SPEAK: (p, ctx) =>
+    projectLTSView(p, SPEAKING_TRANSCRIPT_NOTE, ctx.audio) as unknown as ClientPayload,
+
+  SPEAKING_SAMPLE: (p) => projectSSView(p, SPEAKING_TRANSCRIPT_NOTE) as unknown as ClientPayload,
 
   WRITE_ABOUT_THE_PHOTO: (p) => ({
     imageUrl: p.imageUrl,

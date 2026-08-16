@@ -1,64 +1,220 @@
-// gate:speaking-leak — STUB, deliberately, and it says so out loud.
+// gate:speaking-leak — do the spoken types hand over the rubric, or the question?
 //
-// Read Aloud is the only speaking type today and it has NOTHING TO HIDE: the
-// sentence is the stimulus, on screen, because reading it aloud is the task. So
-// there is no rubric, no reference, and no key to withhold — and a leak check
-// over it would be a check with nothing to check, reporting green forever while
-// looking like coverage.
+// ACTIVATED. This was a stub while Read Aloud was the only speaking type, because
+// Read Aloud has nothing to hide: the sentence is the stimulus, on screen,
+// because reading it aloud is the task. Three rubric-based types have now landed
+// and there are two distinct things to withhold.
 //
-// This file exists so that the moment a speaking type WITH a rubric lands —
-// Speaking Sample and Interactive Speaking both will — the gate is already wired
-// into gate:all and the person adding the type finds a place to put the check
-// rather than deciding whether to bother.
+//   SL1 NO RUBRIC KEY   `rubric`, `reference` and `traits` must not appear as
+//                       keys in any projection.
+//   SL2 WHITELIST       every projection matches its exact field list.
+//   SL3 NO RUBRIC VALUE the reference text must not reach the wire inside an
+//                       allowed field either.
+//   SL4 NO QUESTION     LISTEN_THEN_SPEAK must not emit `question` — by key OR
+//                       by value. Its stimulus is AUDIO.
+//   SL5 TRANSCRIPT NOTE every rubric-based spoken type carries the sentence
+//                       saying the rating comes from a transcript, and
+//                       SPEAKING_SAMPLE additionally carries the unscored note.
 //
-// WHAT IT WILL DO, and the rule is already settled by the writing types:
-// `rubric.reference` is the AI rater's target in prose, an answer key under
-// another name, so it must never be projected. gate:writing-leak WL1-WL3 is the
-// pattern to copy — forbidden keys, a field whitelist per projection, and a
-// value scan for the long-form reference.
+// SL4 IS THE ONE THIS TYPE EXISTS FOR. `question` is not an answer key — it is
+// the LISTENING HALF OF THE TASK. Printing it beside the clip turns a
+// listening-and-speaking item into a reading-and-speaking one, and nothing about
+// the resulting recording would show that it had happened. A taker who never
+// heard the audio would score the same as one who did.
 //
-// UNTIL THEN IT REPORTS WHAT IT IS. A stub that printed "clean" would be
-// indistinguishable from a passing check; this one names the types it would
-// cover and states that none of them exist yet, so nobody reads it as coverage.
+// SL5 REQUIRES SOMETHING TO BE PRESENT, like gate:writing-leak's WL5, and for the
+// same reason: these types rate a TRANSCRIPT and cannot hear the audio. If the
+// sentence saying so is dropped in a redesign, nothing breaks and nothing fails —
+// the product just quietly lets a learner read an accent verdict into a score
+// that contains none.
+//
+// READ_ALOUD REMAINS EXEMPT and is asserted to be: its `text` is projected on
+// purpose. That assertion is here so the exemption is a decision on record
+// rather than a gap.
 
 import { defineGate, type Bank, type Finding } from "./_bank.mjs";
 
-/** Speaking types whose payload will carry a server-only rubric. Add here as
- *  they land; the check turns itself on when the bank first holds one. */
-const RUBRIC_SPEAKING_TYPES = ["SPEAKING_SAMPLE", "INTERACTIVE_SPEAKING"];
+const RTS = "READ_THEN_SPEAK";
+const LTS = "LISTEN_THEN_SPEAK";
+const SS = "SPEAKING_SAMPLE";
+const RA = "READ_ALOUD";
+
+const ALLOWED: Record<string, readonly string[]> = {
+  [RTS]: ["prompt", "speakSeconds", "transcriptNote"],
+  [LTS]: ["audioUrl", "speakSeconds", "transcriptNote"],
+  [SS]: ["category", "prompt", "speakSeconds", "transcriptNote", "practiceNote"],
+  [RA]: ["text"],
+};
+
+const FORBIDDEN_KEYS = ["rubric", "reference", "traits", "question"];
+const MIN_SCANNABLE = 12;
+
+function collectStrings(value: unknown, out: string[] = []): string[] {
+  if (typeof value === "string") out.push(value);
+  else if (Array.isArray(value)) for (const v of value) collectStrings(v, out);
+  else if (value && typeof value === "object") {
+    for (const v of Object.values(value as Record<string, unknown>)) collectStrings(v, out);
+  }
+  return out;
+}
 
 export default defineGate("gate:speaking-leak", async (bank: Bank) => {
   const findings: Finding[] = [];
   const report: string[] = [];
 
-  const present = RUBRIC_SPEAKING_TYPES.filter((t) => bank.items.some((i) => i.taskType === t));
+  const types = [RTS, LTS, SS, RA];
+  const items = bank.items.filter((i) => types.includes(i.taskType));
+  if (items.length === 0) {
+    report.push("  no speaking items authored yet — nothing to check");
+    return { findings, report };
+  }
 
-  report.push("  STUB — no speaking type carries a rubric yet, so there is nothing to withhold.");
-  report.push(
-    `    watching for            : ${RUBRIC_SPEAKING_TYPES.join(", ")}  (none in the bank)`,
-  );
-  report.push(
-    "    READ_ALOUD is exempt    : the sentence IS the stimulus — it is shown on purpose, not leaked.",
-  );
-  report.push(
-    "    when one lands          : copy gate:writing-leak WL1-WL3 — forbidden keys, per-projection",
-  );
-  report.push(
-    "                              whitelist, and a value scan for rubric.reference.",
-  );
+  const { toClientPayload } = await import("../../src/lib/det/client-payload");
+  const { SPEAKING_TRANSCRIPT_NOTE } = await import("../../src/lib/det/tasks/speaking-rater");
+  const { SPEAKING_SAMPLE_NOTE } = await import("../../src/lib/det/tasks/spoken-rubric");
 
-  if (present.length > 0) {
-    // The bank now holds a type this gate was written for and the check is still
-    // a stub. Failing is the only honest outcome: a green stub over content with
-    // a rubric would be a leak gate that has never looked at a rubric.
+  const forbidden: string[] = [];
+  const shape: string[] = [];
+  const values: string[] = [];
+  const questionLeak: string[] = [];
+  const missingNote: string[] = [];
+  let projected = 0;
+
+  for (const it of items) {
+    const where = `${it.taskType} / ${it.title}`;
+    let view: Record<string, unknown>;
+    try {
+      // No audio context: what a fresh attempt receives before any clip is
+      // rendered. That is also the state in which a `question` leak would be
+      // most tempting to add as a "fallback".
+      view = toClientPayload(it.taskType as never, it.payload);
+    } catch (e) {
+      shape.push(`${where}: projection threw — ${e instanceof Error ? e.message : String(e)}`);
+      continue;
+    }
+    projected++;
+    const wire = JSON.stringify(view);
+    const carried = collectStrings(view);
+
+    // ---- SL1 forbidden keys ----
+    for (const k of FORBIDDEN_KEYS) {
+      if (new RegExp(`"${k}"\\s*:`).test(wire)) {
+        forbidden.push(`${where}: "${k}" appears as a key in the projection`);
+      }
+    }
+
+    // ---- SL2 whitelist ----
+    const allowed = ALLOWED[it.taskType] ?? [];
+    for (const k of Object.keys(view)) {
+      if (!allowed.includes(k)) shape.push(`${where}: unexpected field "${k}" projected`);
+    }
+
+    // ---- SL3 rubric text by value ----
+    const rubric = (it.payload.rubric ?? {}) as { reference?: unknown; traits?: unknown };
+    if (typeof rubric.reference === "string" && rubric.reference.length >= MIN_SCANNABLE) {
+      if (carried.some((c) => c.includes(rubric.reference as string))) {
+        values.push(`${where}: rubric.reference reaches the client verbatim`);
+      }
+    }
+    for (const t of (rubric.traits as string[] | undefined) ?? []) {
+      if (t.length >= MIN_SCANNABLE && carried.some((c) => c.includes(t))) {
+        values.push(`${where}: rubric trait "${t}" reaches the client`);
+      }
+    }
+
+    // ---- SL4 the spoken question, by value as well as by key ----
+    if (it.taskType === LTS) {
+      const q = typeof it.payload.question === "string" ? it.payload.question : "";
+      if (q.length >= MIN_SCANNABLE && carried.some((c) => c.includes(q))) {
+        questionLeak.push(`${where}: the question TEXT is on the wire — the clip is meant to be the only copy`);
+      }
+      // Any string field long enough to be prose is suspicious on this view: the
+      // only strings it should carry are a URL and the fixed transcript note.
+      for (const [k, v] of Object.entries(view)) {
+        if (typeof v !== "string" || v === SPEAKING_TRANSCRIPT_NOTE) continue;
+        if (k === "audioUrl") continue;
+        if (v.length >= MIN_SCANNABLE) {
+          questionLeak.push(`${where}: unexpected prose in "${k}" — "${v.slice(0, 40)}…"`);
+        }
+      }
+    }
+
+    // ---- SL5 the notes that must be present ----
+    if (it.taskType !== RA) {
+      if (view.transcriptNote !== SPEAKING_TRANSCRIPT_NOTE) {
+        missingNote.push(
+          `${where}: transcriptNote is ${view.transcriptNote === undefined ? "absent" : "not the canonical sentence"}`,
+        );
+      }
+    }
+    if (it.taskType === SS && view.practiceNote !== SPEAKING_SAMPLE_NOTE) {
+      missingNote.push(
+        `${where}: practiceNote is ${view.practiceNote === undefined ? "absent" : "not the canonical sentence"}`,
+      );
+    }
+
+    // ---- READ_ALOUD's exemption, asserted rather than assumed ----
+    if (it.taskType === RA && typeof view.text !== "string") {
+      shape.push(`${where}: READ_ALOUD must project its sentence — it IS the stimulus`);
+    }
+  }
+
+  const count = (t: string) => items.filter((i) => i.taskType === t).length;
+  report.push(
+    `  ${RTS}: ${count(RTS)} · ${LTS}: ${count(LTS)} · ${SS}: ${count(SS)} · ${RA}: ${count(RA)} (exempt) — ${projected} projection(s)`,
+  );
+  report.push(`    SL1 no rubric/reference/traits/question key : ${forbidden.length === 0 ? "clean" : `${forbidden.length} leak(s)`}`);
+  report.push(`    SL2 projections match the whitelist        : ${shape.length === 0 ? "clean" : `${shape.length} problem(s)`}`);
+  report.push(`    SL3 rubric text not on the wire            : ${values.length === 0 ? "clean" : `${values.length} leak(s)`}`);
+  report.push(`    SL4 LISTEN_THEN_SPEAK is audio only        : ${questionLeak.length === 0 ? "clean" : `${questionLeak.length} leak(s)`}`);
+  report.push(`    SL5 transcript / practice notes present    : ${missingNote.length === 0 ? "clean" : `${missingNote.length} missing`}`);
+
+  if (forbidden.length) {
     findings.push({
       severity: "FAIL",
-      code: "SPEAKING-LEAK-STUB-OUTGROWN",
+      code: "SPEAKING-LEAK-KEY",
       message:
-        `A speaking type with a rubric is now in the bank, and this gate is still a stub. Implement ` +
-        `the checks before this content can ship — a stub reporting green over a server-only ` +
-        `reference is worse than no gate, because it looks like coverage.`,
-      items: present,
+        `A server-only field is present in a projection. \`rubric.reference\` is what the AI rater ` +
+        `marks against; \`question\` is the listening half of Listen Then Speak.`,
+      items: forbidden,
+    });
+  }
+  if (shape.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "SPEAKING-LEAK-SHAPE",
+      message: `A projection emitted a field that is not on the whitelist.`,
+      items: shape,
+    });
+  }
+  if (values.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "SPEAKING-LEAK-VALUE",
+      message: `Rubric text crossed to the client inside an allowed field.`,
+      items: values,
+    });
+  }
+  if (questionLeak.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "SPEAKING-QUESTION-VISIBLE",
+      message:
+        `Listen Then Speak's question is readable on the wire. The clip is meant to be the only copy: ` +
+        `printing the text turns a listening-and-speaking item into a reading-and-speaking one, and ` +
+        `nothing about the recording would show that it had happened.`,
+      items: questionLeak,
+    });
+  }
+  if (missingNote.length) {
+    findings.push({
+      severity: "FAIL",
+      code: "SPEAKING-NOTE-MISSING",
+      message:
+        `A required on-screen note is not in the projected payload. These types rate a TRANSCRIPT and ` +
+        `cannot hear the recording; dropping the sentence that says so breaks nothing visibly, which ` +
+        `is exactly why it is checked.`,
+      items: missingNote,
     });
   }
 

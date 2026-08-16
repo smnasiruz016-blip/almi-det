@@ -31,6 +31,10 @@ import {
 } from "@/components/det/InteractiveWritingComposer";
 import { WritingSampleComposer, type WSView } from "@/components/det/WritingSampleComposer";
 import { ReadAloudComposer, type ReadAloudView } from "@/components/det/ReadAloudComposer";
+import {
+  SpokenResponseComposer,
+  type SpokenView,
+} from "@/components/det/SpokenResponseComposer";
 import { speakingTaskFor } from "@/lib/det/speaking-tasks";
 
 type Args = { attemptId: string; prompt: string; title: string; payload: unknown };
@@ -117,6 +121,33 @@ const RENDERERS: Partial<Record<DetTaskType, (a: Args) => ReactNode>> = {
       />
     );
   },
+  // One composer, three types. LISTEN_THEN_SPEAK passes listenFirst so the
+  // record control stays disabled until the question clip has finished — its
+  // stimulus is audio only, and there is no text to fall back on.
+  READ_THEN_SPEAK: ({ attemptId, prompt, payload }) => (
+    <SpokenResponseComposer
+      attemptId={attemptId}
+      prompt={prompt}
+      view={payload as SpokenView}
+      listenFirst={false}
+    />
+  ),
+  LISTEN_THEN_SPEAK: ({ attemptId, prompt, payload }) => (
+    <SpokenResponseComposer
+      attemptId={attemptId}
+      prompt={prompt}
+      view={payload as SpokenView}
+      listenFirst
+    />
+  ),
+  SPEAKING_SAMPLE: ({ attemptId, prompt, payload }) => (
+    <SpokenResponseComposer
+      attemptId={attemptId}
+      prompt={prompt}
+      view={payload as SpokenView}
+      listenFirst={false}
+    />
+  ),
   SPEAK_ABOUT_THE_PHOTO: ({ attemptId, prompt, title, payload }) => {
     const p = payload as {
       imageUrl: string;

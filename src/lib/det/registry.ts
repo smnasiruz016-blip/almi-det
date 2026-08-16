@@ -210,6 +210,43 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "Read one sentence aloud. We transcribe the recording and check it word by word against the sentence — this measures what was heard, not your accent.",
     live: false,
   },
+  // The three rubric-based speaking types. All AI, all paid — the paid gate and
+  // the daily cap come from being SPEAKING tasks, checked by both submit routes.
+  // Each rates a TRANSCRIPT: the blurbs say so, because a learner reading
+  // "speaking score" will otherwise hear "accent score".
+  READ_THEN_SPEAK: {
+    taskType: "READ_THEN_SPEAK",
+    slug: "read-then-speak",
+    label: "Read Then Speak",
+    skill: "SPEAKING",
+    scoringMode: "AI",
+    feedsSubscores: SKILL_FEEDS.SPEAKING,
+    blurb:
+      "Read a prompt on screen, then speak about it for up to 90 seconds. We rate the ideas, flow, vocabulary and grammar from a transcript — not your accent.",
+    live: false,
+  },
+  LISTEN_THEN_SPEAK: {
+    taskType: "LISTEN_THEN_SPEAK",
+    slug: "listen-then-speak",
+    label: "Listen Then Speak",
+    skill: "SPEAKING",
+    scoringMode: "AI",
+    feedsSubscores: SKILL_FEEDS.SPEAKING,
+    blurb:
+      "Listen to a spoken question — there is no text to read — then answer it aloud for up to 90 seconds. Understanding the question by ear is part of the task.",
+    live: false,
+  },
+  SPEAKING_SAMPLE: {
+    taskType: "SPEAKING_SAMPLE",
+    slug: "speaking-sample",
+    label: "Speaking Sample",
+    skill: "SPEAKING",
+    scoringMode: "AI",
+    feedsSubscores: SKILL_FEEDS.SPEAKING,
+    blurb:
+      "Speak for up to three minutes on one topic. The real test sends this to universities unscored; here you get feedback on it.",
+    live: false,
+  },
   SPEAK_ABOUT_THE_PHOTO: {
     taskType: "SPEAK_ABOUT_THE_PHOTO",
     slug: "speak-about-the-photo",
@@ -234,6 +271,9 @@ export const TASK_ORDER: DetTaskType[] = [
   "INTERACTIVE_WRITING",
   "WRITING_SAMPLE",
   "READ_ALOUD",
+  "READ_THEN_SPEAK",
+  "LISTEN_THEN_SPEAK",
+  "SPEAKING_SAMPLE",
   "SPEAK_ABOUT_THE_PHOTO",
 ];
 

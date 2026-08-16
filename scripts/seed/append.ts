@@ -24,6 +24,9 @@ import { ITEMS as INTERACTIVE_WRITING } from "./interactive-writing";
 import { ITEMS as WRITING_SAMPLE } from "./writing-sample";
 import { ITEMS as SPEAK_ABOUT_THE_PHOTO } from "./speak-about-photo";
 import { ITEMS as READ_ALOUD } from "./read-aloud";
+import { ITEMS as READ_THEN_SPEAK } from "./read-then-speak";
+import { ITEMS as LISTEN_THEN_SPEAK } from "./listen-then-speak";
+import { ITEMS as SPEAKING_SAMPLE } from "./speaking-sample";
 
 const prisma = new PrismaClient();
 const DRY = process.argv.includes("--dry");
@@ -40,6 +43,9 @@ const ALL = [
   ...WRITING_SAMPLE,
   ...SPEAK_ABOUT_THE_PHOTO,
   ...READ_ALOUD,
+  ...READ_THEN_SPEAK,
+  ...LISTEN_THEN_SPEAK,
+  ...SPEAKING_SAMPLE,
 ];
 
 const key = (taskType: string, title: string) => `${taskType}::${title}`;

@@ -52,6 +52,7 @@ Pending as of this writing:
 | `7_interactive_listening` | adds `INTERACTIVE_LISTENING` to the `DetTaskType` enum | ❌ pending |
 | `8_writing_types` | adds `INTERACTIVE_WRITING` and `WRITING_SAMPLE` to the `DetTaskType` enum | ❌ pending |
 | `9_read_aloud` | adds `READ_ALOUD` to the `DetTaskType` enum | ❌ pending |
+| `10_speaking_types` | adds `READ_THEN_SPEAK`, `LISTEN_THEN_SPEAK`, `SPEAKING_SAMPLE` | ❌ pending |
 | _(one enum migration per future task type — append as they land)_ | | |
 
 **Verified against the live database 2026-08-16** (read-only probe, `.env.local` credentials):
@@ -138,6 +139,9 @@ same shared loader (`scripts/seed/_data-loader.ts`). The reference item of each 
 | Interactive Writing | `npm run seed:interactive-writing` | 12 | ❌ pending — **`live: false`**; no audio needed |
 | Writing Sample | `npm run seed:writing-sample` | 12 | ❌ pending — **`live: false`**. Unscored in the real DET; graded here, and the composer says so |
 | Read Aloud | `npm run seed:read-aloud` | 18 | ❌ pending — **`live: false`**; PAID-ONLY + daily cap, see §G |
+| Read Then Speak | `npm run seed:read-then-speak` | 12 | ❌ pending — **`live: false`** |
+| Listen Then Speak | `npm run seed:listen-then-speak` | 12 | ❌ pending — **`live: false`**; needs its question clips, §D |
+| Speaking Sample | `npm run seed:speaking-sample` | 12 | ❌ pending — **`live: false`**. Unscored in the real DET; graded here, and the composer says so |
 | Other speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
 | _(append one row per new type as it lands)_ | | | |
 
@@ -161,9 +165,13 @@ clips per item: **5 units each** (scenario + 4 heard turns; the opener is silent
 Measured over the full authored bank, 2026-08-16, from the same manifest the generator loops
 over — no network, no database:
 
-    12 conversations x 5 clips = 60 clips, 7,936 characters
-    projected cost $0.1190  (tts-1 @ $15/1M chars)
-    every item renders segs 0, 2, 3, 4, 5
+    Interactive Listening   12 conversations x 5 clips = 60 clips, 7,936 chars   $0.1190
+    Listen Then Speak       12 question clips                    967 chars   $0.0145
+    ------------------------------------------------------------------------------
+    TOTAL                                        72 clips,     8,903 chars   $0.1335
+
+    Interactive Listening renders segs 0, 2, 3, 4, 5 per item; Listen Then Speak
+    renders seg 0 only (one question per item).
 
 Two things follow:
 
@@ -179,6 +187,10 @@ Two things follow:
 - [ ] After rendering, confirm `DetItemAudio` holds **5 rows per Interactive Listening item**
       with segs `0, 2, 3, 4, 5` (seg 1 is the opener and is deliberately absent) — **60 rows
       across the 12 items**, on top of the 18 Listen and Type rows already there.
+- [ ] And **1 row per Listen Then Speak item** at seg 0 — **12 rows**. ⚠️ This type is the one
+      where a missing clip is fatal rather than untidy: its question text is NEVER projected, so
+      an item with no clip has no stimulus at all. `gate:audio-coverage` blocks the build on it,
+      but confirm the rows exist before flipping `live: true`.
 
 **The clips are released one stage at a time.** `toClientPayload()` returns Stage A only; each
 turn's URL arrives from `POST /api/det/staged/advance` when that turn is reached. So an item whose
