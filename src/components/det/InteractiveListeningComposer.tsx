@@ -15,7 +15,7 @@
 //
 // THIS COMPONENT DOES NOT HOLD THE ITEM. It holds a view — the stage the server
 // has released. Turns 2..N and the summary prompt are not in props at all until
-// /api/det/il/advance returns them, so the stage locks are not a UI convention
+// /api/det/staged/advance returns them, so the stage locks are not a UI convention
 // that devtools can step around. The lock the taker sees here and the lock the
 // server enforces are the same lock; this one just explains itself.
 //
@@ -58,7 +58,7 @@ export function InteractiveListeningComposer({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/det/il/advance", {
+      const res = await fetch("/api/det/staged/advance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ attemptId, step }),

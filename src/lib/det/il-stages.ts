@@ -41,6 +41,8 @@
 // Import-light on purpose: client-payload.ts imports this, and the content gates
 // execute client-payload.ts with no database and no network.
 
+import { z } from "zod";
+import type { StageDriver } from "@/lib/det/staged";
 import {
   interactiveListeningPayloadSchema,
   ilProgressSchema,
@@ -224,6 +226,23 @@ export function projectILView(raw: unknown, input: ILProjectionInput = {}): ILVi
 
 // ------------------------------------------------------- the state machine --
 
+/** The step bodies /api/det/staged/advance accepts for this task. Lives here
+ *  rather than in the route so the shape and the state machine that consumes it
+ *  cannot drift apart. */
+export const ilStepSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("complete"),
+    filled: z.record(z.string(), z.string()),
+  }),
+  z.object({
+    kind: z.literal("turn"),
+    index: z.number().int().nonnegative(),
+    // The DISPLAYED position, not the authored index and never the key. The
+    // server re-derives the permutation to map it home.
+    chosen: z.number().int().nonnegative(),
+  }),
+]);
+
 export type ILStep =
   | { kind: "complete"; filled: Record<string, string> }
   | { kind: "turn"; index: number; chosen: number };
@@ -281,3 +300,21 @@ export function advanceIL(payload: Payload, progress: ILProgress, step: ILStep):
     patch: { chosen: { [String(step.index)]: step.chosen } },
   };
 }
+
+/**
+ * This task type's entry in the staged-task registry. The advance route holds
+ * nothing Interactive Listening-specific; it looks this up and calls it.
+ */
+export const IL_STAGE_DRIVER: StageDriver = {
+  stepSchema: ilStepSchema,
+  start: IL_PROGRESS_START,
+  // The scenario clip and each turn's clip come from DetItemAudio.
+  needsAudio: true,
+  advance: (payload, stored, step) =>
+    advanceIL(
+      interactiveListeningPayloadSchema.parse(payload),
+      readILProgress(stored),
+      step as ILStep,
+    ),
+  project: (payload, ctx) => projectILView(payload, ctx),
+};

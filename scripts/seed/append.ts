@@ -20,6 +20,8 @@ import { ITEMS as FILL_IN_THE_BLANKS } from "./fill-in-the-blanks";
 import { ITEMS as LISTEN_AND_TYPE } from "./listen-and-type";
 import { ITEMS as INTERACTIVE_LISTENING } from "./interactive-listening";
 import { ITEMS as WRITE_ABOUT_THE_PHOTO } from "./write-about-photo";
+import { ITEMS as INTERACTIVE_WRITING } from "./interactive-writing";
+import { ITEMS as WRITING_SAMPLE } from "./writing-sample";
 import { ITEMS as SPEAK_ABOUT_THE_PHOTO } from "./speak-about-photo";
 
 const prisma = new PrismaClient();
@@ -33,6 +35,8 @@ const ALL = [
   ...LISTEN_AND_TYPE,
   ...INTERACTIVE_LISTENING,
   ...WRITE_ABOUT_THE_PHOTO,
+  ...INTERACTIVE_WRITING,
+  ...WRITING_SAMPLE,
   ...SPEAK_ABOUT_THE_PHOTO,
 ];
 

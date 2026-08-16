@@ -1,0 +1,22 @@
+-- Interactive Writing and Writing Sample — the two remaining Writing task types.
+--
+-- INTERACTIVE_WRITING is two prompts answered in sequence: Part 1 locks on
+-- submit and Part 2 is released only then, so Part 1 cannot be revised once the
+-- follow-up is known. That lock lives on DetAttempt.response.progress, which is
+-- already a Json column — no new table and no new column.
+--
+-- WRITING_SAMPLE is a single timed response. In the official DET it is sent to
+-- institutions UNSCORED; this is a practice product, so we rate it for feedback
+-- and say so on screen rather than implying an official score.
+--
+-- ENUM ONLY. Both types reuse the existing DetItem/DetAttempt pair and the AI
+-- cost ledger, exactly as the other AI-graded writing type does.
+--
+-- Hand-written rather than `prisma migrate dev` (Neon shadow-database flake);
+-- applied with `prisma migrate deploy`.
+--
+-- Postgres 12+ permits ALTER TYPE ... ADD VALUE inside a transaction provided
+-- the new label is not USED in the same transaction. This migration only adds
+-- the labels; seeding runs separately.
+ALTER TYPE "DetTaskType" ADD VALUE IF NOT EXISTS 'INTERACTIVE_WRITING';
+ALTER TYPE "DetTaskType" ADD VALUE IF NOT EXISTS 'WRITING_SAMPLE';

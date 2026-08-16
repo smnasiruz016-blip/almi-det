@@ -238,3 +238,68 @@ export type InteractiveListeningResponse = {
   chosen: Record<string, number>;
   summary: string;
 };
+
+// ---- INTERACTIVE WRITING (Writing, AI) ----
+// Two prompts answered in sequence. Part 1 is a position; Part 2 asks the taker
+// to argue the other side and mitigate their own earlier downside.
+//
+// PART 2's PROMPT IS SERVER-ONLY UNTIL PART 1 IS SUBMITTED. Not because it is an
+// answer key — it is not — but because knowing it changes Part 1. A taker who
+// can read "now describe an advantage of the option you did NOT pick" will hedge
+// Part 1 into something easy to reverse, and the task stops measuring what it
+// measures. Same locked-progressive delivery as Interactive Listening, same
+// machinery (src/lib/det/staged.ts).
+//
+// SERVER-ONLY throughout: `rubric.reference`. It is the rater's target in prose
+// form — an answer key wearing a different name, exactly like the photo tasks'
+// `imageAlt`.
+
+export type WritingRubric = {
+  /** Trait names the rater reports against. Safe to show AFTER scoring. */
+  traits: string[];
+  /** SERVER-ONLY — what a strong answer does. The rater's target. */
+  reference: string;
+};
+
+export type InteractiveWritingPart = {
+  prompt: string;
+  minWords: number;
+};
+
+export type InteractiveWritingPayload = {
+  topic: string;
+  register: string;
+  part1: InteractiveWritingPart;
+  /** SERVER-ONLY until Part 1 is recorded. */
+  part2: InteractiveWritingPart;
+  rubric: WritingRubric;
+};
+
+/** `text` is keyed "part1" / "part2" — the same StoredAnswers.text bag every
+ *  staged task writes into. */
+export type InteractiveWritingResponse = {
+  text: Record<string, string>;
+};
+
+// ---- WRITING SAMPLE (Writing, AI) ----
+// One prompt, 30 seconds to read it with the textarea disabled, then 5 minutes
+// to write ~100-130+ words. Single submission — not staged.
+//
+// HONESTY NOTE, and it is required on screen: in the official DET this sample is
+// sent to institutions UNSCORED. We rate it because this is a practice product
+// and feedback is the whole point, but claiming or implying that the real test
+// scores it would be a lie about the exam. WRITING_SAMPLE_NOTE carries that
+// sentence and the projection always emits it.
+//
+// SERVER-ONLY: `rubric.reference`, for the same reason as above.
+
+export type WritingSamplePayload = {
+  category: string;
+  topic: string;
+  prompt: string;
+  /** Free text, e.g. "100–130+" — a target shown to the taker, never a gate. */
+  targetWords: string;
+  rubric: WritingRubric;
+};
+
+export type WritingSampleResponse = { text: string };

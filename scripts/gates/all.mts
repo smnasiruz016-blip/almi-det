@@ -25,6 +25,8 @@ import ilLeak from "./il-leak.mjs";
 import ilOptions from "./il-options.mjs";
 import ilClozeAudio from "./il-cloze-audio.mjs";
 import ilAudioCoverage from "./il-audio-coverage.mjs";
+import writingLeak from "./writing-leak.mjs";
+import writingPrompts from "./writing-prompts.mjs";
 
 const GATES: GateDef[] = [
   minItems,
@@ -38,6 +40,8 @@ const GATES: GateDef[] = [
   ilOptions,
   ilClozeAudio,
   ilAudioCoverage,
+  writingLeak,
+  writingPrompts,
 ];
 
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice("--only=".length);

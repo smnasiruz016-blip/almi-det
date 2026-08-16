@@ -20,6 +20,8 @@
     "gate:il-options": "tsx scripts/gates/all.mts --only=il-options",
     "gate:il-cloze-audio": "tsx scripts/gates/all.mts --only=il-cloze-audio",
     "gate:il-audio-coverage": "tsx scripts/gates/all.mts --only=il-audio-coverage",
+    "gate:writing-leak": "tsx scripts/gates/all.mts --only=writing-leak",
+    "gate:writing-prompts": "tsx scripts/gates/all.mts --only=writing-prompts",
     "gate:runtime": "tsx scripts/gates/runtime-probe.mts",
     "gate:fixtures": "tsx scripts/gates/fixtures/make.mts",
     "audio:render": "tsx --env-file=.env.local scripts/generate-det-audio.mts",
@@ -33,6 +35,8 @@
     "seed:interactive-listening": "tsx scripts/seed/interactive-listening.ts",
     "seed:il-check": "tsx scripts/seed/il-data-check.mts",
     "seed:speak": "tsx scripts/seed/speak-about-photo.ts",
+    "seed:interactive-writing": "tsx scripts/seed/interactive-writing.ts",
+    "seed:writing-sample": "tsx scripts/seed/writing-sample.ts",
     "seed:all": "npm run seed:read-select && npm run seed:listen && npm run seed:write-photo && npm run seed:speak",
     "seed:append": "tsx scripts/seed/append.ts"
   },

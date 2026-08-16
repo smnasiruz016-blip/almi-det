@@ -50,6 +50,7 @@ Pending as of this writing:
 | `5_interactive_reading` | adds `INTERACTIVE_READING` to the `DetTaskType` enum | ❌ pending |
 | `6_fill_in_the_blanks` | adds `FILL_IN_THE_BLANKS` to the `DetTaskType` enum | ❌ pending |
 | `7_interactive_listening` | adds `INTERACTIVE_LISTENING` to the `DetTaskType` enum | ❌ pending |
+| `8_writing_types` | adds `INTERACTIVE_WRITING` and `WRITING_SAMPLE` to the `DetTaskType` enum | ❌ pending |
 | _(one enum migration per future task type — append as they land)_ | | |
 
 **Verified against the live database 2026-08-16** (read-only probe, `.env.local` credentials):
@@ -125,8 +126,8 @@ which is a legitimate state, so nothing errors.
 | Fill in the Blanks | `npm run seed:fill-blanks` | 18 | ❌ pending (built + live) |
 | Interactive Reading | `npm run seed:interactive-reading` | 18 | ❌ pending (built + live) |
 | Interactive Listening | `npm run seed:interactive-listening` | 12 | ❌ pending — **`live: false`** (also needs an audio render pass, §D) |
-| Interactive Writing | `npm run seed:interactive-writing` | — | ⬜ not built |
-| Writing Sample | `npm run seed:writing-sample` | — | ⬜ not built (ungraded) |
+| Interactive Writing | `npm run seed:interactive-writing` | 1 | ❌ pending — **`live: false`**, one reference item; no audio needed |
+| Writing Sample | `npm run seed:writing-sample` | 1 | ❌ pending — **`live: false`**, one reference item. Unscored in the real DET; graded here, and the composer says so |
 | Speaking types | — | — | 🚫 BLOCKED — speaking inventory unresolved, see master doc §0b |
 | _(append one row per new type as it lands)_ | | | |
 
@@ -170,7 +171,7 @@ Two things follow:
       across the 12 items**, on top of the 18 Listen and Type rows already there.
 
 **The clips are released one stage at a time.** `toClientPayload()` returns Stage A only; each
-turn's URL arrives from `POST /api/det/il/advance` when that turn is reached. So an item whose
+turn's URL arrives from `POST /api/det/staged/advance` when that turn is reached. So an item whose
 audio has not been rendered still runs — every segment projects `audioUrl: null` and the
 composer says so rather than dead-ending — and a taker cannot read ahead to later clips.
 

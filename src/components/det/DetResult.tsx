@@ -40,6 +40,21 @@ import {
   interactiveListeningResponseSchema,
   scoreInteractiveListeningObjective,
 } from "@/lib/det/tasks/interactive-listening";
+import {
+  interactiveWritingPayloadSchema,
+  interactiveWritingResponseSchema,
+  iwSections,
+} from "@/lib/det/tasks/interactive-writing";
+import {
+  writingSamplePayloadSchema,
+  writingSampleResponseSchema,
+  WRITING_SAMPLE_NOTE,
+} from "@/lib/det/tasks/writing-sample";
+import {
+  WRITING_TRAIT_KEYS,
+  WRITING_TRAIT_LABEL,
+  type WritingFeedback,
+} from "@/lib/det/tasks/writing-rater";
 import type {
   WriteAboutPhotoFeedback,
   TraitFeedback as TraitFeedbackShape,
@@ -287,6 +302,92 @@ function InteractiveListeningReview({ item, attempt }: { item: DetItem; attempt:
   );
 }
 
+// Both rubric-based Writing types review the same way: the prompts the taker
+// answered, what they wrote against each, and the four-trait read. The rubric
+// REFERENCE is deliberately not shown even here — it is the rater's target, and
+// printing it teaches the answer to the next attempt rather than the skill.
+function WritingRubricReview({
+  sections,
+  traits,
+  attempt,
+}: {
+  sections: { label: string; prompt: string; text: string; minWords?: number }[];
+  traits: string[];
+  attempt: DetAttempt;
+}) {
+  const fb = attempt.feedback as WritingFeedback | null;
+  const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
+  return (
+    <div className="space-y-5">
+      {sections.map((s) => (
+        <div key={s.label}>
+          <p className="text-xs font-bold uppercase tracking-wider text-almi-teal">{s.label}</p>
+          <p className="mt-1 text-sm text-almi-text-muted">{s.prompt}</p>
+          <p className="mt-2 whitespace-pre-wrap rounded-lg border border-almi-bg-peach bg-almi-paper px-3 py-2 text-sm text-almi-text">
+            {s.text.trim() || "(nothing written)"}
+          </p>
+          <p className="mt-1 text-xs text-almi-text-muted">
+            {words(s.text)} word{words(s.text) === 1 ? "" : "s"}
+            {s.minWords ? ` · target at least ${s.minWords}` : ""}
+          </p>
+        </div>
+      ))}
+
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-almi-text-muted">
+          Marked on
+        </p>
+        <p className="mt-1 text-sm text-almi-text">{traits.join(" · ")}</p>
+      </div>
+
+      {fb && (
+        <TraitFeedback
+          traits={WRITING_TRAIT_KEYS.map((k) => [k, fb[k]] as [string, string])}
+          labels={WRITING_TRAIT_LABEL}
+          fb={fb}
+        />
+      )}
+    </div>
+  );
+}
+
+function InteractiveWritingReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = interactiveWritingPayloadSchema.safeParse(item.payload);
+  const response = interactiveWritingResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  return (
+    <WritingRubricReview
+      sections={iwSections(payload.data, response.data.text)}
+      traits={payload.data.rubric.traits}
+      attempt={attempt}
+    />
+  );
+}
+
+function WritingSampleReview({ item, attempt }: { item: DetItem; attempt: DetAttempt }) {
+  const payload = writingSamplePayloadSchema.safeParse(item.payload);
+  const response = writingSampleResponseSchema.safeParse(attempt.response);
+  if (!payload.success || !response.success) return null;
+  return (
+    <div className="space-y-4">
+      <p className="rounded-lg border border-almi-bg-peach bg-almi-bg-peach/40 px-3 py-2 text-xs text-almi-text">
+        {WRITING_SAMPLE_NOTE}
+      </p>
+      <WritingRubricReview
+        sections={[
+          {
+            label: "YOUR SAMPLE",
+            prompt: payload.data.prompt,
+            text: response.data.text,
+          },
+        ]}
+        traits={payload.data.rubric.traits}
+        attempt={attempt}
+      />
+    </div>
+  );
+}
+
 const WRITE_TRAIT_LABEL: Record<string, string> = {
   taskRelevance: "Describes the photo",
   rangeAndAccuracy: "Range & accuracy",
@@ -404,6 +505,10 @@ const REVIEWERS: Record<
     <InteractiveListeningReview item={item} attempt={attempt} />
   ),
   WRITE_ABOUT_THE_PHOTO: ({ attempt }) => <WritePhotoReview attempt={attempt} />,
+  INTERACTIVE_WRITING: ({ item, attempt }) => (
+    <InteractiveWritingReview item={item} attempt={attempt} />
+  ),
+  WRITING_SAMPLE: ({ item, attempt }) => <WritingSampleReview item={item} attempt={attempt} />,
   SPEAK_ABOUT_THE_PHOTO: ({ attempt }) => <SpeakPhotoReview attempt={attempt} />,
 };
 

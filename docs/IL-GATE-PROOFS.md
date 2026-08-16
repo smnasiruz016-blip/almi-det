@@ -25,7 +25,7 @@ reverted. Where that is the case it is said so plainly below rather than dressed
 
 Interactive Listening does **not** ship its item to the browser. `toClientPayload()` returns
 Stage A only — the scenario, the gapped transcript and the scenario clip. Each turn is released
-by `POST /api/det/il/advance` when it is reached, and the summary prompt last of all.
+by `POST /api/det/staged/advance` when it is reached, and the summary prompt last of all.
 
 That is not cosmetic. Several reply options legitimately name words that were blanked in Part 1
 ("The library usually closes at five-thirty" against a gap keyed `library`), because it is one

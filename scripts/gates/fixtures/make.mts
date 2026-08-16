@@ -545,6 +545,81 @@ async function main(): Promise<void> {
     "a segment label that maps to no DetItemAudio seg",
   );
 
+  // ================= INTERACTIVE_WRITING / WRITING_SAMPLE =================
+  //
+  // As with Interactive Listening, some of what these gates check is a property
+  // of CODE — the projection's field whitelist, whether Part 2 is withheld, and
+  // whether the Writing Sample practice note survives. No JSON file can break
+  // those; they are proven by sabotaging the source and are recorded in
+  // docs/WRITING-GATE-PROOFS.md. What follows is everything a bad ITEM can do.
+  type WItem = BankItem & { payload: Record<string, unknown> };
+  const writingOnly = (type: string, mutate: (it: WItem) => void): BankItem[] => {
+    const items = clone(all);
+    const it = items.find((i) => i.taskType === type) as WItem | undefined;
+    if (!it) throw new Error(`no ${type} item in the bank to derive a fixture from`);
+    mutate(it);
+    return items;
+  };
+
+  write(
+    "wr-red-leak-reference.json",
+    writingOnly("INTERACTIVE_WRITING", (it) => {
+      // The rater's target pasted into a prompt — which IS projected, so the
+      // mark scheme reaches the browser through a legitimate field.
+      const rubric = it.payload.rubric as { reference: string };
+      (it.payload.part1 as Record<string, unknown>).prompt =
+        `${(it.payload.part1 as { prompt: string }).prompt} ${rubric.reference}`;
+    }),
+    "rubric.reference pasted into Part 1's prompt",
+  );
+
+  write(
+    "wr-red-prompt-empty.json",
+    writingOnly("INTERACTIVE_WRITING", (it) => {
+      (it.payload.part2 as Record<string, unknown>).prompt = "   ";
+    }),
+    "an empty Part 2 prompt",
+  );
+
+  write(
+    "wr-red-prompt-identical.json",
+    writingOnly("INTERACTIVE_WRITING", (it) => {
+      (it.payload.part2 as Record<string, unknown>).prompt = (
+        it.payload.part1 as { prompt: string }
+      ).prompt;
+    }),
+    "Part 2 restating Part 1 word for word",
+  );
+
+  write(
+    "wr-red-prompt-toolong.json",
+    writingOnly("WRITING_SAMPLE", (it) => {
+      it.payload.prompt = `${String(it.payload.prompt)} ${"Consider several angles before you answer. ".repeat(12)}`;
+    }),
+    "a Writing Sample prompt too long to read in the 30-second window",
+  );
+
+  write(
+    "wr-red-rubric-empty.json",
+    writingOnly("WRITING_SAMPLE", (it) => {
+      (it.payload.rubric as Record<string, unknown>).reference = "";
+    }),
+    "an empty rubric.reference — the rater would have no target",
+  );
+
+  {
+    // A duplicate needs TWO items of the same type, and the bank holds one of
+    // each. Cloning the item under a new title is the only way to move a
+    // cross-item check, and it is what a second authored item repeating a prompt
+    // would actually look like.
+    const items = clone(all);
+    const ws = items.find((i) => i.taskType === "WRITING_SAMPLE") as WItem;
+    const twin = JSON.parse(JSON.stringify(ws)) as WItem;
+    twin.title = `${ws.title} (second)`;
+    items.push(twin);
+    write("wr-red-prompt-duplicate.json", items, "two Writing Sample items sharing one prompt");
+  }
+
   console.log("");
 }
 

@@ -25,6 +25,11 @@ import {
   InteractiveListeningComposer,
   type ILView,
 } from "@/components/det/InteractiveListeningComposer";
+import {
+  InteractiveWritingComposer,
+  type IWView,
+} from "@/components/det/InteractiveWritingComposer";
+import { WritingSampleComposer, type WSView } from "@/components/det/WritingSampleComposer";
 
 type Args = { attemptId: string; prompt: string; title: string; payload: unknown };
 
@@ -68,6 +73,22 @@ const RENDERERS: Partial<Record<DetTaskType, (a: Args) => ReactNode>> = {
         prompt={prompt}
         view={payload as ILView}
       />
+    );
+  },
+  // Like Interactive Listening, the "payload" is a STAGE VIEW: Part 2's prompt
+  // is not in it until Part 1 is submitted.
+  INTERACTIVE_WRITING: ({ attemptId, prompt, payload }) => {
+    return (
+      <InteractiveWritingComposer
+        attemptId={attemptId}
+        prompt={prompt}
+        view={payload as IWView}
+      />
+    );
+  },
+  WRITING_SAMPLE: ({ attemptId, prompt, payload }) => {
+    return (
+      <WritingSampleComposer attemptId={attemptId} prompt={prompt} view={payload as WSView} />
     );
   },
   WRITE_ABOUT_THE_PHOTO: ({ attemptId, prompt, title, payload }) => {

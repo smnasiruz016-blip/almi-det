@@ -47,9 +47,20 @@
 //                          the current stage only, so later turns and the
 //                          summary prompt are not on the wire at all until they
 //                          are reached. See src/lib/det/il-stages.ts.
+//   INTERACTIVE_WRITING    `rubric` entirely — `rubric.reference` is the rater's
+//                          target in prose, an answer key under another name.
+//                          ALSO progressive: Part 2's prompt is absent from the
+//                          wire until Part 1 is recorded, because a taker who
+//                          reads "now argue the other side" first writes a Part 1
+//                          built to be easy to reverse.
+//   WRITING_SAMPLE         `rubric` entirely, same reason. Not progressive —
+//                          there is one prompt and one submission.
 
 import type { DetTaskType } from "@prisma/client";
+import { stagedNeedsAudio } from "@/lib/det/staged-drivers";
 import { projectILView } from "@/lib/det/il-stages";
+import { projectIWView } from "@/lib/det/tasks/interactive-writing";
+import { projectWSView } from "@/lib/det/tasks/writing-sample";
 
 export type ClientPayload = Record<string, unknown>;
 
@@ -69,10 +80,12 @@ export type ClientPayload = Record<string, unknown>;
 export type ProjectionContext = { audio?: Record<number, string>; stored?: unknown };
 
 /** Task types whose projection needs DetItemAudio rows. The render seam checks
- *  this before spending a query, so the six types with no projected audio do not
- *  pay for one. */
+ *  this before spending a query, so the types with no projected audio do not pay
+ *  for one. Derived from the staged-task registry rather than restated here, so
+ *  a new audio-bearing type cannot be added in one place and forgotten in the
+ *  other. */
 export function needsAudioContext(taskType: DetTaskType): boolean {
-  return taskType === "INTERACTIVE_LISTENING";
+  return stagedNeedsAudio(taskType);
 }
 
 type Projector = (
@@ -106,7 +119,7 @@ const projectCloze: Projector = (p) => ({
  * meant to play once, and the summary prompt tells the taker what to listen for.
  *
  * So this returns only the stage the taker has actually reached. The turns and
- * the summary prompt are released by /api/det/il/advance as each stage is
+ * the summary prompt are released by /api/det/staged/advance as each stage is
  * submitted; they are NOT in this payload. See src/lib/det/il-stages.ts.
  */
 const projectInteractiveListening: Projector = (raw, ctx) =>
@@ -154,6 +167,23 @@ const PROJECTORS: Record<DetTaskType, Projector> = {
   LISTEN_AND_TYPE: () => ({}),
 
   INTERACTIVE_LISTENING: projectInteractiveListening,
+
+  // PROGRESSIVE, like Interactive Listening and for the same kind of reason.
+  // Part 2 asks the taker to argue the side they rejected and to mitigate the
+  // downside they themselves raised in Part 1. Someone who can read that first
+  // writes a Part 1 built to be easy to reverse, and the pair measures nothing.
+  // So Part 2's prompt is absent from the wire until Part 1 is recorded.
+  //
+  // `rubric` is never mentioned by the projection: `rubric.reference` is the
+  // rater's target in prose — an answer key wearing a different name.
+  INTERACTIVE_WRITING: (p, ctx) =>
+    projectIWView(p, { stored: ctx.stored }) as unknown as ClientPayload,
+
+  // Single submission, so nothing is withheld by time — only `rubric`, which is
+  // withheld by field. The projection also carries the practice note verbatim:
+  // in the official DET this sample is UNSCORED, and a practice tool that lets
+  // someone believe otherwise has misled them about the exam.
+  WRITING_SAMPLE: (p) => projectWSView(p) as unknown as ClientPayload,
 
   WRITE_ABOUT_THE_PHOTO: (p) => ({
     imageUrl: p.imageUrl,

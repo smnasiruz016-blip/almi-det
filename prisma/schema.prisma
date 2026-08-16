@@ -158,6 +158,8 @@ enum DetTaskType {
   LISTEN_AND_TYPE // Listening, deterministic
   INTERACTIVE_LISTENING // Listening, hybrid (cloze + turns deterministic, summary AI)
   WRITE_ABOUT_THE_PHOTO // Writing,   AI
+  INTERACTIVE_WRITING // Writing,   AI (two locked parts, progressive)
+  WRITING_SAMPLE // Writing,   AI (unscored in the real DET; graded here for practice)
   SPEAK_ABOUT_THE_PHOTO // Speaking,  AI (Phase 3 — Whisper transcript)
 }
 

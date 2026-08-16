@@ -47,6 +47,19 @@ import {
 } from "@/lib/det/tasks/interactive-listening";
 import { evaluateConversationSummary } from "@/lib/det/tasks/interactive-listening-ai";
 import { readILAnswers, readILProgress } from "@/lib/det/il-stages";
+import {
+  interactiveWritingPayloadSchema,
+  interactiveWritingResponseSchema,
+  iwSections,
+  readIWProgress,
+} from "@/lib/det/tasks/interactive-writing";
+import {
+  writingSamplePayloadSchema,
+  writingSampleResponseSchema,
+  WS_MIN_WORDS,
+} from "@/lib/det/tasks/writing-sample";
+import { evaluateWriting } from "@/lib/det/tasks/writing-rater";
+import { readStoredAnswers } from "@/lib/det/staged";
 
 export type ScoringMode = "DETERMINISTIC" | "AI";
 
@@ -152,6 +165,35 @@ export const DET_TASKS: Record<DetTaskType, TaskDef> = {
       "Write at least 50 words describing the scene. You'll get honest feedback on relevance, range, and clarity.",
     live: true,
   },
+  // PROGRESSIVE, like Interactive Listening — Part 1 locks before Part 2's
+  // prompt exists on the wire. live: false until the deferred deploy chain runs
+  // (migrate -> seed -> live); one reference item is a proof, not a bank.
+  INTERACTIVE_WRITING: {
+    taskType: "INTERACTIVE_WRITING",
+    slug: "interactive-writing",
+    label: "Interactive Writing",
+    skill: "WRITING",
+    scoringMode: "AI",
+    feedsSubscores: SKILL_FEEDS.WRITING,
+    blurb:
+      "Two linked prompts. Write your view first — it locks when you submit — then answer a follow-up that asks you to argue the other side fairly.",
+    live: false,
+  },
+  // In the official DET this sample is sent to institutions UNSCORED. We rate it
+  // because this is a practice tool and feedback is the point; the composer says
+  // so on screen, and the sentence is carried in the PROJECTION so a redesign
+  // cannot quietly drop it.
+  WRITING_SAMPLE: {
+    taskType: "WRITING_SAMPLE",
+    slug: "writing-sample",
+    label: "Writing Sample",
+    skill: "WRITING",
+    scoringMode: "AI",
+    feedsSubscores: SKILL_FEEDS.WRITING,
+    blurb:
+      "Read the prompt for 30 seconds, then write 100-130+ words in five minutes. The real test sends this to universities unscored — here you get feedback on it.",
+    live: false,
+  },
   SPEAK_ABOUT_THE_PHOTO: {
     taskType: "SPEAK_ABOUT_THE_PHOTO",
     slug: "speak-about-the-photo",
@@ -173,6 +215,8 @@ export const TASK_ORDER: DetTaskType[] = [
   "LISTEN_AND_TYPE",
   "INTERACTIVE_LISTENING",
   "WRITE_ABOUT_THE_PHOTO",
+  "INTERACTIVE_WRITING",
+  "WRITING_SAMPLE",
   "SPEAK_ABOUT_THE_PHOTO",
 ];
 
@@ -203,7 +247,7 @@ export type TaskHandler = {
    * already recorded for this attempt, BEFORE scoring and before persisting.
    *
    * Exists for multi-stage tasks. Interactive Listening records Part A's typed
-   * blanks and each turn's choice through /api/det/il/advance as they happen;
+   * blanks and each turn's choice through /api/det/staged/advance as they happen;
    * the final post carries only the summary. Without this hook the submit route
    * would overwrite those stored answers with whatever the last request
    * contained — so a client could replay the whole task with perfect answers in
@@ -265,7 +309,7 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
     mode: "AI",
     // Parts A and B come from the database, not from this request. Only the
     // summary is taken from what the client posted, because Stage C is the one
-    // stage that has not been through /api/det/il/advance yet.
+    // stage that has not been through /api/det/staged/advance yet.
     prepareResponse: ({ stored, incoming }) => {
       const prior = readILAnswers(stored);
       const summary = (incoming as { summary?: unknown } | null)?.summary;
@@ -303,6 +347,71 @@ export const DET_HANDLERS: Partial<Record<DetTaskType, TaskHandler>> = {
       const p = writeAboutPhotoPayloadSchema.parse(payload);
       const r = writeAboutPhotoResponseSchema.parse(response);
       const s = await evaluateWriteAboutPhoto({ payload: p, response: r, userId });
+      return {
+        pointsEarned: s.pointsEarned,
+        pointsMax: s.pointsMax,
+        fraction: s.fraction,
+        feedback: s.feedback,
+        telemetry: s.telemetry,
+      };
+    },
+  },
+  // Both Writing rubric types share one rater (writing-rater.ts): same four
+  // traits, same honesty rules, one place to change them.
+  INTERACTIVE_WRITING: {
+    mode: "AI",
+    // Part 1 comes from the database, not from this request — it was locked by
+    // /api/det/staged/advance and must not be revisable by the final post. Part
+    // 2 is taken from the post OR from what was saved as it was typed.
+    prepareResponse: ({ stored, incoming }) => {
+      const prior = readStoredAnswers(stored);
+      const posted = (incoming as { text?: Record<string, unknown> } | null)?.text ?? {};
+      const part2 = typeof posted.part2 === "string" ? posted.part2 : prior.text.part2;
+      return {
+        text: { part1: prior.text.part1 ?? "", part2: part2 ?? "" },
+        progress: readIWProgress(stored),
+      };
+    },
+    run: async ({ payload, response, userId }) => {
+      const p = interactiveWritingPayloadSchema.parse(payload);
+      const r = interactiveWritingResponseSchema.parse(response);
+      const s = await evaluateWriting({
+        feature: "interactive-writing.evaluate",
+        pointsMax: 12,
+        reference: p.rubric.reference,
+        context: `TOPIC: ${p.topic}
+REGISTER: ${p.register}
+This is a TWO-PART task: Part 2 asks the candidate to concede a genuine advantage of the option they did NOT choose in Part 1, and to mitigate the downside they themselves raised. Judge whether Part 2 actually engages with Part 1.`,
+        sections: iwSections(p, r.text),
+        minTotalWords: p.part1.minWords + p.part2.minWords,
+        userId,
+      });
+      return {
+        pointsEarned: s.pointsEarned,
+        pointsMax: s.pointsMax,
+        fraction: s.fraction,
+        feedback: s.feedback,
+        telemetry: s.telemetry,
+      };
+    },
+  },
+  WRITING_SAMPLE: {
+    mode: "AI",
+    run: async ({ payload, response, userId }) => {
+      const p = writingSamplePayloadSchema.parse(payload);
+      const r = writingSampleResponseSchema.parse(response);
+      const s = await evaluateWriting({
+        feature: "writing-sample.evaluate",
+        pointsMax: 12,
+        reference: p.rubric.reference,
+        context: `CATEGORY: ${p.category}
+TOPIC: ${p.topic}
+TARGET LENGTH: ${p.targetWords}
+Note: in the official DET this sample is sent to institutions unscored. This rating is practice feedback only.`,
+        sections: [{ label: "RESPONSE", prompt: p.prompt, text: r.text }],
+        minTotalWords: WS_MIN_WORDS,
+        userId,
+      });
       return {
         pointsEarned: s.pointsEarned,
         pointsMax: s.pointsMax,
