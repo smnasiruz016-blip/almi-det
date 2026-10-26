@@ -13,6 +13,13 @@ on:
     branches: ["**"]
   pull_request:
 
+# The repo has no NODE_AUTH_TOKEN secret, so Install falls back to GITHUB_TOKEN.
+# That token can read the private almi-data package only if the job is granted
+# packages: read (and the package lists this repo under "Manage Actions access").
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   gates:
     runs-on: ubuntu-latest
