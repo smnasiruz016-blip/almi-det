@@ -6,9 +6,13 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { DET_TASKS, TASK_ORDER } from "@/lib/det/registry";
 import { SUBSCORE_LABEL } from "@/lib/det/types";
+import { FreeTimeBanner } from "@/components/FreeTimeBanner";
+import { isTasteActive } from "@/lib/billing/taste";
 
 export default async function PracticePage() {
-  await requireUser();
+  const user = await requireUser();
+  // RR-397: inside the free 48 hours (no card), the AI Writing and Speaking tasks are open with 1 AI-scored Writing + 1 AI-scored Speaking
+  const free48 = isTasteActive(user);
 
   return (
     <div className="space-y-8">
@@ -24,11 +28,18 @@ export default async function PracticePage() {
         </p>
       </header>
 
+      <FreeTimeBanner user={user} />
+
       <div className="grid gap-4 sm:grid-cols-2">
         {TASK_ORDER.map((t) => {
           const def = DET_TASKS[t];
           const subs = def.feedsSubscores.map((s) => SUBSCORE_LABEL[s]).join(" + ");
-          const tag = def.scoringMode === "AI" ? "AI feedback · Pro" : "Auto-marked · Free";
+          const tag =
+            def.scoringMode !== "AI"
+              ? "Auto-marked · Free"
+              : free48 && (def.skill === "WRITING" || def.skill === "SPEAKING")
+                ? "AI feedback · 1 free in your 48 hours"
+                : "AI feedback · Pro";
           const inner = (
             <>
               <div className="flex items-baseline justify-between gap-3">

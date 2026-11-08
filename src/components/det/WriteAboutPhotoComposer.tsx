@@ -57,6 +57,7 @@ export function WriteAboutPhotoComposer({
       const data = await res.json();
       if (res.status === 402) {
         setUpgrade(true);
+        if (typeof data.error === "string") setError(data.error); // RR-397: the honest reason (used, busy today, or the 48 hours are over)
         setSubmitting(false);
         return;
       }
@@ -109,9 +110,9 @@ export function WriteAboutPhotoComposer({
 
       {upgrade && (
         <div className="rounded-xl border border-almi-accent/40 bg-almi-accent/10 px-4 py-3 text-sm text-almi-ink">
-          AI feedback is part of a subscription.{" "}
+          AI feedback is part of AlmiDET Pro.{" "}
           <a href="/pricing" className="font-semibold underline">
-            See plans
+            Unlock for $12/month
           </a>
           .
         </div>

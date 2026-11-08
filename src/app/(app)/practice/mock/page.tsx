@@ -10,6 +10,7 @@ import { startSession } from "@/lib/det/session";
 async function startMockAction() {
   "use server";
   const user = await requireUser();
+  // RR-397: paid only (the full mock is never part of the free 48 hours).
   if (!hasPaidAccess(user)) redirect("/pricing");
   const id = await startSession({ userId: user.id, mode: "MOCK" });
   if (!id) redirect("/practice?mockempty=1");
@@ -40,9 +41,9 @@ export default async function MockStartPage() {
 
       {needsPaid ? (
         <div className="rounded-xl border border-almi-accent/40 bg-almi-accent/10 px-4 py-3 text-sm text-almi-ink">
-          The full-length practice includes AI feedback and is part of a subscription.{" "}
+          The full-length practice includes AI feedback and is part of AlmiDET Pro.{" "}
           <a href="/pricing" className="font-semibold underline">
-            See plans
+            Unlock for $12/month
           </a>
           .
         </div>

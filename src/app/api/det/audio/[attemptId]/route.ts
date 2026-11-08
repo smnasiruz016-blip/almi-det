@@ -19,6 +19,8 @@ import { listenAndTypePayloadSchema } from "@/lib/det/tasks/listen-and-type";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+// RR-397: not AI scoring. This is the prompt audio of free Listen and Type practice (pre-rendered; on-demand TTS only as a
+// fallback), unchanged by the free 48 hours; the 1 AI-scored Writing + 1 AI-scored Speaking rule does not apply to it.
 export async function GET(
   _req: Request,
   ctx: { params: Promise<{ attemptId: string }> },
