@@ -19,9 +19,9 @@ import { loadAuthoredSpeakingSample, type SpeakingSampleSource } from "./speakin
 
 const prisma = new PrismaClient();
 
-const PROMPT = "Speak on the topic for up to three minutes.";
+export const PROMPT = "Speak on the topic for up to three minutes.";
 
-const GUIDANCE =
+export const GUIDANCE =
   "Three minutes is long — plan a shape before you start. Two developed points beat six mentioned ones.";
 
 const authored = loadAuthoredSpeakingSample({ prompt: PROMPT, guidanceNote: GUIDANCE, reservedTitles: [] });

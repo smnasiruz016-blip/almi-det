@@ -36,6 +36,8 @@ jobs:
         run: node scripts/gates/offer-48h.mjs
       - name: family header and footer gate (RR-398)
         run: node scripts/gates/family-nav.mjs
+      - name: text contrast gate (RR-400, WCAG AA text shades)
+        run: node scripts/gates/text-contrast.mjs
 
       # @smnasiruz016-blip/almi-data is a private GitHub Packages dependency;
       # .npmrc reads NODE_AUTH_TOKEN.
@@ -48,6 +50,14 @@ jobs:
       # contacted — scripts/gates/_bank.mts supplies a dummy DATABASE_URL.
       - name: Generate Prisma client
         run: npx prisma generate
+
+      # RR-399 A3: the free AI use is atomic (pure: a fake store with the database's unique rule; no DB, no AI)
+      - name: free AI claim test (RR-399)
+        run: npx tsx scripts/verify-free-ai-claim.ts
+
+      # RR-401: the content factory (pack parser, LanguageTool gate on fixtures, word counts, pending rule, seed dry run + idempotence; no DB, no network)
+      - name: factory test (RR-401)
+        run: npx tsx scripts/factory/factory.test.mts
 
       - name: Content gates
         run: npm run gate:all

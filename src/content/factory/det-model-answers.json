@@ -1,0 +1,813 @@
+{
+ "schema": 1,
+ "label": "AlmiDET model answer (estimate), not an official Duolingo English Test score",
+ "trademark": "Duolingo and the Duolingo English Test are trademarks of Duolingo, Inc. AlmiDET is not affiliated with Duolingo.",
+ "items": [
+  {
+   "id": "det-p1-conversation-1",
+   "packNo": 1,
+   "key": "Conversation 1",
+   "kind": "CONVERSATION",
+   "taskType": "INTERACTIVE_LISTENING",
+   "title": "Choosing a project topic",
+   "titleFrom": "pack",
+   "status": "audio-pending",
+   "pendingReason": "AlmiDET has no free Edge-voice audio pipeline: its conversation clips are made by a paid text-to-speech call (one voice), which RR-401 ($0) may not use. Also, an Interactive Listening item needs Listen and Complete / Listen and Respond turns, and the pack gives only the script and the summaries. Hidden until audio exists.",
+   "prompt": {},
+   "imageDescription": null,
+   "script": [
+    {
+     "speaker": "Student",
+     "line": "Hi, Professor Lin. Do you have a minute? I'm trying to choose a topic for my final project."
+    },
+    {
+     "speaker": "Professor",
+     "line": "Of course. What are you thinking about?"
+    },
+    {
+     "speaker": "Student",
+     "line": "I'd like to write about plastic pollution in the ocean, but I'm worried it's too big."
+    },
+    {
+     "speaker": "Professor",
+     "line": "That's a good instinct. It is very broad. Could you focus on something local?"
+    },
+    {
+     "speaker": "Student",
+     "line": "Maybe the plastic waste on beaches in our city?"
+    },
+    {
+     "speaker": "Professor",
+     "line": "Excellent. You could even collect your own data during a beach clean-up."
+    },
+    {
+     "speaker": "Student",
+     "line": "That sounds great. Should I include interviews?"
+    },
+    {
+     "speaker": "Professor",
+     "line": "Yes, a few short interviews with volunteers would add a lot. Send me a one-page plan by Friday."
+    }
+   ],
+   "sharedNotes": "the 130+ summary covers the problem, the advice, the details and the next step in two well-formed sentences. The 110 summary is accurate but simpler. (It assumes the student is a man, which the script does not say; *they* would be safer.) The 85 summary misses key details and has errors (*want write*, *Professor say is too big*).",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "A student asked Professor Lin for advice about a final project on ocean plastic pollution, but the professor thought the topic was too broad. She suggested focusing on plastic waste on local beaches, collecting data during a beach clean-up and interviewing volunteers. The student agreed and needs to send a one-page plan by Friday."
+      }
+     ],
+     "text": "A student asked Professor Lin for advice about a final project on ocean plastic pollution, but the professor thought the topic was too broad. She suggested focusing on plastic waste on local beaches, collecting data during a beach clean-up and interviewing volunteers. The student agreed and needs to send a one-page plan by Friday.",
+     "wordCount": 54,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": null,
+       "text": "A student wanted to write a project about plastic in the ocean. The professor said it was too big and suggested studying plastic on beaches in their city. The student can collect data and do interviews. He must send a plan by Friday."
+      }
+     ],
+     "text": "A student wanted to write a project about plastic in the ocean. The professor said it was too big and suggested studying plastic on beaches in their city. The student can collect data and do interviews. He must send a plan by Friday.",
+     "wordCount": 43,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": null,
+       "text": "The student want write about ocean plastic. Professor say is too big. He will go to beach."
+      }
+     ],
+     "text": "The student want write about ocean plastic. Professor say is too big. He will go to beach.",
+     "wordCount": 17,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-conversation-2",
+   "packNo": 1,
+   "key": "Conversation 2",
+   "kind": "CONVERSATION",
+   "taskType": "INTERACTIVE_LISTENING",
+   "title": "Gym membership",
+   "titleFrom": "pack",
+   "status": "audio-pending",
+   "pendingReason": "AlmiDET has no free Edge-voice audio pipeline: its conversation clips are made by a paid text-to-speech call (one voice), which RR-401 ($0) may not use. Also, an Interactive Listening item needs Listen and Complete / Listen and Respond turns, and the pack gives only the script and the summaries. Hidden until audio exists.",
+   "prompt": {},
+   "imageDescription": null,
+   "script": [
+    {
+     "speaker": "Customer",
+     "line": "Hi, I'd like to cancel my gym membership, please."
+    },
+    {
+     "speaker": "Staff",
+     "line": "I'm sorry to hear that. May I ask why?"
+    },
+    {
+     "speaker": "Customer",
+     "line": "I'm moving to another city next month for work."
+    },
+    {
+     "speaker": "Staff",
+     "line": "I see. Actually, we have locations in most major cities. Where are you moving?"
+    },
+    {
+     "speaker": "Customer",
+     "line": "To Denver."
+    },
+    {
+     "speaker": "Staff",
+     "line": "We have two gyms in Denver. I can transfer your membership at no cost, and you'd keep the same monthly price."
+    },
+    {
+     "speaker": "Customer",
+     "line": "Oh, that's great. I didn't know that."
+    },
+    {
+     "speaker": "Staff",
+     "line": "I'll just need your new address. The transfer will start on the first of next month."
+    }
+   ],
+   "sharedNotes": "the 130+ summary includes the reason, the solution, the conditions and the next step. The 85 summary is incomplete and ungrammatical (*Customer want cancel*, *gym have in Denver*).",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "A customer wanted to cancel a gym membership because of a move to Denver for work. However, the staff member explained that the gym has two locations there and offered to transfer the membership for free at the same monthly price. The customer agreed, and the transfer will begin on the first of next month after the customer provides a new address."
+      }
+     ],
+     "text": "A customer wanted to cancel a gym membership because of a move to Denver for work. However, the staff member explained that the gym has two locations there and offered to transfer the membership for free at the same monthly price. The customer agreed, and the transfer will begin on the first of next month after the customer provides a new address.",
+     "wordCount": 62,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": null,
+       "text": "A customer wanted to cancel because they are moving to Denver. The staff said the gym has two locations in Denver, so the customer can transfer the membership for free. The transfer starts next month."
+      }
+     ],
+     "text": "A customer wanted to cancel because they are moving to Denver. The staff said the gym has two locations in Denver, so the customer can transfer the membership for free. The transfer starts next month.",
+     "wordCount": 35,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": null,
+       "text": "Customer want cancel because moving. But gym have in Denver so ok."
+      }
+     ],
+     "text": "Customer want cancel because moving. But gym have in Denver so ok.",
+     "wordCount": 12,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-interactive-writing-1",
+   "packNo": 1,
+   "key": "Interactive Writing 1",
+   "kind": "INTERACTIVE_WRITING",
+   "taskType": "INTERACTIVE_WRITING",
+   "title": "Learning from mistakes",
+   "titleFrom": "pack",
+   "status": "ready",
+   "pendingReason": null,
+   "prompt": {
+    "part1": "Describe a mistake you made and what you learned from it.",
+    "part2": "Do you think schools should allow students to make more mistakes? Why or why not?"
+   },
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": null,
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "In my first year of university, I made the mistake of leaving a major research paper until the last weekend. I assumed that I could write it quickly, but I soon realized that I had not collected enough sources, and the library was closed on Sunday. As a result, I submitted a weak paper and received the lowest grade of my semester. The experience was frustrating, but it taught me an important lesson about planning. Since then, I have broken every large assignment into smaller steps with my own deadlines, and I start research at least two weeks early. Ironically, this one bad grade probably did more to improve my study habits than any good grade I have ever received."
+      },
+      {
+       "label": "Part 2",
+       "text": "I believe schools should give students more freedom to make mistakes, as long as the stakes are low. When students are afraid of losing points, they often choose the safest answer instead of trying creative ideas. Teachers could use practice tasks that are not graded, or allow students to revise their work after feedback. That way, mistakes become part of learning rather than something to hide."
+      }
+     ],
+     "text": "In my first year of university, I made the mistake of leaving a major research paper until the last weekend. I assumed that I could write it quickly, but I soon realized that I had not collected enough sources, and the library was closed on Sunday. As a result, I submitted a weak paper and received the lowest grade of my semester. The experience was frustrating, but it taught me an important lesson about planning. Since then, I have broken every large assignment into smaller steps with my own deadlines, and I start research at least two weeks early. Ironically, this one bad grade probably did more to improve my study habits than any good grade I have ever received.\n\nI believe schools should give students more freedom to make mistakes, as long as the stakes are low. When students are afraid of losing points, they often choose the safest answer instead of trying creative ideas. Teachers could use practice tasks that are not graded, or allow students to revise their work after feedback. That way, mistakes become part of learning rather than something to hide.",
+     "wordCount": 186,
+     "partWords": [
+      120,
+      66
+     ],
+     "notes": "Part 1 tells a clear story (the situation, the mistake, the result, the lesson) with a reflective ending. Part 2 gives a clear opinion with a condition and practical examples. The language is varied and accurate (*As a result*, *Since then*, *Ironically*, *as long as the stakes are low*).",
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "Last year, I forgot to prepare for an important presentation in my English class. I thought I could do it the night before, but I did not have enough time to make good slides or practice. During the presentation, I was very nervous, and I forgot many things. My teacher gave me a low grade. I learned that I need to plan my time better. Now I always write my deadlines in a calendar, and I start preparing a few days early."
+      },
+      {
+       "label": "Part 2",
+       "text": "Yes, I think schools should let students make more mistakes. If students are always afraid of bad grades, they will not try new things. Teachers can give students a second chance to improve their work."
+      }
+     ],
+     "text": "Last year, I forgot to prepare for an important presentation in my English class. I thought I could do it the night before, but I did not have enough time to make good slides or practice. During the presentation, I was very nervous, and I forgot many things. My teacher gave me a low grade. I learned that I need to plan my time better. Now I always write my deadlines in a calendar, and I start preparing a few days early.\n\nYes, I think schools should let students make more mistakes. If students are always afraid of bad grades, they will not try new things. Teachers can give students a second chance to improve their work.",
+     "wordCount": 117,
+     "partWords": [
+      82,
+      35
+     ],
+     "notes": "a clear story and opinion in simple, mostly accurate language; less development and range.",
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "One time I make mistake. I dont study for exam and I get bad score. My parents was angry. I learn I must study more."
+      },
+      {
+       "label": "Part 2",
+       "text": "Yes, because mistake is normal. Everybody make mistake."
+      }
+     ],
+     "text": "One time I make mistake. I dont study for exam and I get bad score. My parents was angry. I learn I must study more.\n\nYes, because mistake is normal. Everybody make mistake.",
+     "wordCount": 33,
+     "partWords": [
+      25,
+      8
+     ],
+     "notes": "very short; tense errors (*I make mistake*, *I dont study*, *I get*, *I learn*), agreement errors (*My parents was*, *Everybody make*), and almost no development.",
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-interactive-writing-2",
+   "packNo": 1,
+   "key": "Interactive Writing 2",
+   "kind": "INTERACTIVE_WRITING",
+   "taskType": "INTERACTIVE_WRITING",
+   "title": "Big city or quiet village",
+   "titleFrom": "pack",
+   "status": "ready",
+   "pendingReason": null,
+   "prompt": {
+    "part1": "Would you rather live in a big city or in the countryside? Explain your choice.",
+    "part2": "What could governments do to make life in small towns more attractive to young people?"
+   },
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": null,
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "Although I enjoy visiting the countryside, I would rather live in a big city, at least at this stage of my life. Cities offer far more opportunities for young people, from internships and well-paid jobs to universities and professional networks. I also appreciate the convenience of public transportation, which means I do not need to own a car. In addition, cities are culturally diverse, so I can try food from different countries, attend concerts and meet people with very different backgrounds. Of course, city life is expensive and noisy, but for someone who is building a career, the advantages clearly outweigh these disadvantages."
+      },
+      {
+       "label": "Part 2",
+       "text": "Governments could start by improving internet connections, so that young people can work remotely from small towns. They could also offer tax benefits or housing grants to people who move there, and support local businesses that create jobs. Finally, investing in public transportation would make it easier to reach nearby cities for education and entertainment."
+      }
+     ],
+     "text": "Although I enjoy visiting the countryside, I would rather live in a big city, at least at this stage of my life. Cities offer far more opportunities for young people, from internships and well-paid jobs to universities and professional networks. I also appreciate the convenience of public transportation, which means I do not need to own a car. In addition, cities are culturally diverse, so I can try food from different countries, attend concerts and meet people with very different backgrounds. Of course, city life is expensive and noisy, but for someone who is building a career, the advantages clearly outweigh these disadvantages.\n\nGovernments could start by improving internet connections, so that young people can work remotely from small towns. They could also offer tax benefits or housing grants to people who move there, and support local businesses that create jobs. Finally, investing in public transportation would make it easier to reach nearby cities for education and entertainment.",
+     "wordCount": 158,
+     "partWords": [
+      103,
+      55
+     ],
+     "notes": "a clear preference with several developed reasons and a balanced acknowledgment of the drawbacks; Part 2 offers four specific, realistic ideas. The language is precise (*outweigh*, *culturally diverse*, *housing grants*).",
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "I would prefer to live in a big city. There are more jobs in the city, and it is easier to find good universities. I also like that there are many restaurants, shops and parks. Public transportation is better, so I do not need a car. The countryside is quiet and beautiful, but I think it can be boring for young people."
+      },
+      {
+       "label": "Part 2",
+       "text": "Governments can build better internet and give more jobs in small towns. They can also make houses cheaper for young people."
+      }
+     ],
+     "text": "I would prefer to live in a big city. There are more jobs in the city, and it is easier to find good universities. I also like that there are many restaurants, shops and parks. Public transportation is better, so I do not need a car. The countryside is quiet and beautiful, but I think it can be boring for young people.\n\nGovernments can build better internet and give more jobs in small towns. They can also make houses cheaper for young people.",
+     "wordCount": 83,
+     "partWords": [
+      62,
+      21
+     ],
+     "notes": "relevant and clear, with less detail; Part 2 is short.",
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "I like city more. In city have many job and shopping mall. Countryside is boring, nothing to do."
+      },
+      {
+       "label": "Part 2",
+       "text": "Government must give money and make more job."
+      }
+     ],
+     "text": "I like city more. In city have many job and shopping mall. Countryside is boring, nothing to do.\n\nGovernment must give money and make more job.",
+     "wordCount": 26,
+     "partWords": [
+      18,
+      8
+     ],
+     "notes": "very limited; errors (*In city have*, *many job*, *make more job*); no real development.",
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-photo-1",
+   "packNo": 1,
+   "key": "Photo 1",
+   "kind": "PHOTO",
+   "taskType": "WRITE_ABOUT_THE_PHOTO",
+   "title": "A rainy bus stop",
+   "titleFrom": "pack",
+   "status": "image-pending",
+   "pendingReason": "AlmiDET shows a real photo for this task and the pack gives only a description of it. Hidden until an image exists.",
+   "prompt": {},
+   "imageDescription": "a city bus stop in heavy rain; three people under a shelter; one woman holds a red umbrella; a man checks his phone; a bus with its lights on is approaching in the background.",
+   "script": [],
+   "sharedNotes": "the 130+ answer uses varied structures (*holding*, *while*, *with its headlights on*) and places details clearly. The 110 answer is accurate but simple. The 85 answer has errors (*There is people*, *It raining*, *woman have*, *man look phone*).",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "Three people are waiting at a bus stop on a rainy evening. A woman holding a bright red umbrella is standing at the edge of the shelter, while a man next to her is checking his phone. In the background, a bus with its headlights on is approaching through the rain."
+      }
+     ],
+     "text": "Three people are waiting at a bus stop on a rainy evening. A woman holding a bright red umbrella is standing at the edge of the shelter, while a man next to her is checking his phone. In the background, a bus with its headlights on is approaching through the rain.",
+     "wordCount": 51,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": null,
+       "text": "Some people are waiting at a bus stop. It is raining a lot. A woman has a red umbrella, and a man is looking at his phone. A bus is coming in the background."
+      }
+     ],
+     "text": "Some people are waiting at a bus stop. It is raining a lot. A woman has a red umbrella, and a man is looking at his phone. A bus is coming in the background.",
+     "wordCount": 34,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": null,
+       "text": "There is people in bus stop. It raining. One woman have red umbrella and man look phone."
+      }
+     ],
+     "text": "There is people in bus stop. It raining. One woman have red umbrella and man look phone.",
+     "wordCount": 17,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-photo-2",
+   "packNo": 1,
+   "key": "Photo 2",
+   "kind": "PHOTO",
+   "taskType": "WRITE_ABOUT_THE_PHOTO",
+   "title": "A family picnic",
+   "titleFrom": "pack",
+   "status": "image-pending",
+   "pendingReason": "AlmiDET shows a real photo for this task and the pack gives only a description of it. Hidden until an image exists.",
+   "prompt": {},
+   "imageDescription": "a family of four on a blanket in a park; sandwiches and a bowl of strawberries; a father pouring juice; a girl flying a kite; trees and a lake behind them.",
+   "script": [],
+   "sharedNotes": "the 130+ answer adds descriptive adjectives (*fresh*, *colorful*, *calm*) and links ideas smoothly (*Nearby*, *with … visible*). The 85 answer has errors in subject-verb agreement and articles (*The family eat*, *in park*, *The girl play*, *nice day*).",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "A family of four is enjoying a picnic on a sunny day in the park. The father is pouring juice into paper cups, and there are sandwiches and a bowl of fresh strawberries on the blanket. Nearby, a young girl is flying a colorful kite, with a calm lake visible behind the trees."
+      }
+     ],
+     "text": "A family of four is enjoying a picnic on a sunny day in the park. The father is pouring juice into paper cups, and there are sandwiches and a bowl of fresh strawberries on the blanket. Nearby, a young girl is flying a colorful kite, with a calm lake visible behind the trees.",
+     "wordCount": 53,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": null,
+       "text": "A family is having a picnic in a park. They are sitting on a blanket with sandwiches and strawberries. The father is pouring juice. A girl is flying a kite near some trees."
+      }
+     ],
+     "text": "A family is having a picnic in a park. They are sitting on a blanket with sandwiches and strawberries. The father is pouring juice. A girl is flying a kite near some trees.",
+     "wordCount": 33,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": null,
+       "text": "The family eat in park. They have sandwich and strawberry. The girl play with kite. It is nice day."
+      }
+     ],
+     "text": "The family eat in park. They have sandwich and strawberry. The girl play with kite. It is nice day.",
+     "wordCount": 19,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-photo-3",
+   "packNo": 1,
+   "key": "Photo 3",
+   "kind": "PHOTO",
+   "taskType": "WRITE_ABOUT_THE_PHOTO",
+   "title": "A science lab",
+   "titleFrom": "pack",
+   "status": "image-pending",
+   "pendingReason": "AlmiDET shows a real photo for this task and the pack gives only a description of it. Hidden until an image exists.",
+   "prompt": {},
+   "imageDescription": "two students in white lab coats and safety glasses (a young woman on the left, a young man on the right); one pours blue liquid into a test tube; the other writes in a notebook; shelves of bottles behind them.",
+   "script": [],
+   "sharedNotes": "the 130+ answer uses precise vocabulary (*conducting an experiment*, *recording the results*). The 85 answer has errors (*Two student*, *One put*, *other write*) and imprecise words (*blue water*).",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "Two students wearing white lab coats and safety glasses are conducting an experiment in a science laboratory. One of them is carefully pouring a blue liquid into a test tube, while the other is recording the results in a notebook. Behind them, the shelves are filled with glass bottles of different sizes."
+      }
+     ],
+     "text": "Two students wearing white lab coats and safety glasses are conducting an experiment in a science laboratory. One of them is carefully pouring a blue liquid into a test tube, while the other is recording the results in a notebook. Behind them, the shelves are filled with glass bottles of different sizes.",
+     "wordCount": 52,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": null,
+       "text": "Two students are working in a lab. They are wearing lab coats and glasses. One student is pouring blue liquid into a tube, and the other one is writing in a notebook."
+      }
+     ],
+     "text": "Two students are working in a lab. They are wearing lab coats and glasses. One student is pouring blue liquid into a tube, and the other one is writing in a notebook.",
+     "wordCount": 32,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": null,
+       "text": "Two student are in the lab. One put the blue water in tube and other write something."
+      }
+     ],
+     "text": "Two student are in the lab. One put the blue water in tube and other write something.",
+     "wordCount": 17,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-read-then-speak",
+   "packNo": 1,
+   "key": "Read, Then Speak (20 seconds to prepare, 90 seconds)",
+   "kind": "READ_THEN_SPEAK",
+   "taskType": "READ_THEN_SPEAK",
+   "title": "A skill you would like to learn",
+   "titleFrom": "cc",
+   "status": "ready",
+   "pendingReason": null,
+   "prompt": {
+    "text": "Talk about a skill you would like to learn. You should say: what the skill is; why you want to learn it; how you would learn it; and how it would help you in the future."
+   },
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": "every point of the prompt is answered in order, with reasons and concrete methods; fluent linking (*To learn it*, *In the future*, *More generally*).",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "One skill I'd really like to learn is public speaking. At the moment, I feel quite nervous when I have to give presentations, even in front of people I know, and I often speak too quickly when I'm anxious. I'd like to change that, because I think confident speaking is important in almost every career. To learn it, I'd probably join a public speaking club, where members practice giving short speeches every week and receive feedback. I'd also record myself on my phone, so I could notice my habits, like saying \"um\" too often. In the future, this skill would help me in job interviews, in meetings, and maybe even in leading a team. More generally, I think being able to express my ideas clearly would make me more confident in my personal life too, for example when I need to solve a problem or disagree politely with someone."
+      }
+     ],
+     "text": "One skill I'd really like to learn is public speaking. At the moment, I feel quite nervous when I have to give presentations, even in front of people I know, and I often speak too quickly when I'm anxious. I'd like to change that, because I think confident speaking is important in almost every career. To learn it, I'd probably join a public speaking club, where members practice giving short speeches every week and receive feedback. I'd also record myself on my phone, so I could notice my habits, like saying \"um\" too often. In the future, this skill would help me in job interviews, in meetings, and maybe even in leading a team. More generally, I think being able to express my ideas clearly would make me more confident in my personal life too, for example when I need to solve a problem or disagree politely with someone.",
+     "wordCount": 149,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    }
+   ]
+  },
+  {
+   "id": "det-p1-speak-about-the-photo",
+   "packNo": 1,
+   "key": "Speak About the Photo (20 seconds to prepare, 90 seconds)",
+   "kind": "SPEAK_ABOUT_THE_PHOTO",
+   "taskType": "SPEAK_ABOUT_THE_PHOTO",
+   "title": "A science lab",
+   "titleFrom": "cc",
+   "status": "image-pending",
+   "pendingReason": "Uses the pack's Photo 3 (the science lab), which has no image yet. Hidden until an image exists.",
+   "prompt": {},
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": "a clear description from the main action to details to the background, with speculation (*probably*, *as if*, *suggests*) and a personal connection to fill 90 seconds naturally.",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "In this picture, I can see two students working together in a science laboratory. They're both wearing white lab coats and safety glasses, which suggests that they're following proper safety rules. The student on the left is carefully pouring a bright blue liquid into a test tube. She looks very focused, as if she's measuring the exact amount. Meanwhile, the student on the right is writing in a notebook, probably recording the results or the steps of the experiment. In the background, there are shelves full of glass bottles and containers, so this looks like a well-equipped school or university lab. Overall, the photo gives the impression of careful teamwork. It reminds me of my own chemistry classes in high school, where we always worked in pairs: one person did the experiment, and the other took notes, and then we switched roles halfway through."
+      }
+     ],
+     "text": "In this picture, I can see two students working together in a science laboratory. They're both wearing white lab coats and safety glasses, which suggests that they're following proper safety rules. The student on the left is carefully pouring a bright blue liquid into a test tube. She looks very focused, as if she's measuring the exact amount. Meanwhile, the student on the right is writing in a notebook, probably recording the results or the steps of the experiment. In the background, there are shelves full of glass bottles and containers, so this looks like a well-equipped school or university lab. Overall, the photo gives the impression of careful teamwork. It reminds me of my own chemistry classes in high school, where we always worked in pairs: one person did the experiment, and the other took notes, and then we switched roles halfway through.",
+     "wordCount": 144,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    }
+   ]
+  },
+  {
+   "id": "det-p1-speaking-sample",
+   "packNo": 1,
+   "key": "Speaking Sample (30 seconds to prepare, 3 minutes)",
+   "kind": "SPEAKING_SAMPLE",
+   "taskType": "SPEAKING_SAMPLE",
+   "title": "A few close friends",
+   "titleFrom": "cc",
+   "status": "ready",
+   "pendingReason": null,
+   "prompt": {
+    "text": "Some people say that it is better to have a few close friends than many friends. Do you agree or disagree? Explain your reasons."
+   },
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": "a clear position, two developed reasons, a fair counterargument with a personal example, and a thoughtful conclusion. At a calm speaking pace, this length fills about 2.5–3 minutes.",
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "I mostly agree that it's better to have a few close friends than a large number of casual friends, although I think both types of friendship have some value.\n\nMy main reason is trust. Close friendships take years to build, and they're based on shared experiences, honesty and support during difficult times. When something serious happens, like losing a job or a family member getting sick, you need people you can call at two in the morning, and those are usually just a handful of people. With a very large group of friends, it's difficult to give everyone that level of time and attention, so the relationships often stay on the surface.\n\nAnother reason is quality of time. When I spend an evening with one or two close friends, we can have deep conversations, and I come home feeling understood and energized. In big groups, conversations tend to be more general, and quieter people can feel left out.\n\nThat said, having a wider circle of friends also has advantages. Acquaintances can introduce you to new ideas, hobbies and even job opportunities. For example, I found my part-time job through a friend of a friend I'd met only twice. A larger network can also make it easier to settle into a new city or school.\n\nSo, in my opinion, the ideal situation is to have a small core of close friends, people who really know you, surrounded by a larger network of friendly acquaintances. But if I had to choose only one, I'd definitely choose a few close friends, because when life gets hard, depth matters much more than numbers."
+      }
+     ],
+     "text": "I mostly agree that it's better to have a few close friends than a large number of casual friends, although I think both types of friendship have some value.\n\nMy main reason is trust. Close friendships take years to build, and they're based on shared experiences, honesty and support during difficult times. When something serious happens, like losing a job or a family member getting sick, you need people you can call at two in the morning, and those are usually just a handful of people. With a very large group of friends, it's difficult to give everyone that level of time and attention, so the relationships often stay on the surface.\n\nAnother reason is quality of time. When I spend an evening with one or two close friends, we can have deep conversations, and I come home feeling understood and energized. In big groups, conversations tend to be more general, and quieter people can feel left out.\n\nThat said, having a wider circle of friends also has advantages. Acquaintances can introduce you to new ideas, hobbies and even job opportunities. For example, I found my part-time job through a friend of a friend I'd met only twice. A larger network can also make it easier to settle into a new city or school.\n\nSo, in my opinion, the ideal situation is to have a small core of close friends, people who really know you, surrounded by a larger network of friendly acquaintances. But if I had to choose only one, I'd definitely choose a few close friends, because when life gets hard, depth matters much more than numbers.",
+     "wordCount": 269,
+     "partWords": null,
+     "notes": null,
+     "withMistakes": false
+    }
+   ]
+  },
+  {
+   "id": "det-p1-writing-sample-1",
+   "packNo": 1,
+   "key": "Writing Sample 1",
+   "kind": "WRITING_SAMPLE",
+   "taskType": "WRITING_SAMPLE",
+   "title": "Social media and friendship",
+   "titleFrom": "pack",
+   "status": "ready",
+   "pendingReason": null,
+   "prompt": {
+    "text": "Some people believe that social media makes friendships stronger, while others think it makes them weaker. What is your opinion?"
+   },
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": null,
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "In my view, social media can strengthen friendships, but only when it supports real-life contact rather than replacing it.\n\nOn the positive side, social media makes it easy to stay in touch with friends who live far away. When my best friend moved to another country, messaging apps and video calls allowed us to share daily moments, celebrate birthdays and support each other during difficult times. Without these tools, our friendship would probably have faded.\n\nHowever, social media can also create shallow relationships. Many people have hundreds of online \"friends\" but very few people they could call in an emergency. Liking a photo takes a second, so it can give the false impression that we are connected when we have not had a meaningful conversation in months.\n\nTherefore, I believe the key is how we use it. If we treat social media as a bridge to meeting, calling and genuinely listening to our friends, it can make friendships stronger."
+      }
+     ],
+     "text": "In my view, social media can strengthen friendships, but only when it supports real-life contact rather than replacing it.\n\nOn the positive side, social media makes it easy to stay in touch with friends who live far away. When my best friend moved to another country, messaging apps and video calls allowed us to share daily moments, celebrate birthdays and support each other during difficult times. Without these tools, our friendship would probably have faded.\n\nHowever, social media can also create shallow relationships. Many people have hundreds of online \"friends\" but very few people they could call in an emergency. Liking a photo takes a second, so it can give the false impression that we are connected when we have not had a meaningful conversation in months.\n\nTherefore, I believe the key is how we use it. If we treat social media as a bridge to meeting, calling and genuinely listening to our friends, it can make friendships stronger.",
+     "wordCount": 159,
+     "partWords": null,
+     "notes": "a clear, nuanced opinion with a personal example and a counterargument; strong cohesion (*On the positive side*, *However*, *Therefore*) and precise vocabulary (*faded*, *shallow*, *false impression*).",
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": null,
+       "text": "I think social media has both good and bad effects on friendship. On the one hand, it helps people stay in contact. For example, I can talk to my friends from high school even though we live in different cities now. We send messages and photos every day. On the other hand, some people spend too much time online and do not meet their friends in person. They only like posts and do not really talk. In my opinion, social media is useful, but people should still meet their friends face to face."
+      }
+     ],
+     "text": "I think social media has both good and bad effects on friendship. On the one hand, it helps people stay in contact. For example, I can talk to my friends from high school even though we live in different cities now. We send messages and photos every day. On the other hand, some people spend too much time online and do not meet their friends in person. They only like posts and do not really talk. In my opinion, social media is useful, but people should still meet their friends face to face.",
+     "wordCount": 93,
+     "partWords": null,
+     "notes": "a clear, organized answer with an example; accurate but simpler language.",
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": null,
+       "text": "Social media is good for friend because we can talk every time. But some people use phone too much and they dont meet. I think it is good and bad."
+      }
+     ],
+     "text": "Social media is good for friend because we can talk every time. But some people use phone too much and they dont meet. I think it is good and bad.",
+     "wordCount": 30,
+     "partWords": null,
+     "notes": "very short; errors (*good for friend*, *every time* instead of *any time*, *use phone*, *dont*), and the opinion is unclear.",
+     "withMistakes": true
+    }
+   ]
+  },
+  {
+   "id": "det-p1-writing-sample-2",
+   "packNo": 1,
+   "key": "Writing Sample 2",
+   "kind": "WRITING_SAMPLE",
+   "taskType": "WRITING_SAMPLE",
+   "title": "Learning online",
+   "titleFrom": "pack",
+   "status": "ready",
+   "pendingReason": null,
+   "prompt": {
+    "text": "Do you think online courses can be as effective as traditional classes? Explain your view."
+   },
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": null,
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": null,
+       "text": "I believe online courses can be just as effective as traditional classes, but only for certain learners and subjects.\n\nThe greatest advantage of online learning is flexibility. Students can watch lectures at their own pace, replay difficult explanations and study at times that fit around work or family responsibilities. For motivated, independent learners, this freedom often leads to deeper understanding. Online courses also give access to expert teachers from around the world, regardless of where the student lives.\n\nNevertheless, traditional classes still offer important benefits. Face-to-face discussion encourages students to ask questions and exchange ideas spontaneously, and teachers can notice immediately when someone is confused. Practical subjects, such as chemistry or nursing, also require hands-on training that is difficult to replicate on a screen.\n\nOverall, online courses work best for self-disciplined students and theory-based subjects, while traditional classes remain valuable for practical skills and learners who need more structure. A combination of both may be the most effective approach."
+      }
+     ],
+     "text": "I believe online courses can be just as effective as traditional classes, but only for certain learners and subjects.\n\nThe greatest advantage of online learning is flexibility. Students can watch lectures at their own pace, replay difficult explanations and study at times that fit around work or family responsibilities. For motivated, independent learners, this freedom often leads to deeper understanding. Online courses also give access to expert teachers from around the world, regardless of where the student lives.\n\nNevertheless, traditional classes still offer important benefits. Face-to-face discussion encourages students to ask questions and exchange ideas spontaneously, and teachers can notice immediately when someone is confused. Practical subjects, such as chemistry or nursing, also require hands-on training that is difficult to replicate on a screen.\n\nOverall, online courses work best for self-disciplined students and theory-based subjects, while traditional classes remain valuable for practical skills and learners who need more structure. A combination of both may be the most effective approach.",
+     "wordCount": 159,
+     "partWords": null,
+     "notes": "a qualified thesis, balanced development, and a clear conclusion; sophisticated vocabulary (*spontaneously*, *replicate*, *self-disciplined*).",
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": null,
+       "text": "I think online courses can be effective, but they are not the same as traditional classes. Online courses are flexible, because students can study anytime and anywhere. They can also watch videos again if they do not understand. However, in traditional classes, students can ask the teacher questions directly and talk with classmates. Some subjects, like science, need labs, so they are difficult to study online. In my opinion, online courses are good for some students, but traditional classes are better for practical subjects."
+      }
+     ],
+     "text": "I think online courses can be effective, but they are not the same as traditional classes. Online courses are flexible, because students can study anytime and anywhere. They can also watch videos again if they do not understand. However, in traditional classes, students can ask the teacher questions directly and talk with classmates. Some subjects, like science, need labs, so they are difficult to study online. In my opinion, online courses are good for some students, but traditional classes are better for practical subjects.",
+     "wordCount": 84,
+     "partWords": null,
+     "notes": "clear and relevant; less development and range.",
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": null,
+       "text": "Online course is good because I can study in my home. But sometime the internet is bad and I dont understand teacher. Class is more better."
+      }
+     ],
+     "text": "Online course is good because I can study in my home. But sometime the internet is bad and I dont understand teacher. Class is more better.",
+     "wordCount": 26,
+     "partWords": null,
+     "notes": "very short; errors (*Online course is good*, *sometime*, *dont understand teacher*, *more better*).",
+     "withMistakes": true
+    }
+   ]
+  }
+ ]
+}

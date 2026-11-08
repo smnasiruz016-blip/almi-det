@@ -15,6 +15,7 @@ import { overallReadiness } from "@/lib/det/subscores";
 import type { TaskDef } from "@/lib/det/registry";
 import { DET_TASKS } from "@/lib/det/registry";
 import { SubscoreRanges } from "@/components/det/SubscoreRanges";
+import { ModelAnswers } from "@/components/det/ModelAnswers";
 import {
   readAndSelectPayloadSchema,
   readAndSelectResponseSchema,
@@ -745,6 +746,8 @@ export function DetResult({
           <TaskReview item={item} attempt={attempt} />
         </div>
       </section>
+
+      <ModelAnswers taskType={attempt.taskType} title={item.title} />
 
       {variant === "single" && (
         <>

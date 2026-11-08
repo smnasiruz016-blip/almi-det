@@ -27,7 +27,7 @@ import {
   startOfDay,
 } from "@/lib/det/speaking";
 import { stageDriverFor } from "@/lib/det/staged-drivers";
-import { mergeStoredAnswers } from "@/lib/det/staged";
+import { mergeStoredAnswers, readStageProgress } from "@/lib/det/staged";
 import { speakingTaskFor, speakingTaskTypes } from "@/lib/det/speaking-tasks";
 
 export const runtime = "nodejs";
@@ -79,16 +79,26 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (!hasPaidAccess(user) && !isEmailVerified(user)) {
     return NextResponse.json({ ok: false, error: "Please verify your email first.", upgradeUrl: "/pricing" }, { status: 403 });
   }
-  const gate = await aiGate(user, "SPEAKING", () =>
-    prisma.detAttempt.count({ where: { userId: user.id, taskType: { in: speakingTaskTypes() }, status: "SCORED" } }),
+  // RR-399 A3: a staged interview that the SERVER already recorded past its start holds this account's free reservation (its first
+  // turn claimed it); its later turns are not asked to claim again. Read from the stored progress, never from the request.
+  const driver = stageDriverFor(attempt.taskType);
+  const progressNow = driver ? readStageProgress(attempt.response, driver.start) : null;
+  const continuing = Boolean(driver && progressNow && (progressNow.stage !== driver.start.stage || progressNow.turn !== driver.start.turn));
+  const gate = await aiGate(
+    user,
+    "SPEAKING",
+    () => prisma.detAttempt.count({ where: { userId: user.id, taskType: { in: speakingTaskTypes() }, status: "SCORED" } }),
+    Date.now(),
+    { continuing },
   );
   if (!gate.ok) return NextResponse.json(gate.body, { status: gate.status });
   // the kernel's isPaid guard means "may this account be billed for a speaking attempt": paid, or admitted by aiGate above
   const mayUseSpeakingAi = hasPaidAccess(user) || gate.free;
+  // RR-399 A3: every way out after this point that delivered no score gives a reserved free use back
+  const release = gate.release;
 
   // Pre-rendered question clips, for the staged types whose stimulus is audio.
   const audio: Record<number, string> = {};
-  const driver = stageDriverFor(attempt.taskType);
   if (driver?.needsAudio) {
     const rows = await prisma.detItemAudio.findMany({
       where: { itemId: attempt.itemId },
@@ -146,14 +156,21 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ ok: false, error: "Missing turnIndex" }, { status: 400 });
     }
 
-    const turn = await transcribeSpeakingTurn({
-      userId: user.id,
-      isPaid: mayUseSpeakingAi,
-      task,
-      audio: uploaded,
-      deps: { countAttemptsToday, transcribe },
-    });
+    let turn: Awaited<ReturnType<typeof transcribeSpeakingTurn>>;
+    try {
+      turn = await transcribeSpeakingTurn({
+        userId: user.id,
+        isPaid: mayUseSpeakingAi,
+        task,
+        audio: uploaded,
+        deps: { countAttemptsToday, transcribe },
+      });
+    } catch (err) {
+      await release();
+      throw err;
+    }
     if (!turn.ok) {
+      await release();
       return NextResponse.json(
         { ok: false, error: turn.error, upgradeUrl: turn.upgradeUrl, reason: turn.reason },
         { status: turn.status },
@@ -166,11 +183,13 @@ export async function POST(req: Request): Promise<NextResponse> {
       transcript: turn.transcript,
     });
     if (!step.success) {
+      await release();
       return NextResponse.json({ ok: false, error: "Invalid turn" }, { status: 400 });
     }
 
     const advanced = driver.advance(attempt.item.payload, attempt.response, step.data);
     if (!advanced.ok) {
+      await release();
       return NextResponse.json(
         {
           ok: false,
@@ -196,11 +215,17 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // Last turn: one holistic rating over every transcript, then persist.
-    const graded = await task.grade({
-      transcript: JSON.stringify(stored),
-      payload: attempt.item.payload,
-      userId: user.id,
-    });
+    let graded: Awaited<ReturnType<typeof task.grade>>;
+    try {
+      graded = await task.grade({
+        transcript: JSON.stringify(stored),
+        payload: attempt.item.payload,
+        userId: user.id,
+      });
+    } catch (err) {
+      await release();
+      throw err;
+    }
     const def = DET_TASKS[attempt.taskType];
     const range = fractionToRange(graded.fraction);
     await prisma.detAttempt.update({
@@ -222,19 +247,26 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: true, finished: true });
   }
 
-  const outcome = await runSpeakingAttempt({
-    userId: user.id,
-    isPaid: mayUseSpeakingAi,
-    task,
-    payload: attempt.item.payload,
-    audio: uploaded,
-    // Billed attempts only: an attempt row exists from the moment a session step
-    // is created, so counting those would charge the cap for items the user
-    // never recorded. `submittedAt` is set when one is actually scored.
-    deps: { countAttemptsToday, transcribe },
-  });
+  let outcome: Awaited<ReturnType<typeof runSpeakingAttempt>>;
+  try {
+    outcome = await runSpeakingAttempt({
+      userId: user.id,
+      isPaid: mayUseSpeakingAi,
+      task,
+      payload: attempt.item.payload,
+      audio: uploaded,
+      // Billed attempts only: an attempt row exists from the moment a session step
+      // is created, so counting those would charge the cap for items the user
+      // never recorded. `submittedAt` is set when one is actually scored.
+      deps: { countAttemptsToday, transcribe },
+    });
+  } catch (err) {
+    await release();
+    throw err;
+  }
 
   if (!outcome.ok) {
+    await release();
     return NextResponse.json(
       { ok: false, error: outcome.error, upgradeUrl: outcome.upgradeUrl, reason: outcome.reason },
       { status: outcome.status },
