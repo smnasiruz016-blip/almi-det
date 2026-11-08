@@ -45,7 +45,7 @@ const PRICING_LINES = [
   "Auto-marked Read and Select and Listen and Type",
   "Subscore estimates on the 10–160 scale, shown as ranges",
   "Original practice material — never copied from Duolingo",
-  "$12/month with a 7-day free trial, cancel anytime",
+  "Try free for 48 hours, then $12/month. Cancel anytime.",
 ] as const;
 
 const FAQ = [
@@ -75,7 +75,7 @@ const FAQ = [
   },
   {
     q: "How much does AlmiDET cost?",
-    a: "$12 per month with a 7-day free trial, monthly only, cancel anytime. No hidden fees.",
+    a: "Try free for 48 hours, then $12/month. Cancel anytime. No hidden fees.",
   },
 ] as const;
 
@@ -162,7 +162,7 @@ export default function Home() {
               </Link>
             </div>
             <p className="mt-4 text-sm text-almi-text-muted">
-              $12/month, 7-day free trial, cancel anytime · Original material, never copied from Duolingo · Part of the AlmiWorld family
+              Try free for 48 hours, then $12/month · Cancel anytime · Original material, never copied from Duolingo · Part of the AlmiWorld family
             </p>
           </div>
           <SubscoreMockup />
@@ -238,7 +238,7 @@ export default function Home() {
       <section className="px-6 py-16">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-3xl font-semibold text-almi-ink">Simple, honest pricing</h2>
-          <p className="mt-3 text-xl font-semibold text-almi-ink">$12/month — 7-day free trial, cancel anytime.</p>
+          <p className="mt-3 text-xl font-semibold text-almi-ink">Try free for 48 hours, then $12/month. Cancel anytime.</p>
           <ul className="mx-auto mt-6 max-w-xl space-y-2 text-left text-sm text-almi-text">
             {PRICING_LINES.map((line) => (
               <li key={line} className="flex items-start gap-2">
@@ -281,8 +281,8 @@ export default function Home() {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-semibold text-almi-ink">Practise honestly. Walk in ready.</h2>
           <p className="mt-3 text-base text-almi-text">
-            Real DET task types, honest subscore estimates, original material — for $12/month with a 7-day free
-            trial.
+            Real DET task types, honest subscore estimates, original material. Try free for 48 hours,
+            then $12/month.
           </p>
           <div className="mt-8">
             <Link
