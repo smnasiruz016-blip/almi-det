@@ -95,6 +95,8 @@ export async function POST(req: Request): Promise<NextResponse> {
   // actually arrives.
   // RR-397: set when the free-48-hours door (aiGate) has already admitted this AI scoring, so it is not asked twice.
   let aiAdmitted = false;
+  // RR-399 A3: gives a reserved free AI use back when nothing was delivered (the AI call failed, or the request stopped before it).
+  let releaseFree: () => Promise<void> = async () => {};
   if (isSpeakingTask(attempt.taskType)) {
     // RR-397: paid users as before (hasPaidAccess inside aiGate); a free account inside its 48 hours from sign-up (no card),
     // with a verified email, gets ONE scored Speaking (any speaking type: each is transcribed), within today's free-AI budget.
@@ -110,6 +112,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
     if (!gate.ok) return NextResponse.json(gate.body, { status: gate.status });
     aiAdmitted = true;
+    releaseFree = gate.release;
     const usedToday = await prisma.detAttempt.count({
       where: {
         userId: user.id,
@@ -118,6 +121,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       },
     });
     if (usedToday >= SPEAKING_DAILY_CAP) {
+      await releaseFree();
       return NextResponse.json(
         { ok: false, error: speakingCapMessage(SPEAKING_DAILY_CAP) },
         { status: 429 },
@@ -140,6 +144,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         prisma.detAttempt.count({ where: { userId: user.id, taskType: { in: AI_WRITING_TYPES }, status: "SCORED" } }),
       );
       if (!gate.ok) return NextResponse.json(gate.body, { status: gate.status });
+      releaseFree = gate.release;
     } else if (!hasPaidAccess(user)) {
       // RR-397: paid only. Interactive Listening (its Part C is AI-rated) is not part of the free 48 hours, which give
       // 1 AI-scored Writing + 1 AI-scored Speaking.
@@ -165,6 +170,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       responseValue = { transcript };
     } catch (err) {
       console.error("[det.submit] transcription failed:", err);
+      await releaseFree();
       return NextResponse.json(
         { ok: false, error: "Could not transcribe your recording. Try again." },
         { status: 500 },
@@ -190,6 +196,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
   } catch (err) {
     console.error("[det.submit] scoring failed:", err);
+    await releaseFree();
     return NextResponse.json(
       { ok: false, error: "Could not score this attempt. Try again in a moment." },
       { status: 500 },

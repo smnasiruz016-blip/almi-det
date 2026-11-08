@@ -49,5 +49,9 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      # RR-399 A3: the free AI use is atomic (pure: a fake store with the database's unique rule; no DB, no AI)
+      - name: free AI claim test (RR-399)
+        run: npx tsx scripts/verify-free-ai-claim.ts
+
       - name: Content gates
         run: npm run gate:all
