@@ -19,9 +19,9 @@ import { loadAuthoredReadThenSpeak, type ReadThenSpeakSource } from "./read-then
 
 const prisma = new PrismaClient();
 
-const PROMPT = "Read the prompt, then speak about it for up to 90 seconds.";
+export const PROMPT = "Read the prompt, then speak about it for up to 90 seconds.";
 
-const GUIDANCE =
+export const GUIDANCE =
   "Give a clear position and develop two ideas. We rate what you said from a transcript — the ideas, flow, words and grammar — not your accent.";
 
 const authored = loadAuthoredReadThenSpeak({ prompt: PROMPT, guidanceNote: GUIDANCE, reservedTitles: [] });

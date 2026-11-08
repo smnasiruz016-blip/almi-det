@@ -10,5 +10,8 @@ dist/
 .vercel
 .env*.local
 
+# RR-401 factory: LanguageTool answers cached on disk (a re-import makes no request)
+.factory-cache/
+
 # TypeScript incremental build cache — machine-specific, never commit
 *.tsbuildinfo

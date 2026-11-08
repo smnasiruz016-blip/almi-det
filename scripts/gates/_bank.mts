@@ -130,6 +130,8 @@ export async function loadBank(): Promise<Bank> {
       import("../seed/listen-then-speak"),
       import("../seed/speaking-sample"),
       import("../seed/interactive-speaking"),
+      // RR-401: the factory pack's ready items (seeded by scripts/factory/seed-det-pack.ts), gated like every other item
+      import("../seed/factory-pack1"),
     ]);
     raw = mods.flatMap((m) => m.ITEMS as unknown as Record<string, unknown>[]);
   }

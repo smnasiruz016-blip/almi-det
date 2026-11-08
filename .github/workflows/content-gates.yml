@@ -55,5 +55,9 @@ jobs:
       - name: free AI claim test (RR-399)
         run: npx tsx scripts/verify-free-ai-claim.ts
 
+      # RR-401: the content factory (pack parser, LanguageTool gate on fixtures, word counts, pending rule, seed dry run + idempotence; no DB, no network)
+      - name: factory test (RR-401)
+        run: npx tsx scripts/factory/factory.test.mts
+
       - name: Content gates
         run: npm run gate:all

@@ -24,9 +24,9 @@ import { loadAuthoredWritingSample, type WSSource } from "./writing-sample.loade
 
 const prisma = new PrismaClient();
 
-const PROMPT = "Read the prompt, then write your response.";
+export const PROMPT = "Read the prompt, then write your response.";
 
-const GUIDANCE =
+export const GUIDANCE =
   "Name one idea and stay with it. Two developed reasons with concrete examples read far better than five ideas listed.";
 
 /** The reference item, authored inline and proven end to end before the rest

@@ -24,9 +24,9 @@ import { loadAuthoredInteractiveWriting, type IWSource } from "./interactive-wri
 
 const prisma = new PrismaClient();
 
-const PROMPT = "Answer both parts. Part 1 locks when you submit it.";
+export const PROMPT = "Answer both parts. Part 1 locks when you submit it.";
 
-const GUIDANCE =
+export const GUIDANCE =
   "Take a clear position in Part 1 and support it with specific examples. Part 2 is not a reversal — it asks you to be fair to the other side and practical about your own objection.";
 
 /** The reference item, authored inline and proven end to end before the rest
