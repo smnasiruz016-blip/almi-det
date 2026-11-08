@@ -7,7 +7,8 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
-import { hasPaidAccess } from "@/lib/billing/plans";
+import { hasPaidAccess, isEmailVerified } from "@/lib/billing/plans";
+import { aiGate } from "@/lib/billing/free-access";
 import { prisma } from "@/lib/prisma";
 import { DET_HANDLERS, DET_TASKS } from "@/lib/det/registry";
 import { fractionToRange } from "@/lib/det/scale";
@@ -15,13 +16,17 @@ import { subscoreEstimateFromSkill } from "@/lib/det/subscores";
 import { transcribeAudio } from "@/lib/ai/openai";
 import {
   SPEAKING_DAILY_CAP,
-  SPEAKING_UNPAID_MESSAGE,
   speakingCapMessage,
   startOfDay,
 } from "@/lib/det/speaking";
 import { isSpeakingTask, speakingTaskFor, speakingTaskTypes } from "@/lib/det/speaking-tasks";
 
 export const runtime = "nodejs";
+
+/** RR-397: the AI-rated Writing task types (one AI-scored Writing in the free 48 hours counts across all of them). */
+const AI_WRITING_TYPES = (Object.keys(DET_TASKS) as (keyof typeof DET_TASKS)[]).filter(
+  (t) => DET_TASKS[t].skill === "WRITING" && DET_TASKS[t].scoringMode === "AI",
+);
 
 export async function POST(req: Request): Promise<NextResponse> {
   const user = await getCurrentUser();
@@ -88,13 +93,23 @@ export async function POST(req: Request): Promise<NextResponse> {
   // speaking type except the one that has been live longest. The kernel owns the
   // numbers and the wording; this is the same guard, applied where that type
   // actually arrives.
+  // RR-397: set when the free-48-hours door (aiGate) has already admitted this AI scoring, so it is not asked twice.
+  let aiAdmitted = false;
   if (isSpeakingTask(attempt.taskType)) {
-    if (!hasPaidAccess(user)) {
+    // RR-397: paid users as before (hasPaidAccess inside aiGate); a free account inside its 48 hours from sign-up (no card),
+    // with a verified email, gets ONE scored Speaking (any speaking type: each is transcribed), within today's free-AI budget.
+    // "Used" = a speaking attempt the account already had SCORED (a real result, never a click).
+    if (!hasPaidAccess(user) && !isEmailVerified(user)) {
       return NextResponse.json(
-        { ok: false, error: SPEAKING_UNPAID_MESSAGE, upgradeUrl: "/pricing" },
-        { status: 402 },
+        { ok: false, error: "Please verify your email first.", upgradeUrl: "/pricing" },
+        { status: 403 },
       );
     }
+    const gate = await aiGate(user, "SPEAKING", () =>
+      prisma.detAttempt.count({ where: { userId: user.id, taskType: { in: speakingTaskTypes() }, status: "SCORED" } }),
+    );
+    if (!gate.ok) return NextResponse.json(gate.body, { status: gate.status });
+    aiAdmitted = true;
     const usedToday = await prisma.detAttempt.count({
       where: {
         userId: user.id,
@@ -111,11 +126,28 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   // AI feedback is a paid feature; objective auto-marking is free practice.
-  if (handler.mode === "AI" && !hasPaidAccess(user)) {
-    return NextResponse.json(
-      { ok: false, error: "AI feedback needs a subscription", upgradeUrl: "/pricing" },
-      { status: 402 },
-    );
+  if (handler.mode === "AI" && !aiAdmitted) {
+    if (def.skill === "WRITING") {
+      // RR-397: paid users as before; a free account inside its 48 hours (no card), with a verified email, gets ONE
+      // AI-scored Writing, within today's free-AI budget. "Used" = a Writing attempt the account already had SCORED.
+      if (!hasPaidAccess(user) && !isEmailVerified(user)) {
+        return NextResponse.json(
+          { ok: false, error: "Please verify your email first.", upgradeUrl: "/pricing" },
+          { status: 403 },
+        );
+      }
+      const gate = await aiGate(user, "WRITING", () =>
+        prisma.detAttempt.count({ where: { userId: user.id, taskType: { in: AI_WRITING_TYPES }, status: "SCORED" } }),
+      );
+      if (!gate.ok) return NextResponse.json(gate.body, { status: gate.status });
+    } else if (!hasPaidAccess(user)) {
+      // RR-397: paid only. Interactive Listening (its Part C is AI-rated) is not part of the free 48 hours, which give
+      // 1 AI-scored Writing + 1 AI-scored Speaking.
+      return NextResponse.json(
+        { ok: false, error: "AI feedback on this task is part of AlmiDET Pro. Unlock for $12/month.", upgradeUrl: "/pricing" },
+        { status: 402 },
+      );
+    }
   }
 
   // Speaking: transcribe the uploaded audio before scoring.

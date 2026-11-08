@@ -5,6 +5,17 @@
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { hasPaidAccess } from "@/lib/billing/plans";
+import { hasPracticeAccess } from "@/lib/billing/free-access";
+import { FreeTimeBanner } from "@/components/FreeTimeBanner";
+import type { DetSkill } from "@/lib/det/types";
+
+/** RR-397: inside the free 48 hours from sign-up (no card), the AI-rated Writing and Speaking tasks open too; the submit
+ *  routes hold them to 1 AI-scored Writing + 1 AI-scored Speaking (aiGate). Interactive Listening and the mock stay Pro. */
+const OPEN_IN_FREE_48: DetSkill[] = ["WRITING", "SPEAKING"];
+function mayStart(def: { scoringMode: string; skill: DetSkill }, user: Parameters<typeof hasPracticeAccess>[0]): boolean {
+  if (def.scoringMode !== "AI") return true;
+  return OPEN_IN_FREE_48.includes(def.skill) ? hasPracticeAccess(user) : hasPaidAccess(user);
+}
 import { startSession } from "@/lib/det/session";
 import { taskBySlug } from "@/lib/det/registry";
 import { SUBSCORE_LABEL } from "@/lib/det/types";
@@ -15,7 +26,7 @@ async function beginAction(formData: FormData) {
   const def = taskBySlug(slug);
   if (!def || !def.live) redirect("/practice");
   const user = await requireUser();
-  if (def.scoringMode === "AI" && !hasPaidAccess(user)) redirect("/pricing");
+  if (!mayStart(def, user)) redirect("/pricing");
   const id = await startSession({ userId: user.id, mode: "ADAPTIVE", taskType: def.taskType });
   if (!id) redirect(`/practice/${def.slug}?empty=1`);
   redirect(`/practice/session/${id}`);
@@ -36,7 +47,8 @@ export default async function TaskStartPage({
 
   const subs = def.feedsSubscores.map((s) => SUBSCORE_LABEL[s]).join(" + ");
   const isObjective = def.scoringMode === "DETERMINISTIC";
-  const needsPaid = def.scoringMode === "AI" && !hasPaidAccess(user);
+  const needsPaid = !mayStart(def, user);
+  const aiKind = def.skill === "WRITING" ? "WRITING" : def.skill === "SPEAKING" ? "SPEAKING" : undefined;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -66,11 +78,13 @@ export default async function TaskStartPage({
         </p>
       )}
 
+      {!isObjective && aiKind && <FreeTimeBanner user={user} ai={aiKind} />}
+
       {needsPaid ? (
         <div className="rounded-xl border border-almi-accent/40 bg-almi-accent/10 px-4 py-3 text-sm text-almi-ink">
-          AI feedback is part of a subscription.{" "}
+          AI feedback on this task is part of AlmiDET Pro.{" "}
           <a href="/pricing" className="font-semibold underline">
-            See plans
+            Unlock for $12/month
           </a>{" "}
           — objective tasks (Read and Select, Listen and Type) are free.
         </div>

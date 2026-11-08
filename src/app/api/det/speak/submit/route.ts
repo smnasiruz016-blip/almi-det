@@ -14,7 +14,8 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
-import { hasPaidAccess } from "@/lib/billing/plans";
+import { hasPaidAccess, isEmailVerified } from "@/lib/billing/plans";
+import { aiGate } from "@/lib/billing/free-access";
 import { prisma } from "@/lib/prisma";
 import { DET_TASKS } from "@/lib/det/registry";
 import { fractionToRange } from "@/lib/det/scale";
@@ -71,6 +72,19 @@ export async function POST(req: Request): Promise<NextResponse> {
       { status: 400 },
     );
   }
+
+  // RR-397: paid users as before (hasPaidAccess inside aiGate); a free account inside its 48 hours from sign-up (no card),
+  // with a verified email, gets ONE scored Speaking (one interview = one attempt), within today's free-AI budget. "Used" =
+  // a speaking attempt the account already had SCORED (a real result, never a click). Checked before anything is spent.
+  if (!hasPaidAccess(user) && !isEmailVerified(user)) {
+    return NextResponse.json({ ok: false, error: "Please verify your email first.", upgradeUrl: "/pricing" }, { status: 403 });
+  }
+  const gate = await aiGate(user, "SPEAKING", () =>
+    prisma.detAttempt.count({ where: { userId: user.id, taskType: { in: speakingTaskTypes() }, status: "SCORED" } }),
+  );
+  if (!gate.ok) return NextResponse.json(gate.body, { status: gate.status });
+  // the kernel's isPaid guard means "may this account be billed for a speaking attempt": paid, or admitted by aiGate above
+  const mayUseSpeakingAi = hasPaidAccess(user) || gate.free;
 
   // Pre-rendered question clips, for the staged types whose stimulus is audio.
   const audio: Record<number, string> = {};
@@ -134,7 +148,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const turn = await transcribeSpeakingTurn({
       userId: user.id,
-      isPaid: hasPaidAccess(user),
+      isPaid: mayUseSpeakingAi,
       task,
       audio: uploaded,
       deps: { countAttemptsToday, transcribe },
@@ -210,7 +224,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const outcome = await runSpeakingAttempt({
     userId: user.id,
-    isPaid: hasPaidAccess(user),
+    isPaid: mayUseSpeakingAi,
     task,
     payload: attempt.item.payload,
     audio: uploaded,

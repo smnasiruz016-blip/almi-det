@@ -32,8 +32,10 @@ jobs:
           cache: npm
 
       # Pure node: no install, no database, no secrets.
-      - name: offer gate (RR-394, 48-hour trial)
+      - name: offer gate (RR-397, free 48 hours, no card)
         run: node scripts/gates/offer-48h.mjs
+      - name: family header and footer gate (RR-398)
+        run: node scripts/gates/family-nav.mjs
 
       # @smnasiruz016-blip/almi-data is a private GitHub Packages dependency;
       # .npmrc reads NODE_AUTH_TOKEN.
