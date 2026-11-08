@@ -286,6 +286,94 @@
    ]
   },
   {
+   "id": "det-p1-interactive-writing-2",
+   "packNo": 1,
+   "key": "Interactive Writing 2",
+   "kind": "INTERACTIVE_WRITING",
+   "taskType": "INTERACTIVE_WRITING",
+   "title": "Big city or quiet village",
+   "titleFrom": "pack",
+   "status": "ready",
+   "pendingReason": null,
+   "prompt": {
+    "part1": "Would you rather live in a big city or in the countryside? Explain your choice.",
+    "part2": "What could governments do to make life in small towns more attractive to young people?"
+   },
+   "imageDescription": null,
+   "script": [],
+   "sharedNotes": null,
+   "provenance": {
+    "author": "beta-g",
+    "date": "2026-11-08",
+    "file": "AlmiDET_Pack1.md"
+   },
+   "answers": [
+    {
+     "level": "130+",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "Although I enjoy visiting the countryside, I would rather live in a big city, at least at this stage of my life. Cities offer far more opportunities for young people, from internships and well-paid jobs to universities and professional networks. I also appreciate the convenience of public transportation, which means I do not need to own a car. In addition, cities are culturally diverse, so I can try food from different countries, attend concerts and meet people with very different backgrounds. Of course, city life is expensive and noisy, but for someone who is building a career, the advantages clearly outweigh these disadvantages."
+      },
+      {
+       "label": "Part 2",
+       "text": "Governments could start by improving internet connections, so that young people can work remotely from small towns. They could also offer tax benefits or housing grants to people who move there, and support local businesses that create jobs. Finally, investing in public transportation would make it easier to reach nearby cities for education and entertainment."
+      }
+     ],
+     "text": "Although I enjoy visiting the countryside, I would rather live in a big city, at least at this stage of my life. Cities offer far more opportunities for young people, from internships and well-paid jobs to universities and professional networks. I also appreciate the convenience of public transportation, which means I do not need to own a car. In addition, cities are culturally diverse, so I can try food from different countries, attend concerts and meet people with very different backgrounds. Of course, city life is expensive and noisy, but for someone who is building a career, the advantages clearly outweigh these disadvantages.\n\nGovernments could start by improving internet connections, so that young people can work remotely from small towns. They could also offer tax benefits or housing grants to people who move there, and support local businesses that create jobs. Finally, investing in public transportation would make it easier to reach nearby cities for education and entertainment.",
+     "wordCount": 158,
+     "partWords": [
+      103,
+      55
+     ],
+     "notes": "a clear preference with several developed reasons and a balanced acknowledgment of the drawbacks; Part 2 offers four specific, realistic ideas. The language is precise (*outweigh*, *culturally diverse*, *housing grants*).",
+     "withMistakes": false
+    },
+    {
+     "level": "110",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "I would prefer to live in a big city. There are more jobs in the city, and it is easier to find good universities. I also like that there are many restaurants, shops and parks. Public transportation is better, so I do not need a car. The countryside is quiet and beautiful, but I think it can be boring for young people."
+      },
+      {
+       "label": "Part 2",
+       "text": "Governments can build better internet and give more jobs in small towns. They can also make houses cheaper for young people."
+      }
+     ],
+     "text": "I would prefer to live in a big city. There are more jobs in the city, and it is easier to find good universities. I also like that there are many restaurants, shops and parks. Public transportation is better, so I do not need a car. The countryside is quiet and beautiful, but I think it can be boring for young people.\n\nGovernments can build better internet and give more jobs in small towns. They can also make houses cheaper for young people.",
+     "wordCount": 83,
+     "partWords": [
+      62,
+      21
+     ],
+     "notes": "relevant and clear, with less detail; Part 2 is short.",
+     "withMistakes": false
+    },
+    {
+     "level": "85",
+     "parts": [
+      {
+       "label": "Part 1",
+       "text": "I like city more. In city have many job and shopping mall. Countryside is boring, nothing to do."
+      },
+      {
+       "label": "Part 2",
+       "text": "Government must give money and make more job."
+      }
+     ],
+     "text": "I like city more. In city have many job and shopping mall. Countryside is boring, nothing to do.\n\nGovernment must give money and make more job.",
+     "wordCount": 26,
+     "partWords": [
+      18,
+      8
+     ],
+     "notes": "very limited; errors (*In city have*, *many job*, *make more job*); no real development.",
+     "withMistakes": true
+    }
+   ]
+  },
+  {
    "id": "det-p1-photo-1",
    "packNo": 1,
    "key": "Photo 1",

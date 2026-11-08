@@ -53,12 +53,19 @@ await t("word counts recomputed equal every row of the pack's own table (30 rows
   }
 });
 const r1 = importPacks([pack], clean, existing);
-await t("import: 11 in (5 ready, 4 image pending, 2 audio pending), 1 blocked (Interactive Writing 2: title already used)", () => {
+await t("import: all 12 in (6 ready, 4 image pending, 2 audio pending), nothing blocked", () => {
   const st = (s: string) => r1.data.items.filter((i) => i.status === s).map((i) => i.key).sort();
-  assert.deepEqual(st("ready"), ["Interactive Writing 1", "Read, Then Speak (20 seconds to prepare, 90 seconds)", "Speaking Sample (30 seconds to prepare, 3 minutes)", "Writing Sample 1", "Writing Sample 2"]);
+  assert.deepEqual(st("ready"), ["Interactive Writing 1", "Interactive Writing 2", "Read, Then Speak (20 seconds to prepare, 90 seconds)", "Speaking Sample (30 seconds to prepare, 3 minutes)", "Writing Sample 1", "Writing Sample 2"]);
   assert.deepEqual(st("image-pending"), ["Photo 1", "Photo 2", "Photo 3", "Speak About the Photo (20 seconds to prepare, 90 seconds)"]);
   assert.deepEqual(st("audio-pending"), ["Conversation 1", "Conversation 2"]);
-  assert.equal(r1.blocked.length, 1); assert.match(r1.blocked[0].where, /Interactive Writing 2$/); assert.match(r1.blocked[0].reasons[0], /already used/);
+  assert.equal(r1.blocked.length, 0);
+  assert.equal(r1.data.items.find((i) => i.key === "Interactive Writing 2")?.title, "Big city or quiet village");
+});
+await t("title gate: a title already used by a different item in AlmiDET blocks the item (the old 'City or countryside')", () => {
+  const md = SRC.replace("# Interactive Writing 2 — Big city or quiet village", "# Interactive Writing 2 — City or countryside");
+  assert.notEqual(md, SRC);
+  const r = importPacks([load(md)], clean, existing);
+  assert.equal(r.blocked.length, 1); assert.match(r.blocked[0].where, /Interactive Writing 2$/); assert.match(r.blocked[0].reasons[0], /already used/);
 });
 await t("the data in the repo IS this pack's import (nothing edited by hand)", () => {
   assert.equal(JSON.stringify(mergeData(null, r1.data), null, 1), JSON.stringify(COMMITTED, null, 1));
@@ -76,7 +83,7 @@ await t("every model answer is copied exactly from the pack", () => {
 console.log("gates");
 await t("grammar gate: a planted spelling error in a 130+ answer blocks that item, and it stays out of the data and the seed", () => {
   const r = importPacks([pack], flag("enjoyable"), existing); // not in the pack: nothing blocked
-  assert.equal(r.blocked.length, 1);
+  assert.equal(r.blocked.length, 0);
   const bad = importPacks([load(SRC.replace("I made the mistake of leaving", "I made the mistake of leavving"))], flag("leavving"), existing);
   const b = bad.blocked.find((x) => /Interactive Writing 1$/.test(x.where));
   assert.ok(b, "planted spelling error did not block"); assert.equal(b.findings[0].text, "leavving");
@@ -89,11 +96,11 @@ await t("grammar gate: a planted error in a 110 answer or a note blocks; style h
   const n = importPacks([pack], flag("practical examples", "GRAMMAR", "grammar"), existing);
   assert.ok(n.blocked.some((x) => /Interactive Writing 1$/.test(x.where) && x.reasons.some((y) => /notes/.test(y))), "planted error in a note missed");
   const s = importPacks([pack], flag("Ironically", "STYLE", "style"), existing);
-  assert.equal(s.blocked.length, 1);
+  assert.equal(s.blocked.length, 0);
 });
 await t("85 level: its mistakes never block; a quoted mistake in a note never blocks", () => {
   const r = importPacks([pack], flag("There is people"), existing); // an 85 answer, and quoted in the notes
-  assert.equal(r.blocked.length, 1);
+  assert.equal(r.blocked.length, 0);
 });
 await t("85 level: notes that name no mistake block the item", () => {
   const md = SRC.replace("**Notes:** very short; tense errors (*I make mistake*, *I dont study*, *I get*, *I learn*), agreement errors (*My parents was*, *Everybody make*), and almost no development.", "**Notes:** very short and almost no development.");
@@ -114,8 +121,8 @@ await t("a pending item (image or audio) never becomes a row, and the reader hid
     assert.throws(() => seedRowFor(it, DEFAULTS), /never seeded/);
     assert.equal(modelAnswersFor(it.taskType, it.title), null);
   }
-  assert.equal(seedRows(r1.data, DEFAULTS).length, 5);
-  assert.deepEqual(FACTORY_ITEMS.map((i) => i.title).sort(), ["A few close friends", "A skill you would like to learn", "Learning from mistakes", "Learning online", "Social media and friendship"]);
+  assert.equal(seedRows(r1.data, DEFAULTS).length, 6);
+  assert.deepEqual(FACTORY_ITEMS.map((i) => i.title).sort(), ["A few close friends", "A skill you would like to learn", "Big city or quiet village", "Learning from mistakes", "Learning online", "Social media and friendship"]);
   assert.ok(modelAnswersFor("WRITING_SAMPLE", "Learning online"));
 });
 await t("the rater reference is beta-g's own 130+ note (no new words)", () => {
@@ -134,19 +141,19 @@ await t("seed: a dry run writes nothing (and only --confirm WITH FACTORY_WRITE=y
   assert.equal(writeAllowed(["--confirm"], { FACTORY_WRITE: "yes" }), true);
   const db = fakeDb();
   const r = await runSeed(db, ROWS, writeAllowed([], { FACTORY_WRITE: "yes" }));
-  assert.equal(r.plan.create.length, 5); assert.equal(r.written, 0); assert.equal(db.writes, 0); assert.equal(db.rows.length, 0);
+  assert.equal(r.plan.create.length, 6); assert.equal(r.written, 0); assert.equal(db.writes, 0); assert.equal(db.rows.length, 0);
 });
-await t("seed: the write is idempotent (second run creates 0, all 5 'already there and equal')", async () => {
+await t("seed: the write is idempotent (second run creates 0, all 6 'already there and equal')", async () => {
   const db = fakeDb();
   const a = await runSeed(db, ROWS, true);
-  assert.equal(a.written, 5);
+  assert.equal(a.written, 6);
   const b = await runSeed(db, ROWS, true);
-  assert.equal(b.written, 0); assert.equal(b.plan.same.length, 5); assert.equal(db.writes, 1); assert.equal(db.rows.length, 5);
+  assert.equal(b.written, 0); assert.equal(b.plan.same.length, 6); assert.equal(db.writes, 1); assert.equal(db.rows.length, 6);
 });
 await t("seed: a live row that differs is listed, never changed; the same prompt under another title is skipped", () => {
   const live: LiveRow[] = [{ ...ROWS[0], payload: { ...ROWS[0].payload, topic: "changed" } }, { ...ROWS[1], title: "Another title" }];
   const p = planSeed(ROWS, live);
-  assert.equal(p.differs.length, 1); assert.equal(p.duplicate.length, 1); assert.equal(p.create.length, 3);
+  assert.equal(p.differs.length, 1); assert.equal(p.duplicate.length, 1); assert.equal(p.create.length, 4);
 });
 
 console.log(`\n${failed ? "FACTORY TEST FAIL" : "FACTORY TEST PASS"} — ${passed} passed, ${failed} failed`);

@@ -14,8 +14,8 @@ export type Lt = (text: string, lang: Lang) => LtMatch[];
 export const plainNote = (t: string) => t.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/\*([^*]+)\*/g, "“$1”").replace(/\*/g, "");
 
 /**
- * The pack gives no title for these items. CC's titles, taken from the item's own words, for beta-g to confirm. The pack's text is not
- * changed; a title is only the label the bank and the learner see.
+ * The pack gives no title for these items. CC's titles, taken from the item's own words; confirmed by beta-g (RR-401 round 2 decisions).
+ * The pack's text is not changed; a title is only the label the bank and the learner see.
  */
 export const CC_TITLES: Record<string, string> = {
   "Read, Then Speak": "A skill you would like to learn",

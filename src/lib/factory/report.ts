@@ -33,7 +33,7 @@ export function renderReport(packs: Pack[], res: ImportResult): string {
   const cc = res.data.items.filter((i) => i.titleFrom === "cc");
   if (cc.length) {
     L.push("");
-    L.push("### Titles CC gave (the pack has none; beta-g to confirm)");
+    L.push("### Titles CC gave (the pack has none; confirmed by beta-g)");
     for (const i of cc) L.push(`- ${i.key}: "${i.title}"`);
   }
   return L.join("\n") + "\n";

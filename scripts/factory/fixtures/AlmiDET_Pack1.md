@@ -85,7 +85,7 @@ subtitle: "beta-g · 8 Nov 2026 · original AlmiDET content · for owner check b
 
 **Notes:** very short; tense errors (*I make mistake*, *I dont study*, *I get*, *I learn*), agreement errors (*My parents was*, *Everybody make*), and almost no development.
 
-# Interactive Writing 2 — City or countryside
+# Interactive Writing 2 — Big city or quiet village
 
 > **Part 1:** Would you rather live in a big city or in the countryside? Explain your choice.
 >
