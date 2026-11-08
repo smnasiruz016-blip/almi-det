@@ -4,7 +4,9 @@ export const ALMIWORLD_FAMILY = {
   "generatedFrom": "almiworld-site app/layout.jsx + lib/products.mjs (RR-398)",
   "home": "https://almiworld.com/",
   "logo": {
-    "src": "https://almiworld.com/wp-content/uploads/2026/04/almi-latest.webp",
+    // RR-400: served from this product (public/almiworld/, a byte copy of almiworld.com's almi-latest.webp), so the logo
+    // needs no cross-site fetch and no 307 redirect to www.almiworld.com.
+    "src": "/almiworld/almi-latest.webp",
     "alt": "AlmiWorld — live beautifully",
     "width": 132,
     "height": 88

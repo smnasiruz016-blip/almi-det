@@ -36,6 +36,8 @@ jobs:
         run: node scripts/gates/offer-48h.mjs
       - name: family header and footer gate (RR-398)
         run: node scripts/gates/family-nav.mjs
+      - name: text contrast gate (RR-400, WCAG AA text shades)
+        run: node scripts/gates/text-contrast.mjs
 
       # @smnasiruz016-blip/almi-data is a private GitHub Packages dependency;
       # .npmrc reads NODE_AUTH_TOKEN.

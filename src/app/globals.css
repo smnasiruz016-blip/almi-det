@@ -37,3 +37,15 @@ body {
   color: var(--color-almi-text);
   font-family: var(--font-sans);
 }
+
+/* RR-400 text shades. The brand tokens above stay as they are for fills, borders and buttons. As TEXT on the cream page
+ * they measured 2.4–3.7:1 (Lighthouse accessibility 96), so text in these colours uses a darker shade of the same hue,
+ * at least 4.5:1 (WCAG AA) on white, cream, peach and the 10–20% brand tints. Same cascade layer as Tailwind's own
+ * utilities and later in source order, so it wins over `text-almi-*` while `hover:` and `/opacity` variants still apply.
+ * Gate: node scripts/gates/text-contrast.mjs */
+@layer utilities {
+  .text-almi-coral, .text-almi-coral-deep { color: #b0382a; }
+  .text-almi-teal { color: #0f6b63; }
+  .text-almi-gold-deep { color: #76601f; }
+  .text-almi-accent-deep { color: #9a4a0c; }
+}
